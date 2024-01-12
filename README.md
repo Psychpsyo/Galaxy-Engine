@@ -1,6 +1,6 @@
 # Galaxy Engine
 
-![](spashImage.png)  
+![](splash.png)  
 <sup><sup>
 [Galaxy Train from Cross Universe](https://crossuniverse.jp/2009/01/10/%E9%8A%80%E6%B2%B3%E9%89%84%E9%81%93%E9%BE%8D%E3%80%80%E3%83%8A%E3%82%A4%E3%83%88%E3%83%BB%E3%83%89%E3%83%A9%E3%82%B4%E3%83%B399%E3%80%80lv9/)
 </sup></sup>  
