@@ -1,4 +1,4 @@
-import {BaseCard} from "../card.js";
+import {BaseCard} from "../card.mjs";
 
 export class ScriptValue {
 	constructor(type, value) {

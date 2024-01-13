@@ -1,11 +1,11 @@
 // This module exports the Game class which holds all data relevant to a single Cross Universe game.
 
-import {Player} from "./player.js";
-import {Turn} from "./turns.js";
-import {CURandom} from "./random.js";
-import {createDeckShuffledEvent, createStartingPlayerSelectedEvent, createCardsDrawnEvent, createPartnerRevealedEvent, createTurnStartedEvent} from "./events.js";
-import * as phases from "./phases.js";
-import * as requests from "./inputRequests.js";
+import {Player} from "./player.mjs";
+import {Turn} from "./turns.mjs";
+import {CURandom} from "./random.mjs";
+import {createDeckShuffledEvent, createStartingPlayerSelectedEvent, createCardsDrawnEvent, createPartnerRevealedEvent, createTurnStartedEvent} from "./events.mjs";
+import * as phases from "./phases.mjs";
+import * as requests from "./inputRequests.mjs";
 
 export const baseTypes = [
 	"Angel",

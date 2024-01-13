@@ -1,7 +1,7 @@
-import * as interpreter from "./cdfScriptInterpreter/interpreter.js";
-import * as blocks from "./blocks.js";
-import * as timingGenerators from "./timingGenerators.js";
-import {ScriptContext} from "./cdfScriptInterpreter/structs.js";
+import * as interpreter from "./cdfScriptInterpreter/interpreter.mjs";
+import * as blocks from "./blocks.mjs";
+import * as timingGenerators from "./timingGenerators.mjs";
+import {ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
 
 export class BaseAbility {
 	constructor(ability, game) {

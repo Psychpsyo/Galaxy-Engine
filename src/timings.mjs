@@ -1,15 +1,15 @@
 
-import {createActionCancelledEvent, createPlayerWonEvent, createGameDrawnEvent, createValueChangedEvent, createActionModificationAbilityAppliedEvent} from "./events.js";
-import {chooseAbilityOrder, chooseCards, applyActionModificationAbility} from "./inputRequests.js";
-import {Player} from "./player.js";
-import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.js";
-import {BaseCard} from "./card.js";
-import {recalculateModifiedValuesFor, ActionReplaceModification, ActionModification} from "./valueModifiers.js";
-import * as abilities from "./abilities.js";
-import * as phases from "./phases.js";
-import * as actions from "./actions.js";
-import * as zones from "./zones.js";
-import * as ast from "./cdfScriptInterpreter/astNodes.js";
+import {createActionCancelledEvent, createPlayerWonEvent, createGameDrawnEvent, createValueChangedEvent, createActionModificationAbilityAppliedEvent} from "./events.mjs";
+import {chooseAbilityOrder, chooseCards, applyActionModificationAbility} from "./inputRequests.mjs";
+import {Player} from "./player.mjs";
+import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
+import {BaseCard} from "./card.mjs";
+import {recalculateModifiedValuesFor, ActionReplaceModification, ActionModification} from "./valueModifiers.mjs";
+import * as abilities from "./abilities.mjs";
+import * as phases from "./phases.mjs";
+import * as actions from "./actions.mjs";
+import * as zones from "./zones.mjs";
+import * as ast from "./cdfScriptInterpreter/astNodes.mjs";
 
 // Represents a single instance in time where multiple actions take place at once.
 export class Timing {

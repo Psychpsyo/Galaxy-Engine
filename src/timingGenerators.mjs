@@ -1,11 +1,11 @@
 // This file contains timing generator functions and related utility functions
 
-import {Timing, runInterjectedTimings} from "./timings.js";
-import {createCardsAttackedEvent} from "./events.js";
-import {FieldZone} from "./zones.js";
-import {ScriptValue} from "./cdfScriptInterpreter/structs.js";
-import * as actions from "./actions.js";
-import * as requests from "./inputRequests.js";
+import {Timing, runInterjectedTimings} from "./timings.mjs";
+import {createCardsAttackedEvent} from "./events.mjs";
+import {FieldZone} from "./zones.mjs";
+import {ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
+import * as actions from "./actions.mjs";
+import * as requests from "./inputRequests.mjs";
 
 export class TimingRunner {
 	constructor(generatorFunction, game) {

@@ -1,6 +1,6 @@
 // This file input request definitions for passing out of the engine
-import {DeckPosition} from "./cdfScriptInterpreter/structs.js";
-import {nChooseK} from "./math.js";
+import {DeckPosition} from "./cdfScriptInterpreter/structs.mjs";
+import {nChooseK} from "./math.mjs";
 
 export const chooseCards = {
 	create: function(player, cards, validAmounts, reason, validate = () => true) {

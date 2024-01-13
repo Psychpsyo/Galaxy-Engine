@@ -1,6 +1,6 @@
-import {parseScript} from "./parser.js";
-import {tokenize} from "./lexer.js";
-import * as abilities from "../abilities.js";
+import {parseScript} from "./parser.mjs";
+import {tokenize} from "./lexer.mjs";
+import * as abilities from "../abilities.mjs";
 
 let registeredAbilities = {};
 

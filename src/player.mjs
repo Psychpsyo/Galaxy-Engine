@@ -1,9 +1,9 @@
 // This module exports the Player class which holds all data relevant to one player in a game.
 
-import {Card} from "./card.js";
-import {ObjectValues, PlayerValues} from "./objectValues.js";
-import * as zones from "./zones.js";
-import * as deckErrors from "./deckErrors.js";
+import {Card} from "./card.mjs";
+import {ObjectValues, PlayerValues} from "./objectValues.mjs";
+import * as zones from "./zones.mjs";
+import * as deckErrors from "./deckErrors.mjs";
 
 export class Player {
 	constructor(game) {

@@ -1,12 +1,12 @@
 // This module exports the Card class which represents a specific card in a Game.
 
-import {CardValues, ObjectValues} from "./objectValues.js";
-import {ScriptContext} from "./cdfScriptInterpreter/structs.js";
-import * as abilities from "./abilities.js";
-import * as interpreter from "./cdfScriptInterpreter/interpreter.js";
-import * as blocks from "./blocks.js";
-import * as actions from "./actions.js";
-import * as timingGenerators from "./timingGenerators.js";
+import {CardValues, ObjectValues} from "./objectValues.mjs";
+import {ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
+import * as abilities from "./abilities.mjs";
+import * as interpreter from "./cdfScriptInterpreter/interpreter.mjs";
+import * as blocks from "./blocks.mjs";
+import * as actions from "./actions.mjs";
+import * as timingGenerators from "./timingGenerators.mjs";
 
 export class BaseCard {
 	constructor(player, cardId, isToken, values, deckLimit, equipableTo, turnLimit, condition) {

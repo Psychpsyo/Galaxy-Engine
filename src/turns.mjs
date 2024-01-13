@@ -1,6 +1,6 @@
-import {ManaSupplyPhase, DrawPhase, MainPhase, BattlePhase, EndPhase} from "./phases.js";
-import {createPhaseStartedEvent} from "./events.js";
-import {enterBattlePhase} from "./inputRequests.js";
+import {ManaSupplyPhase, DrawPhase, MainPhase, BattlePhase, EndPhase} from "./phases.mjs";
+import {createPhaseStartedEvent} from "./events.mjs";
+import {enterBattlePhase} from "./inputRequests.mjs";
 
 export class Turn {
 	constructor(player, endOfTurnTimings) {

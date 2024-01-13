@@ -1,9 +1,9 @@
 // This file holds definitions for the CardValues class and modifiers for the card's modifier stacks.
-import * as ast from "./cdfScriptInterpreter/astNodes.js";
-import * as abilities from "./abilities.js";
-import {BaseCard} from "./card.js";
-import {makeAbility} from "./cdfScriptInterpreter/interpreter.js";
-import {ScriptContext} from "./cdfScriptInterpreter/structs.js";
+import * as ast from "./cdfScriptInterpreter/astNodes.mjs";
+import * as abilities from "./abilities.mjs";
+import {BaseCard} from "./card.mjs";
+import {makeAbility} from "./cdfScriptInterpreter/interpreter.mjs";
+import {ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
 
 export function recalculateModifiedValuesFor(object) {
 	// for cards, all abilities need to be un-cancelled as a baseline

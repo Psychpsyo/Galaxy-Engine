@@ -1,8 +1,8 @@
-import * as abilities from "./abilities.js";
-import * as blocks from "./blocks.js";
-import * as requests from "./inputRequests.js";
-import {createBlockCreatedEvent, createBlockCreationAbortedEvent, createStackStartedEvent, createBlockStartedEvent} from "./events.js";
-import {runInterjectedTimings} from "./timings.js";
+import * as abilities from "./abilities.mjs";
+import * as blocks from "./blocks.mjs";
+import * as requests from "./inputRequests.mjs";
+import {createBlockCreatedEvent, createBlockCreationAbortedEvent, createStackStartedEvent, createBlockStartedEvent} from "./events.mjs";
+import {runInterjectedTimings} from "./timings.mjs";
 
 export class Stack {
 	constructor(phase, index) {

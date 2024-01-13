@@ -1,11 +1,11 @@
-import * as ast from "./cdfScriptInterpreter/astNodes.js";
-import * as events from "./events.js";
-import * as requests from "./inputRequests.js";
-import * as zones from "./zones.js";
-import {BaseCard} from "./card.js";
-import {Player} from "./player.js";
-import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.js";
-import {Timing} from "./timings.js";
+import * as ast from "./cdfScriptInterpreter/astNodes.mjs";
+import * as events from "./events.mjs";
+import * as requests from "./inputRequests.mjs";
+import * as zones from "./zones.mjs";
+import {BaseCard} from "./card.mjs";
+import {Player} from "./player.mjs";
+import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
+import {Timing} from "./timings.mjs";
 
 // helper functions
 function getAvailableZoneSlots(zone) {

@@ -1,6 +1,6 @@
 // This module exports zone-related classes which define single zones as per the Cross Universe rules.
 
-import * as abilities from "./abilities.js";
+import * as abilities from "./abilities.mjs";
 
 export class Zone {
 	constructor(player, type) {

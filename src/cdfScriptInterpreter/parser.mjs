@@ -1,5 +1,5 @@
-import * as ast from "./astNodes.js";
-import * as valueModifiers from "../valueModifiers.js";
+import * as ast from "./astNodes.mjs";
+import * as valueModifiers from "../valueModifiers.mjs";
 
 let code; // the actual text representation of the code being parsed
 let tokens; // the token stream emitted by the lexer

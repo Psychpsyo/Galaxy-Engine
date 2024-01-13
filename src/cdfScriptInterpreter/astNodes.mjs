@@ -1,13 +1,13 @@
 // This module exports the definition for all nodes required for the CDF Script abstract syntax tree
 
-import * as actions from "../actions.js";
-import * as blocks from "../blocks.js";
-import * as zones from "../zones.js";
-import {BaseCard} from "../card.js";
-import {Modifier} from "../valueModifiers.js";
-import {ScriptValue, ScriptContext, DeckPosition} from "./structs.js";
-import {functions, initFunctions} from "./functions.js";
-import {cartesianProduct} from "../math.js";
+import * as actions from "../actions.mjs";
+import * as blocks from "../blocks.mjs";
+import * as zones from "../zones.mjs";
+import {BaseCard} from "../card.mjs";
+import {Modifier} from "../valueModifiers.mjs";
+import {ScriptValue, ScriptContext, DeckPosition} from "./structs.mjs";
+import {functions, initFunctions} from "./functions.mjs";
+import {cartesianProduct} from "../math.mjs";
 
 let implicit = {
 	card: [null],

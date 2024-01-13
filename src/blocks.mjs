@@ -1,9 +1,9 @@
 
-import * as game from "./game.js";
-import * as actions from "./actions.js";
-import * as abilities from "./abilities.js";
-import * as timingGenerators from "./timingGenerators.js";
-import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.js";
+import * as game from "./game.mjs";
+import * as actions from "./actions.mjs";
+import * as abilities from "./abilities.mjs";
+import * as timingGenerators from "./timingGenerators.mjs";
+import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 
 // Base class for all blocks
 class Block {

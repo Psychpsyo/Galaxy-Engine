@@ -1,10 +1,10 @@
 // This file contains definitions for all phases in the game.
-import {Stack} from "./stacks.js";
-import {createStackCreatedEvent, createPlayerWonEvent} from "./events.js";
-import {Timing} from "./timings.js";
-import * as actions from "./actions.js";
-import * as requests from "./inputRequests.js";
-import * as abilities from "./abilities.js";
+import {Stack} from "./stacks.mjs";
+import {createStackCreatedEvent, createPlayerWonEvent} from "./events.mjs";
+import {Timing} from "./timings.mjs";
+import * as actions from "./actions.mjs";
+import * as requests from "./inputRequests.mjs";
+import * as abilities from "./abilities.mjs";
 
 // Base class for all phases
 class Phase {

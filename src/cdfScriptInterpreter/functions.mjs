@@ -1,11 +1,11 @@
-import * as actions from "../actions.js";
-import * as ast from "./astNodes.js";
-import * as events from "../events.js";
-import * as requests from "../inputRequests.js";
-import * as zones from "../zones.js";
-import {Card, BaseCard} from "../card.js";
-import {nChooseK} from "../math.js";
-import {ScriptValue, ScriptContext, DeckPosition} from "./structs.js";
+import * as actions from "../actions.mjs";
+import * as ast from "./astNodes.mjs";
+import * as events from "../events.mjs";
+import * as requests from "../inputRequests.mjs";
+import * as zones from "../zones.mjs";
+import {Card, BaseCard} from "../card.mjs";
+import {nChooseK} from "../math.mjs";
+import {ScriptValue, ScriptContext, DeckPosition} from "./structs.mjs";
 
 // general helper functions
 
