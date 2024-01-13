@@ -4,7 +4,7 @@ name: CUU00227
 level: 3
 types: Dark, Bug, Curse
 attack: 300
-defense: 300
+defense: 200
 
 o: trigger
 mandatory: no

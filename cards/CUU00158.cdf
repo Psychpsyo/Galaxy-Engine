@@ -3,7 +3,7 @@ cardType: unit
 name: CUU00158
 level: 9
 types: Wind, Dragon, Warrior
-attack: 800
+attack: 900
 defense: 700
 
 o: optional

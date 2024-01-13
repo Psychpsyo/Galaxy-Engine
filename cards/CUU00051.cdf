@@ -3,7 +3,7 @@ cardType: unit
 name: CUU00051
 level: 1
 types: Earth, Warrior
-attack: 100
+attack: 0
 defense: 100
 
 o: trigger

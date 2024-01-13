@@ -1,7 +1,7 @@
 id: CUS00035
 cardType: standardSpell
 name: CUS00035
-level: 0
+level: 1
 types: Psychic
 
 o: cast

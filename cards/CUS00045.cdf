@@ -2,7 +2,7 @@ id: CUS00045
 cardType: standardSpell
 name: CUS00045
 level: 6
-types:
+types: Electric
 
 o: cast
 DESTROY(SELECT(1, [from field where cardType = unit]));

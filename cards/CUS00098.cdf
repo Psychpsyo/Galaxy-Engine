@@ -2,7 +2,7 @@ id: CUS00098
 cardType: continuousSpell
 name: CUS00098
 level: 1
-types: Gravity
+types: Dragon
 
 o: trigger
 mandatory: no

@@ -2,7 +2,7 @@ id: CUS00102
 cardType: standardSpell
 name: CUS00102
 level: 1
-types: Fire, Katana
+types: Wind
 
 o: cast
 condition: COUNT([from you.discard where types = Wind]) > 2
