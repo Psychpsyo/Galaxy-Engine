@@ -22,7 +22,10 @@ export class Timing {
 		}
 		this.costCompletions = [];
 		this.successful = false;
-		this.followupTiming = [];
+		this.followupTiming = null;
+		// The static action modification abilities that were applied during this timing.
+		// This needs to be tracked for those that can only be activated once per game.
+		this.staticAbilitiesApplied = [];
 	}
 
 	// replaces the given action, if possible
@@ -217,6 +220,7 @@ export class Timing {
 							yield this._cancelAction(this.actions[i]);
 						}
 						ability.successfulApplication();
+						this.staticAbilitiesApplied.push({ability: ability, player: ability.card.currentOwner()});
 						didApply = true;
 						break;
 					}
@@ -372,6 +376,8 @@ export class Timing {
 		if (events.length > 0) {
 			yield events;
 		}
+
+		this.game.nextTimingIndex--;
 	}
 
 	getFollowupActions(game, lastActions = []) {

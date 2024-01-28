@@ -9,5 +9,5 @@ defense: 500
 o: optional
 turnLimit: 1
 condition: thisCard.zone = field
-$views = opponent.VIEW(you.SELECT(any, [from you.hand where types = Light & cardType = unit]));
-GAINLIFE(COUNT($views.viewed) * 50);
+$viewed = opponent.VIEW(you.SELECT(any, [from you.hand where types = Light & cardType = unit]));
+GAINLIFE(COUNT($viewed) * 50);

@@ -276,6 +276,7 @@ export class StaticAbility extends BaseAbility {
 		this.mandatory = ability.mandatory; // for action-replacing abilities
 
 		// all of these are for cancel or replacement static abilities.
+		this.gameLimit = interpreter.buildAST("gameLimit", ability.id, ability.gameLimit, game);
 		this.turnLimit = interpreter.buildAST("turnLimit", ability.id, ability.turnLimit, game);
 		this.zoneDurationLimit = interpreter.buildAST("zoneDurationLimit", ability.id, ability.zoneDurationLimit, game);
 		this.turnApplicationCount = 0;
@@ -304,6 +305,10 @@ export class StaticAbility extends BaseAbility {
 		if (this.turnApplicationCount >= this.turnLimit.evalFull(ctx)[0].getJsNum(player)) return false;
 
 		if (this.zoneApplicationCount >= this.zoneDurationLimit.evalFull(ctx)[0].getJsNum(player)) return false;
+
+		let gameLimit = this.gameLimit.evalFull(ctx)[0].getJsNum(player);
+		if (gameLimit !== Infinity && player.game.getTimings().map(timing => timing.staticAbilitiesApplied.filter(a => a.player === player && a.ability.id === this.id)).flat().length >= gameLimit)
+			return false;
 
 		return super.canActivate(card, player, evaluatingPlayer);
 	}

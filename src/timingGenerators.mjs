@@ -41,12 +41,8 @@ export class TimingRunner {
 			while(this.timings[this.timings.length - 1].followupTiming) {
 				this.timings.push(this.timings[this.timings.length - 1].followupTiming);
 			}
-			if (!timing.successful) {
-				// We only need to pop 1 since unsuccessful timings never have followups
-				this.timings.pop();
-				if (this.isCost) {
-					return false;
-				}
+			if (!timing.successful && this.isCost) {
+				return false;
 			}
 			timing = yield* this.getNextTiming(generator, timing);
 		}

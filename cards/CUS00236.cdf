@@ -9,7 +9,7 @@ APPLY(SELECT(1, [from you.field where types = Earth & cardType = unit]), {defens
 
 o: static
 applyTo: [from you.field where types = Earth & cardType = unit & defense > 499]
-condition: thisCard.zone = discard & you.partner = [CUU00029, CUU00260]
+condition: thisCard.zone = discard & you.partner.name = [CUU00029, CUU00260]
 modifier: {cancel destroyed = self}
 mandatory: no
 gameLimit: 1
