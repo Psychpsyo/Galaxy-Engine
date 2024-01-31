@@ -248,13 +248,22 @@ export class Card extends BaseCard {
 		this.globalIdHistory = [];
 	}
 
+	// this card needs to start being counted as an entirely new card
 	invalidateSnapshots() {
 		this.globalIdHistory.push(this.globalId);
 		this.owner.game.currentCards.delete(this.globalId);
 		this.globalId = ++this.owner.game.lastGlobalCardId;
 		this.owner.game.currentCards.set(this.globalId, this);
+		// invalidate ability snapshots as well
+		for (const ability of this.values.getAllAbilities()) {
+			ability.invalidateSnapshots(this.owner.game);
+		}
 	}
+	// the reverse of the above
 	undoInvalidateSnapshots() {
+		for (const ability of this.values.getAllAbilities()) {
+			ability.undoInvalidateSnapshots(this.owner.game);
+		}
 		this.owner.game.currentCards.delete(this.globalId);
 		this.globalId = this.globalIdHistory.pop();
 		this.owner.game.currentCards.set(this.globalId, this);
@@ -336,16 +345,11 @@ export class SnapshotCard extends BaseCard {
 
 		this._actualCard.hiddenFor = [...this.hiddenFor];
 
-		// restoring snapshotted abilities and fixing up their card references
 		this._actualCard.values = this.values;
-		for (const ability of this.values.initial.abilities) {
+		// restoring snapshotted abilities and fixing up their card references
+		for (const ability of this.values.getAllAbilities()) {
 			ability.card = this._actualCard;
-		}
-		for (const ability of this.values.base.abilities) {
-			ability.card = this._actualCard;
-		}
-		for (const ability of this.values.current.abilities) {
-			ability.card = this._actualCard;
+			this.owner.game.currentAbilities.set(ability.globalId, ability);
 		}
 
 		this._actualCard.equippedTo = this.equippedTo?._actualCard ?? null;

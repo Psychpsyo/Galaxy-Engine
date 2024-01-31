@@ -108,6 +108,8 @@ export class Game {
 		// is considered to be a different card even though it is still the same Card object.
 		this.lastGlobalCardId = 0;
 		this.currentCards = new Map();
+		this.lastGlobalAbilityId = 0;
+		this.currentAbilities = new Map();
 	}
 
 	// Iterate over this function after setting the decks of both players and putting their partners into the partner zones.

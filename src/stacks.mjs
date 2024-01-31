@@ -73,7 +73,7 @@ export class Stack {
 				case "activateOptionalAbility":
 				case "activateFastAbility":
 				case "activateTriggerAbility": {
-					nextBlock = new blocks.AbilityActivation(this, this.getNextPlayer(), responseValue);
+					nextBlock = new blocks.AbilityActivation(this, this.getNextPlayer(), responseValue.current());
 					break;
 				}
 			}

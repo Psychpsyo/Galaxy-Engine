@@ -19,18 +19,24 @@ export class ObjectValues {
 
 		// cloning abilities if this is for a card
 		if (this.initial instanceof CardValues) {
-			const abilities = [...this.initial.abilities];
-			for (const ability of this.base.abilities.concat(this.current.abilities)) {
-				if (!abilities.includes(ability)) {
-					abilities.push(ability);
-				}
-			}
+			const abilities = this.getAllAbilities();
 			const abilitySnapshots = abilities.map(ability => ability.snapshot());
 			newValues.initial.abilities = newValues.initial.abilities.map(ability => abilitySnapshots[abilities.indexOf(ability)]);
 			newValues.base.abilities = newValues.base.abilities.map(ability => abilitySnapshots[abilities.indexOf(ability)]);
 			newValues.current.abilities = newValues.current.abilities.map(ability => abilitySnapshots[abilities.indexOf(ability)]);
 		}
 		return newValues;
+	}
+
+	// returns an array of all (initial, base and current) abilities without duplicates
+	getAllAbilities() {
+		const abilities = [...this.initial.abilities];
+		for (const ability of this.base.abilities.concat(this.current.abilities)) {
+			if (!abilities.includes(ability)) {
+				abilities.push(ability);
+			}
+		}
+		return abilities;
 	}
 }
 

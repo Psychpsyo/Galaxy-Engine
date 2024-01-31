@@ -13,6 +13,9 @@ export class BaseAbility {
 			this.condition = interpreter.buildAST("condition", ability.id, ability.condition, game);
 		}
 		this.card = null; // set by the card later
+		this.globalId = ++game.lastGlobalAbilityId;
+		game.currentAbilities.set(this.globalId, this);
+		this.globalIdHistory = [];
 	}
 
 	isConditionMet(player, evaluatingPlayer = player) {
@@ -25,6 +28,23 @@ export class BaseAbility {
 
 	snapshot() {
 		return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+	}
+	// always returns the current version of an ability (attached to a non-snapshot card) or null if that doesn't exist.
+	current() {
+		return this.card.owner.game.currentAbilities.get(this.globalId) ?? null;
+	}
+	// These correspond to the same functions on a card.
+	invalidateSnapshots(game) {
+		this.globalIdHistory.push(this.globalId);
+		game.currentAbilities.delete(this.globalId);
+		this.globalId = ++game.lastGlobalAbilityId;
+		game.currentAbilities.set(this.globalId, this);
+	}
+	undoInvalidateSnapshots(game) {
+		game.currentAbilities.delete(this.globalId);
+		this.globalId = this.globalIdHistory.pop();
+		game.currentAbilities.set(this.globalId, this);
+		game.lastGlobalAbilityId--;
 	}
 
 	zoneMoveReset(game) {}

@@ -99,9 +99,9 @@ export class StackPhase extends Phase {
 	}
 
 	async getActivatableFastAbilities(stack) {
-		let eligibleAbilities = [];
-		let player = stack.getNextPlayer();
-		for (let card of player.getActiveCards()) {
+		const eligibleAbilities = [];
+		const player = stack.getNextPlayer();
+		for (const card of player.getActiveCards()) {
 			for (const ability of card.values.current.abilities) {
 				if (ability instanceof abilities.FastAbility && await ability.canActivate(ability.card, player)) {
 					eligibleAbilities.push(ability);
@@ -112,9 +112,9 @@ export class StackPhase extends Phase {
 	}
 
 	async getActivatableTriggerAbilities(stack) {
-		let eligibleAbilities = [];
-		let player = stack.getNextPlayer();
-		for (let card of player.getActiveCards()) {
+		const eligibleAbilities = [];
+		const player = stack.getNextPlayer();
+		for (const card of player.getActiveCards()) {
 			for (const ability of card.values.current.abilities) {
 				if (ability instanceof abilities.TriggerAbility && await ability.canActivate(ability.card, player)) {
 					eligibleAbilities.push(ability);
@@ -268,8 +268,8 @@ export class MainPhase extends StackPhase {
 	}
 
 	async getActivatableOptionalAbilities() {
-		let eligibleAbilities = [];
-		for (let card of this.turn.player.getActiveCards()) {
+		const eligibleAbilities = [];
+		for (const card of this.turn.player.getActiveCards()) {
 			for (const ability of card.values.current.abilities) {
 				if (ability instanceof abilities.OptionalAbility && await ability.canActivate(ability.card, this.turn.player)) {
 					eligibleAbilities.push(ability);
