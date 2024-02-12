@@ -272,7 +272,7 @@ export class ValueAppendModification extends ValueModification {
 		}
 		// construct ability instances now
 		if (this.value === "abilities") {
-			valueArray = valueArray.map(val => makeAbility(type === "abilityId"? val : val.id));
+			valueArray = valueArray.map(val => makeAbility(type === "abilityId"? val : val.id, ctx.game));
 			for (const ability of valueArray) {
 				ability.card = target;
 			}
@@ -285,7 +285,7 @@ export class ValueAppendModification extends ValueModification {
 		if (valueArray.type != "abilityId") return this;
 
 		const type = valueArray.type;
-		valueArray = valueArray.get(ctx.player).map(val => makeAbility(type === "abilityId"? val : val.id));
+		valueArray = valueArray.get(ctx.player).map(val => makeAbility(type === "abilityId"? val : val.id, ctx.game));
 		for (const ability of valueArray) {
 			ability.card = target;
 		}

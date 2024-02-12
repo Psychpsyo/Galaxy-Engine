@@ -97,7 +97,7 @@ export async function generateOptionTree(runner, endOfTreeCheck, generator = nul
 	if (generator === null) {
 		generator = runner.run(true);
 	}
-	let node = new OptionTreeNode(lastNode, lastChoice);
+	const node = new OptionTreeNode(lastNode, lastChoice);
 	let events = await generator.next(lastChoice);
 	// go to next user input request
 	while (!events.done && events.value[0].nature !== "request") {
@@ -140,10 +140,11 @@ export function* arrayTimingGenerator(actionArrays) {
 }
 
 export function* combinedTimingGenerator(generators) {
-	let successful = false;
+	let successful = true;
 	for (const timingGenerator of generators) {
-		if (yield* timingGenerator) {
-			successful = true;
+		// any failed timing should make the whole thing count as unsuccessful.
+		if (!(yield* timingGenerator)) {
+			successful = false;
 		}
 	}
 	return successful;
