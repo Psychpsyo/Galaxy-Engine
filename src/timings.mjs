@@ -1,5 +1,5 @@
 
-import {createActionCancelledEvent, createPlayerWonEvent, createGameDrawnEvent, createValueChangedEvent, createActionModificationAbilityAppliedEvent} from "./events.mjs";
+import {createActionCancelledEvent, createValueChangedEvent, createActionModificationAbilityAppliedEvent} from "./events.mjs";
 import {chooseAbilityOrder, chooseCards, applyActionModificationAbility} from "./inputRequests.mjs";
 import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
@@ -337,7 +337,7 @@ export class Timing {
 
 		if (!isPrediction) {
 			// check win/lose conditions
-			yield* checkGameOver(this.game);
+			yield* this.game.checkGameOver();
 
 			// check trigger ability conditions
 			if (this.game.currentPhase() instanceof phases.StackPhase) {
@@ -450,25 +450,6 @@ export async function* runInterjectedTimings(game, isPrediction) {
 		await (yield* timing.run(isPrediction));
 	}
 	return timing;
-}
-
-function* checkGameOver(game) {
-	let gameOverEvents = [];
-	for (let player of game.players) {
-		if (player.victoryConditions.length > 0) {
-			if (player.next().victoryConditions.length > 0) {
-				gameOverEvents.push(createGameDrawnEvent());
-				break;
-			}
-			gameOverEvents.push(createPlayerWonEvent(player));
-		}
-	}
-	if (gameOverEvents.length > 0) {
-		yield gameOverEvents;
-		while (true) {
-			yield [];
-		}
-	}
 }
 
 // iterates over all static abilities and activates/deactivates those that need it.

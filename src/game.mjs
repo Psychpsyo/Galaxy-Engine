@@ -3,7 +3,7 @@
 import {Player} from "./player.mjs";
 import {Turn} from "./turns.mjs";
 import {CURandom} from "./random.mjs";
-import {createDeckShuffledEvent, createStartingPlayerSelectedEvent, createCardsDrawnEvent, createPartnerRevealedEvent, createTurnStartedEvent} from "./events.mjs";
+import {createDeckShuffledEvent, createStartingPlayerSelectedEvent, createCardsDrawnEvent, createPartnerRevealedEvent, createTurnStartedEvent, createPlayerWonEvent, createGameDrawnEvent} from "./events.mjs";
 import * as phases from "./phases.mjs";
 import * as requests from "./inputRequests.mjs";
 
@@ -84,13 +84,14 @@ export class Game {
 
 		this.rng = new CURandom(); // the random number source for this game
 		this.config = {
-			allTypes: baseTypes, // all types that the game is aware of. This may be extended by custom types to allow for custom cards.
-			allCounters: baseCounters, // all counters that the game is aware of. This may be extended by custom counters to allow for custom cards.
+			allTypes: baseTypes,          // all types that the game is aware of. This may be extended by custom types to allow for custom cards.
+			allCounters: baseCounters,    // all counters that the game is aware of. This may be extended by custom counters to allow for custom cards.
 			startingPlayerChooses: false, // whether or not the randomly selected starting player gets to choose the actual starting player
-			validateCardAmounts: true, // whether or not deck card counts should be validated
-			lowerDeckLimit: 30, // the minimum number of cards a deck needs
-			upperDeckLimit: 50, // the maximum number of cards a deck can have
-			startingHandSize: 5 // how many hand cards each player draws at the beginning of the game
+			useOldManaRule: false,        // makes it so that all players gain mana at the start of the first player's turn
+			validateCardAmounts: true,    // whether or not deck card counts should be validated
+			lowerDeckLimit: 30,           // the minimum number of cards a deck needs
+			upperDeckLimit: 50,           // the maximum number of cards a deck can have
+			startingHandSize: 5           // how many hand cards each player draws at the beginning of the game
 		}
 
 		this.replay = {
@@ -200,6 +201,27 @@ export class Game {
 				}
 			}
 			currentPlayer = currentPlayer.next();
+		}
+	}
+
+	// To be called whenever victory conditions need to be checked.
+	// In case a player won, this function never finishes and keeps yielding empty array to signal that the game is over.
+	* checkGameOver() {
+		const gameOverEvents = [];
+		for (const player of this.players) {
+			if (player.victoryConditions.length > 0) {
+				if (player.next().victoryConditions.length > 0) {
+					gameOverEvents.push(createGameDrawnEvent());
+					break;
+				}
+				gameOverEvents.push(createPlayerWonEvent(player));
+			}
+		}
+		if (gameOverEvents.length > 0) {
+			yield gameOverEvents;
+			while (true) {
+				yield [];
+			}
 		}
 	}
 

@@ -1,6 +1,6 @@
 // This file contains definitions for all phases in the game.
 import {Stack} from "./stacks.mjs";
-import {createStackCreatedEvent, createPlayerWonEvent} from "./events.mjs";
+import {createStackCreatedEvent} from "./events.mjs";
 import {Timing} from "./timings.mjs";
 import * as actions from "./actions.mjs";
 import * as requests from "./inputRequests.mjs";
@@ -147,47 +147,61 @@ export class ManaSupplyPhase extends Phase {
 
 	async* run() {
 		// RULES: First, if any player has more than 5 mana, their mana will be reduced to five.
-		let reduceManaActions = [];
-		for (let player of this.turn.game.players) {
+		const firstReduceManaActions = [];
+		for (const player of this.turn.game.players) {
 			if (player.mana > 5) {
-				reduceManaActions.push(new actions.ChangeMana(player, 5 - player.mana));
+				firstReduceManaActions.push(new actions.ChangeMana(player, 5 - player.mana));
 			}
 		}
-		if (reduceManaActions.length > 0) {
-			this.timings.push(new Timing(this.turn.game, reduceManaActions));
+		if (firstReduceManaActions.length > 0) {
+			this.timings.push(new Timing(this.turn.game, firstReduceManaActions));
 			await (yield* this.runTiming());
 		}
 
 		// RULES: Next, the active player gains 5 mana.
-		let turnPlayer = this.turn.player;
-		this.timings.push(new Timing(this.turn.game, [new actions.ChangeMana(turnPlayer, turnPlayer.values.current.manaGainAmount)]));
-		await (yield* this.runTiming());
+		if (!this.turn.game.config.useOldManaRule || this.turn.index % this.turn.game.players.length === 0) {
+			// manaPlyers is the list of players that need to gain mana this turn.
+			// usually this is only the turn player, but when using the old mana rule, both players gain mana on the first player's turn
+			const manaPlayers = this.turn.game.config.useOldManaRule? this.turn.game.players : [this.turn.player];
+			this.timings.push(new Timing(this.turn.game, manaPlayers.map(player => new actions.ChangeMana(player, player.values.current.manaGainAmount))));
+			await (yield* this.runTiming());
 
-		// RULES: Then they pay their partner's level in mana. If they can't pay, they loose the game.
-		if (turnPlayer.values.current.needsToPayForPartner) {
-			let partnerLevel = turnPlayer.partnerZone.cards[0].values.current.level;
-			if (turnPlayer.mana < partnerLevel) {
-				let winner = turnPlayer.next();
-				winner.victoryConditions.push("partnerCostTooHigh");
-				yield [createPlayerWonEvent(winner)];
-				while (true) {
-					yield [];
+			// RULES: Then they pay their partner's level in mana. If they can't pay, they loose the game.
+			const payForPartnerActions = [];
+			for (const player of manaPlayers) {
+				if (player.values.current.needsToPayForPartner) {
+					const partnerLevel = player.partnerZone.cards[0].values.current.level;
+					if (player.mana < partnerLevel) {
+						player.next().victoryConditions.push("partnerCostTooHigh");
+					} else {
+						payForPartnerActions.push(new actions.ChangeMana(player, -partnerLevel));
+					}
 				}
-			} else {
-				this.timings.push(new Timing(this.turn.game, [new actions.ChangeMana(turnPlayer, -partnerLevel)]));
+			}
+			// player(s) might've just lost
+			yield* this.turn.game.checkGameOver();
+			// if we made it through that, it's time to actually pay mana
+			if (payForPartnerActions.length > 0) {
+				this.timings.push(new Timing(this.turn.game, payForPartnerActions));
+				await (yield* this.runTiming());
+			}
+
+			// RULES: If they still have more than 5 mana, it will again be reduced to 5.
+			const secondReduceManaActions = [];
+			for (const player of manaPlayers) {
+				if (player.mana > 5) {
+					secondReduceManaActions.push(new actions.ChangeMana(player, 5 - player.mana));
+				}
+			}
+			if (secondReduceManaActions.length > 0) {
+				this.timings.push(new Timing(this.turn.game, secondReduceManaActions));
 				await (yield* this.runTiming());
 			}
 		}
 
-		// RULES: If they still have more than 5 mana, it will again be reduced to 5.
-		if (turnPlayer.mana > 5) {
-			this.timings.push(new Timing(this.turn.game, [new actions.ChangeMana(turnPlayer, 5 - turnPlayer.mana)]));
-			await (yield* this.runTiming());
-		}
-
 		// RULES: At the end of the mana supply phase, any player with more than 8 hand cards discards down to 8.
 		// (turn player chooses first)
-		for (let player of [turnPlayer, turnPlayer.next()]) {
+		for (let player of [this.turn.player, this.turn.player.next()]) {
 			if (player.handZone.cards.length > 8) {
 				let choiceRequest = requests.chooseCards.create(player, player.handZone.cards, [player.handZone.cards.length - 8], "handTooFull");
 				let chosenCards = requests.chooseCards.validate((yield [choiceRequest]).value, choiceRequest);
