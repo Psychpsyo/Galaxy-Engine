@@ -158,6 +158,8 @@ export class FunctionNode extends AstNode {
 		let players = (yield* this.player.eval(ctx)).get(ctx.player);
 		if (players.length == 1) {
 			const value = yield* this.function.run(this, new ScriptContext(ctx.card, players[0], ctx.ability));
+			if (!this.function.returnType) return;
+
 			if (value.type === "tempActions") { // actions need to be executed
 				const actions = value.get(ctx.player);
 				const timing = yield actions;
@@ -178,9 +180,11 @@ export class FunctionNode extends AstNode {
 		let valueMap = new Map();
 		let type;
 		for (const player of players) {
-			let value = yield* this.function.run(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer));
-			type = value.type;
-			valueMap.set(player, value.get(player));
+			const value = yield* this.function.run(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer));
+			if (this.function.returnType) {
+				type = value.type;
+				valueMap.set(player, value.get(player));
+			}
 		}
 
 		if (type === "tempActions") { // actions need to be executed
@@ -200,7 +204,9 @@ export class FunctionNode extends AstNode {
 				}
 			}
 		}
-		return new ScriptValue(type, valueMap);
+		if (this.function.returnType) {
+			return new ScriptValue(type, valueMap);
+		}
 	}
 	evalFull(ctx) {
 		let players = this.player.evalFull(ctx)[0].get(ctx.player);

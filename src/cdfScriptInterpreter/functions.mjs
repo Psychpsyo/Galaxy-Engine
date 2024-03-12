@@ -6,6 +6,7 @@ import * as zones from "../zones.mjs";
 import {Card, BaseCard} from "../card.mjs";
 import {nChooseK} from "../math.mjs";
 import {ScriptValue, ScriptContext, DeckPosition} from "./structs.mjs";
+import {buildAST} from "./interpreter.mjs"
 
 // general helper functions
 
@@ -272,6 +273,25 @@ export function initFunctions() {
 		}
 	),
 
+	// Executes a part ability, given its ID
+	DOABILITY: new ScriptFunction(
+		["abilityId"],
+		[null],
+		null,
+		function*(astNode, ctx) {
+			const abilityId = (yield* this.getParameter(astNode, "abilityId").eval(ctx)).get(ctx.player)[0];
+			// Calling buildAST without a cdfScript or game is fine here since the ability has already been parsed
+			yield* buildAST("exec", abilityId).eval(ctx);
+		},
+		function(astNode, ctx) {
+			const abilityId = this.getParameter(astNode, "abilityId").evalFull(ctx)[0].get(ctx.player)[0];
+			// Calling buildAST without a cdfScript or game is fine here since the ability has already been parsed
+			return buildAST("exec", abilityId).hasAllTargets(ctx);
+		},
+		undefined, // evalFull is not needed since this has no return value and is therefore never called from inside another function
+		() => {} // this has no return value
+	),
+
 	// The executing player draws X cards
 	DRAW: new ScriptFunction(
 		["number"],
@@ -533,7 +553,7 @@ export function initFunctions() {
 	),
 
 	// Makes the executing player choose X cards from the given ones, either selecting at random or not.
-	// The last parameter is a validator that takes any possible selection as implicit cards and returns whether
+	// The first bool parameter is a validator that takes any possible selection as implicit cards and returns whether
 	// those conform to any additional constraints the card text imposes. (all having different names, for example)
 	SELECT: new ScriptFunction(
 		["number", "card", "bool", "bool"],
@@ -609,23 +629,50 @@ export function initFunctions() {
 	),
 
 	// Makes the executing player choose a type
+	SELECTABILITY: new ScriptFunction(
+		["abilityId"],
+		[null],
+		"abilityId",
+		function*(astNode, ctx) {
+			const selectionRequest = new requests.chooseAbility.create(ctx.player, ctx.ability.id, (yield* this.getParameter(astNode, "abilityId").eval(ctx)).get(ctx.player));
+			const response = yield [selectionRequest];
+			if (response.type != "chooseAbility") {
+				throw new Error("Incorrect response type supplied during ability selection. (expected \"chooseAbility\", got \"" + response.type + "\" instead)");
+			}
+			const ability = requests.chooseType.validate(response.value, selectionRequest);
+			yield [events.createAbilitySelectedEvent(ctx.player, ability)];
+			return new ScriptValue("type", [ability]);
+		},
+		function(astNode, ctx) {
+			// Use the full eval to see if there is any valid choices for the player.
+			// Yes, this could lazily stop after finding the first valid choice but for now this is good enough.
+			return this.runFull(astNode, ctx).length > 0;
+		},
+		function(astNode, ctx) {
+			let abilities = this.getParameter(astNode, "abilityId").evalFull(ctx).map(value => value.get(ctx.player)).flat();
+			abilities = [...new Set(abilities)];
+			return abilities.map(ability => new ScriptValue("abilityId", [ability]));
+		}
+	),
+
+	// Makes the executing player choose a type
 	SELECTDECKSIDE: new ScriptFunction(
 		["player"],
 		[null],
 		"zone",
 		function*(astNode, ctx) {
-			let selectionRequest = new requests.chooseDeckSide.create(ctx.player, ctx.ability.id, (yield* this.getParameter(astNode, "player").eval(ctx)).get(ctx.player)[0]);
-			let response = yield [selectionRequest];
+			const selectionRequest = new requests.chooseDeckSide.create(ctx.player, ctx.ability.id, (yield* this.getParameter(astNode, "player").eval(ctx)).get(ctx.player)[0]);
+			const response = yield [selectionRequest];
 			if (response.type != "chooseDeckSide") {
 				throw new Error("Incorrect response type supplied during type selection. (expected \"chooseDeckSide\", got \"" + response.type + "\" instead)");
 			}
-			let deckSide = requests.chooseDeckSide.validate(response.value, selectionRequest);
+			const deckSide = requests.chooseDeckSide.validate(response.value, selectionRequest);
 			yield [events.createDeckSideSelectedEvent(ctx.player, deckSide.isTop? "top" : "bottom")];
 			return new ScriptValue("zone", deckSide);
 		},
 		alwaysHasTarget,
 		function(astNode, ctx) {
-			let player = this.getParameter(astNode, "player").evalFull(ctx).get(ctx.player)[0];
+			const player = this.getParameter(astNode, "player").evalFull(ctx).get(ctx.player)[0];
 			return [new ScriptValue("zone", new DeckPosition(player.deckZone, true)), new ScriptValue("zone", new DeckPosition(player.deckZone, false))];
 		}
 	),
@@ -636,12 +683,12 @@ export function initFunctions() {
 		[],
 		"player",
 		function*(astNode, ctx) {
-			let selectionRequest = new requests.choosePlayer.create(ctx.player, "cardEffect:" + ctx.ability.id);
-			let response = yield [selectionRequest];
+			const selectionRequest = new requests.choosePlayer.create(ctx.player, "cardEffect:" + ctx.ability.id);
+			const response = yield [selectionRequest];
 			if (response.type != "choosePlayer") {
 				throw new Error("Incorrect response type supplied during player selection. (expected \"choosePlayer\", got \"" + response.type + "\" instead)");
 			}
-			let chosenPlayer = requests.choosePlayer.validate(response.value, selectionRequest);
+			const chosenPlayer = requests.choosePlayer.validate(response.value, selectionRequest);
 			yield [events.createPlayerSelectedEvent(ctx.player, chosenPlayer)];
 			return new ScriptValue("player", [chosenPlayer]);
 		},
@@ -657,16 +704,20 @@ export function initFunctions() {
 		[null],
 		"type",
 		function*(astNode, ctx) {
-			let selectionRequest = new requests.chooseType.create(ctx.player, ctx.ability.id, (yield* this.getParameter(astNode, "type").eval(ctx)).get(ctx.player));
-			let response = yield [selectionRequest];
+			const selectionRequest = new requests.chooseType.create(ctx.player, ctx.ability.id, (yield* this.getParameter(astNode, "type").eval(ctx)).get(ctx.player));
+			const response = yield [selectionRequest];
 			if (response.type != "chooseType") {
 				throw new Error("Incorrect response type supplied during type selection. (expected \"chooseType\", got \"" + response.type + "\" instead)");
 			}
-			let type = requests.chooseType.validate(response.value, selectionRequest);
+			const type = requests.chooseType.validate(response.value, selectionRequest);
 			yield [events.createTypeSelectedEvent(ctx.player, type)];
 			return new ScriptValue("type", [type]);
 		},
-		alwaysHasTarget,
+		function(astNode, ctx) {
+			// Use the full eval to see if there is any valid choices for the player.
+			// Yes, this could lazily stop after finding the first valid choice but for now this is good enough.
+			return this.runFull(astNode, ctx).length > 0;
+		},
 		function(astNode, ctx) {
 			let types = this.getParameter(astNode, "type").evalFull(ctx).map(value => value.get(ctx.player)).flat();
 			types = [...new Set(types)];
@@ -680,7 +731,7 @@ export function initFunctions() {
 		[null],
 		"card",
 		function*(astNode, ctx) {
-			let newTarget = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0];
+			const newTarget = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0];
 			return new ScriptValue("tempActions", [new actions.SetAttackTarget(ctx.player, newTarget)]);
 		},
 		hasCardTarget,
@@ -699,7 +750,7 @@ export function initFunctions() {
 			return new ScriptValue("tempActions", [new actions.Shuffle(ctx.player)]);
 		},
 		function(astNode, ctx) {
-			let excludableCardAmounts = this.getParameter(astNode, "card")?.evalFull(ctx)?.map(cardList => cardList.get(ctx.player).length) ?? [0];
+			const excludableCardAmounts = this.getParameter(astNode, "card")?.evalFull(ctx)?.map(cardList => cardList.get(ctx.player).length) ?? [0];
 			return ctx.player.deckZone.cards.length > Math.min(...excludableCardAmounts);
 		},
 		undefined // TODO: Write evalFull
@@ -711,7 +762,7 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
-			let list = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
+			const list = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
 			let sum = 0;
 			for (let num of list) {
 				sum += num;

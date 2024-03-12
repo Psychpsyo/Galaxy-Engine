@@ -14,7 +14,7 @@ applyTo: thisCard.equippedUnit
 condition: thisCard.zone = field
 modifier: {abilities += CUI00018:2:1}
 
-[o: trigger
+|o: trigger
 turnLimit: 1
 mandatory: yes
 after: targeted = thisCard

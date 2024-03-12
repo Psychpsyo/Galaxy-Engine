@@ -8,7 +8,7 @@ o: deploy
 condition: COUNT([from you.unitZone]) = 0
 SUMMONTOKENS(1, CUT00023, 0, [Light, Earth, Plant], 0, 0, CUI00076:1:1);
 
-[o: trigger
+|o: trigger
 during: currentPhase = endPhase
 condition: thisCard.defense < 500
 mandatory: yes

@@ -336,6 +336,15 @@ export function createTypeSelectedEvent(player, chosenType) {
 	}
 }
 
+export function createAbilitySelectedEvent(player, chosenAbility) {
+	return {
+		"nature": "event",
+		"type": "abilitySelected",
+		"player": player,
+		"chosenAbility": chosenAbility
+	}
+}
+
 export function createDeckSideSelectedEvent(player, chosenSide) {
 	return {
 		"nature": "event",

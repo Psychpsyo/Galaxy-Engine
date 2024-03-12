@@ -30,7 +30,7 @@ export function makeAbility(abilityId, game) {
 	if (!(registeredAbilities.hasOwnProperty(abilityId))) {
 		throw new Error("Trying to create unregistered ability " + abilityId + ".\nThe ability must first be registered with registerAbility().");
 	}
-	let ability = registeredAbilities[abilityId];
+	const ability = registeredAbilities[abilityId];
 	switch (ability.type) {
 		case "cast": {
 			return new abilities.CastAbility(ability, game);

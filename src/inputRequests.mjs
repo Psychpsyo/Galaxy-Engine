@@ -127,6 +127,31 @@ export const chooseDeckSide = {
 	}
 }
 
+export const chooseAbility = {
+	create: function(player, effect, abilities) {
+		return {
+			"nature": "request",
+			"player": player,
+			"type": "chooseAbility",
+			"effect": effect,
+			"from": abilities
+		}
+	},
+	validate: function(response, request) {
+		if (response < 0 || response >= request.from.length) {
+			throw new Error("Chose an invalid ability index: " + response);
+		}
+		return request.from[response];
+	},
+	generateValidResponses: function(request) {
+		let options = [];
+		for (let i = 0; i < request.from.length; i++) {
+			options.push(i);
+		}
+		return options;
+	}
+}
+
 export const orderCards = {
 	create: function(player, cards, reason) {
 		return {

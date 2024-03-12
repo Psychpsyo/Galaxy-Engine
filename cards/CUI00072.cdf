@@ -18,7 +18,7 @@ applyTo: [from you.field where baseTypes = Figure & cardType = unit]
 condition: thisCard.zone = field
 modifier: {abilities += CUI00072:2:1}
 
-[o: static
+|o: static
 applyTo: thisCard
 condition: thisCard.zone = field
 modifier: {baseAttack = baseLevel * 100}

@@ -10,7 +10,7 @@ LOSELIFE(200);
 exec:
 SUMMONTOKENS?(4, CUT00029, 0, Machine, 0, 0, CUS00222:1:1, opponent.field);
 
-[o: trigger
+|o: trigger
 during: currentPhase = endPhase
 mandatory: yes
 DESTROY(thisCard);

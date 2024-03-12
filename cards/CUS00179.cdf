@@ -11,7 +11,7 @@ EXILE(SELECT(3, [from you.discard where types = Book & cardType = item], DIFFERE
 exec:
 APPLY(SELECT(1, [from field where level = 0 & types = Mage & cardType = unit]), {abilities += CUS00119:1:1}, endOfTurn);
 
-[o: static
+|o: static
 applyTo: thisCard
 condition: thisCard.zone = field
 modifier: {attack += COUNT([from exile]) * 100}

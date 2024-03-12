@@ -14,7 +14,7 @@ LOSELIFE(200);
 exec:
 APPLY(thisCard, {abilities += CUU00211:1:1}, endOfNextTurn)
 
-[o: static
+|o: static
 applyTo: [from field where cardType = unit & level < 3]
 condition: thisCard.zone = field
 modifier: {canAttack = no}

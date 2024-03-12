@@ -489,8 +489,8 @@ function parseCdfValues(cdf) {
 					ability.modifier = parts[1];
 					break;
 				}
-				case "[o": { // sub-ability
-					if (!["optional", "fast", "trigger", "static"].includes(parts[1])) {
+				case "|o": { // sub-ability
+					if (!["optional", "fast", "trigger", "static", "part"].includes(parts[1])) {
 						throw new Error("CDF Parser Error: " + parts[1] + " is an invalid sub-ability type.");
 					}
 					subAbilityCount++;
@@ -615,6 +615,10 @@ function parseCdfValues(cdf) {
 	for (const ability of data.abilities) {
 		if (typeof ability !== "string") {
 			interpreter.registerAbility(ability);
+			// part abilities must have their exec AST built before they can be used
+			if (ability.type === "part") {
+				interpreter.buildAST("exec", ability.id, ability.exec, game);
+			}
 		}
 	}
 	// sub abilities just needed to be registered, they can now be filtered out
