@@ -326,10 +326,10 @@ export class Timing {
 		this.successful = true;
 		this.game.currentPhase().lastActionList = this.actions;
 
-		// TODO: The following things have proper undo support yet.
+		// TODO: The following things do not have proper undo support yet.
 		// This *should* only matter when units turn into spells/items so for now it does not matter(?)
 		// (That's because in those cases, modifiers on the card are destroyed and wouldn't properly get restored)
-		let valueChangeEvents = recalculateObjectValues(this.game);
+		const valueChangeEvents = recalculateObjectValues(this.game);
 		if (valueChangeEvents.length > 0) {
 			yield valueChangeEvents;
 		}
@@ -612,23 +612,24 @@ function* orderStaticAbilities(target, abilities) {
 	return orderedAbilities;
 }
 
+// recalculates the values of every object currently in the game, according to their modifier stacks.
 function recalculateObjectValues(game) {
 	let valueChangeEvents = [];
-	for (let player of game.players) {
+	for (const player of game.players) {
 		// recalculate the player's own values
 		const oldPlayerValues = player.values.clone();
 		recalculateModifiedValuesFor(player);
-		for (let property of oldPlayerValues.base.compareTo(player.values.base)) {
+		for (const property of oldPlayerValues.base.compareTo(player.values.base)) {
 			valueChangeEvents.push(createValueChangedEvent(player, property, true));
 		}
-		for (let property of oldPlayerValues.current.compareTo(player.values.current)) {
+		for (const property of oldPlayerValues.current.compareTo(player.values.current)) {
 			valueChangeEvents.push(createValueChangedEvent(player, property, false));
 		}
 
 		// recalculate the values for the player's cards
-		for (let card of player.getActiveCards()) {
-			let oldCard = card.snapshot();
-			let wasUnit = card.values.current.cardTypes.includes("unit");
+		for (const card of player.getActiveCards()) {
+			const oldCard = card.snapshot();
+			const wasUnit = card.values.current.cardTypes.includes("unit");
 			recalculateModifiedValuesFor(card);
 			// once done, unit specific modifications may need to be removed.
 			if (wasUnit && !card.values.current.cardTypes.includes("unit")) {
@@ -640,11 +641,11 @@ function recalculateObjectValues(game) {
 				}
 			}
 
-			for (let property of oldCard.values.base.compareTo(card.values.base)) {
+			for (const property of oldCard.values.base.compareTo(card.values.base)) {
 				valueChangeEvents.push(createValueChangedEvent(card, property, true));
 			}
-			for (let property of oldCard.values.current.compareTo(card.values.current)) {
-				if (valueChangeEvents.find(event => event.valueName === property) === undefined) {
+			for (const property of oldCard.values.current.compareTo(card.values.current)) {
+				if (valueChangeEvents.find(event => event.valueName === property && event.card === card) === undefined) {
 					valueChangeEvents.push(createValueChangedEvent(card, property, false));
 				}
 			}
