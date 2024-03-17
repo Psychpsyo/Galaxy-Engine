@@ -155,9 +155,7 @@ export function* abilityCostTimingGenerator(ability, card, player) {
 	let timing;
 	let actionList;
 	do {
-		if (ability.isCancelled) {
-			return false;
-		}
+		// not checking for isCancelled here since costs of cancelled abilities can still be paid.
 		actionList = timingGenerator.next(timing);
 		if (!actionList.done) {
 			if (actionList.value.length == 0) {

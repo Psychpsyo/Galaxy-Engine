@@ -23,7 +23,7 @@ export class BaseAbility {
 	}
 
 	canActivate(card, player, evaluatingPlayer = player) {
-		return !this.isCancelled && this.isConditionMet(player, evaluatingPlayer);
+		return this.isConditionMet(player, evaluatingPlayer);
 	}
 
 	snapshot() {
