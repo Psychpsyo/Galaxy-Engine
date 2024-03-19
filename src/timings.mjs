@@ -6,6 +6,7 @@ import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {BaseCard} from "./card.mjs";
 import {recalculateModifiedValuesFor, ActionReplaceModification, ActionModification} from "./valueModifiers.mjs";
 import * as abilities from "./abilities.mjs";
+import * as blocks from "./blocks.mjs";
 import * as phases from "./phases.mjs";
 import * as actions from "./actions.mjs";
 import * as zones from "./zones.mjs";
@@ -457,6 +458,9 @@ function* getStaticAbilityPhasingTiming(game) {
 	const modificationActions = []; // the list of Apply/UnapplyStaticAbility actions that this will return as a timing.
 	const activeCards = game.players.map(player => player.getActiveCards()).flat();
 	const possibleTargets = activeCards.concat(game.players);
+	if (game.currentBlock() instanceof blocks.Fight) {
+		possibleTargets.push(game.currentBlock().fight);
+	}
 	const abilityTargets = new Map(); // caches the abilities targets so they do not get recomputed
 
 	// unapplying old modifiers
@@ -579,7 +583,7 @@ function* orderStaticAbilities(target, abilities) {
 				applyBuckets.push({player: game.currentTurn().player, abilities: []}); // abilities owned by the turn player
 				applyBuckets.push({player: game.currentTurn().player.next(), abilities: []}); // abilities owned by the non-turn player
 				for (const ability of fieldEnterBuckets[timing]) {
-					if (ability.card.currentOwner() === buckets[0].player) {
+					if (ability.card.currentOwner() === applyBuckets[0].player) {
 						applyBuckets[0].abilities.push(ability);
 					} else {
 						applyBuckets[1].abilities.push(ability);
@@ -613,6 +617,7 @@ function* orderStaticAbilities(target, abilities) {
 }
 
 // recalculates the values of every object currently in the game, according to their modifier stacks.
+// TODO: generalize this somehow. Should probably generate a list of modifiables and loop over those
 function recalculateObjectValues(game) {
 	let valueChangeEvents = [];
 	for (const player of game.players) {
@@ -650,6 +655,10 @@ function recalculateObjectValues(game) {
 				}
 			}
 		}
+	}
+	if (game.currentBlock() instanceof blocks.Fight) {
+		// TODO: Not duplicating the ValueChangedEvent code until this gets generalized
+		recalculateModifiedValuesFor(game.currentBlock().fight);
 	}
 	return valueChangeEvents;
 }

@@ -237,69 +237,67 @@ export function* retireTimingGenerator(player, units) {
 	return true;
 }
 
-export function* fightTimingGenerator(attackDeclaration) {
-	if (attackDeclaration.target === null || attackDeclaration.attackers.length === 0) {
-		return;
+export function* fightTimingGenerator(attackDeclaration, fight) {
+	const attackOrder = [fight.values.current.counterattackFirst, !fight.values.current.counterattackFirst];
+	for (const isCounterattack of attackOrder) {
+		if (!(yield* attackGenerator(attackDeclaration, fight, isCounterattack))) return false;
 	}
+	return true;
+}
+function* attackGenerator(attackDeclaration, fight, isCounterattack) {
+	// determine attackers and attack target
+	let target = attackDeclaration.target;
+	let attackers = attackDeclaration.attackers;
+	if (isCounterattack) {
+		if (attackDeclaration.target === null || !attackDeclaration.attackers[0].values.current.canCounterattack) return true;
+
+		// attacker is the original target
+		attackers = [attackDeclaration.target];
+		// target is the attacker or, in a combined attack, the partner
+		if (attackDeclaration.attackers.length === 1) {
+			target = attackDeclaration.attackers[0];
+		} else {
+			for (const unit of attackDeclaration.attackers) {
+				if (unit.zone.type === "partner") {
+					target = unit;
+					break;
+				}
+			}
+		}
+	}
+	// if this is supposed to be a counterattack, a missing target/attackers is a normal way for this to exit.
+	if (target === null || attackers.length === 0) return false;
+
+
 	// RULES: Compare the attacker’s Attack to the target’s Defense.
 	let totalAttack = 0;
-	for (const unit of attackDeclaration.attackers) {
+	for (const unit of attackers) {
 		totalAttack += unit.values.current.attack;
 	}
 
 	// RULES: If the Attack is greater the attacker destroys the target.
-	yield [createCardsAttackedEvent(attackDeclaration.attackers, attackDeclaration.target)];
-	if (totalAttack > attackDeclaration.target.values.current.defense) {
+	yield [createCardsAttackedEvent(attackers, target)];
+	if (totalAttack > target.values.current.defense) {
 		let discard = new actions.Discard(
-			attackDeclaration.target.owner,
-			attackDeclaration.target,
+			target.owner,
+			target,
 			new ScriptValue("dueToReason", ["fight"]),
-			new ScriptValue("card", attackDeclaration.attackers.map(unit => unit.snapshot()))
+			new ScriptValue("card", attackers.map(unit => unit.snapshot()))
 		);
-		let actionList = [new actions.Destroy(discard), discard];
-		if (attackDeclaration.target.zone.type == "partner") {
-			actionList.push(new actions.DealDamage(
-				attackDeclaration.target.currentOwner(),
-				totalAttack - attackDeclaration.target.values.current.defense
-			));
-		}
-		yield actionList;
-	}
 
-	// RULES: If the unit wasn't destoyed, a 'counterattack' occurs.
-	if (attackDeclaration.target === null || !attackDeclaration.target.values.current.canCounterattack) {
-		return;
-	}
-
-	let counterattackTarget;
-	if (attackDeclaration.attackers.length == 1) {
-		counterattackTarget = attackDeclaration.attackers[0];
-	} else {
-		for (const unit of attackDeclaration.attackers) {
-			if (unit.zone.type == "partner") {
-				counterattackTarget = unit;
-				break;
+		const actionList = [new actions.Destroy(discard), discard];
+		const player = target.currentOwner();
+		if (target.zone.type === "partner" && fight.values.current.dealDamageTo.includes(player)) {
+			let playerDamage = totalAttack - target.values.current.defense;
+			if (fight.values.current.lifeDamageOverrides.get(player) !== undefined) {
+				playerDamage = fight.values.current.lifeDamageOverrides.get(player);
 			}
-		}
-	}
-
-	yield [createCardsAttackedEvent([attackDeclaration.target], counterattackTarget)];
-	if (attackDeclaration.target.values.current.attack > counterattackTarget.values.current.defense) {
-		let discard = new actions.Discard(
-			counterattackTarget.owner,
-			counterattackTarget,
-			new ScriptValue("dueToReason", ["fight"]),
-			new ScriptValue("card", [attackDeclaration.target.snapshot()])
-		);
-		let actionList = [new actions.Destroy(discard), discard];
-		if (counterattackTarget.zone.type == "partner") {
 			actionList.push(new actions.DealDamage(
-				counterattackTarget.currentOwner(),
-				attackDeclaration.target.values.current.attack - counterattackTarget.values.current.defense
+				player,
+				playerDamage
 			));
 		}
 		yield actionList;
 	}
-	// TODO: lazy, assumes fights can't be interrupted somehow
 	return true;
 }

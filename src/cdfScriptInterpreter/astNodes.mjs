@@ -9,10 +9,11 @@ import {ScriptValue, ScriptContext, DeckPosition} from "./structs.mjs";
 import {functions, initFunctions} from "./functions.mjs";
 import {cartesianProduct} from "../math.mjs";
 
-let implicit = {
-	card: [null],
-	action: [null],
-	player: [null]
+const implicit = {
+	card: [[]],
+	action: [[]],
+	player: [[]],
+	fight: [[]]
 }
 
 // helper functions
@@ -255,10 +256,12 @@ export class FunctionNode extends AstNode {
 	}
 }
 
-export class CardMatchNode extends AstNode {
-	constructor(cardListNodes, conditions) {
-		super("card");
-		this.cardListNodes = cardListNodes;
+export class ObjectMatchNode extends AstNode {
+	constructor(objectNodes, conditions) {
+		let returnType = objectNodes[0].returnType;
+		if (returnType === "zone") returnType = "card";
+		super(returnType);
+		this.objectNodes = objectNodes;
 		this.conditions = conditions;
 	}
 	* eval(ctx) {
@@ -273,38 +276,43 @@ export class CardMatchNode extends AstNode {
 		return [new ScriptValue("card", next.value)];
 	}
 	getChildNodes() {
-		return this.cardListNodes.concat(this.conditions);
+		return this.objectNodes.concat(this.conditions);
 	}
 
 	* getMatchingCards(ctx) {
-		let cards = [];
-		let matchingCards = [];
-		for (let cardList of this.cardListNodes) {
-			cardList = (yield* cardList.eval(ctx)).get(ctx.player);
-			if (cardList.length > 0 && (cardList[0] instanceof zones.Zone)) {
-				cards.push(...(cardList.map(zone => zone.cards).flat()));
-			} else {
-				cards.push(...cardList);
+		const objects = [];
+		const matchingObjects = [];
+		for (const objectNode of this.objectNodes) {
+			const objectList = (yield* objectNode.eval(ctx)).get(ctx.player);
+			switch (objectNode.returnType) {
+				case "card":
+				case "fight": {
+					objects.push(...objectList);
+					break;
+				}
+				case "zone": {
+					objects.push(...(objectList.map(zone => zone.cards).flat()));
+					break;
+				}
 			}
 		}
-		for (let checkCard of cards) {
-			if (checkCard == null) {
+		for (const checkObj of objects) {
+			if (checkObj === null) continue;
+
+			// If this is for cards and the evaluating player can't see the cards, they should all be treated as valid / matching.
+			if (checkObj instanceof BaseCard && checkObj.hiddenFor.includes(ctx.evaluatingPlayer) && checkObj.zone !== ctx.evaluatingPlayer.deckZone) {
+				matchingObjects.push(checkObj);
 				continue;
 			}
-			// If the evaluating player can't see the cards, they should all be treated as valid / matching.
-			if (checkCard.hiddenFor.includes(ctx.evaluatingPlayer) && checkCard.zone !== ctx.evaluatingPlayer.deckZone) {
-				matchingCards.push(checkCard);
-				continue;
-			}
-			setImplicit([checkCard], "card");
+			setImplicit([checkObj], this.returnType);
 			if ((!this.conditions || (yield* this.conditions.eval(ctx)).get(ctx.player))) {
-				matchingCards.push(checkCard);
-				clearImplicit("card");
+				matchingObjects.push(checkObj);
+				clearImplicit(this.returnType);
 				continue;
 			}
-			clearImplicit("card");
+			clearImplicit(this.returnType);
 		}
-		return matchingCards;
+		return matchingObjects;
 	}
 }
 export class ThisCardNode extends AstNode {
@@ -336,6 +344,19 @@ export class AttackersNode extends AstNode {
 			return new ScriptValue("card", ctx.game.currentAttackDeclaration.attackers);
 		}
 		return new ScriptValue("card", []);
+	}
+}
+
+export class FightsNode extends AstNode {
+	constructor() {
+		super("fight");
+	}
+	* eval(ctx) {
+		const block = ctx.game.currentBlock();
+		if (block instanceof blocks.Fight) {
+			return new ScriptValue("fight", [block.fight]);
+		}
+		return new ScriptValue("fight", []);
 	}
 }
 
@@ -496,7 +517,6 @@ export class CardPropertyNode extends AstNode {
 		}
 	}
 }
-
 export class PlayerPropertyNode extends AstNode {
 	constructor(players, property) {
 		super({
@@ -552,6 +572,63 @@ export class PlayerPropertyNode extends AstNode {
 			}
 			case "needsToPayForPartner": {
 				return player.values.current.needsToPayForPartner;
+			}
+		}
+	}
+}
+export class FightPropertyNode extends AstNode {
+	constructor(fights, property) {
+		super({
+			counterattackFirst: "bool",
+			dealDamageTo: "player",
+			participants: "card",
+			opponentLifeDamage: "number",
+			yourLifeDamage: "number"
+		}[property]);
+		this.fights = fights;
+		this.property = property;
+	}
+
+	* eval(ctx) {
+		const fights = (yield* this.fights.eval(ctx)).get(ctx.player);
+		let retVal = fights.map(fight => this.accessProperty(fight, ctx)).flat();
+		if (this.returnType === "bool") {
+			for (const value of retVal) {
+				if (value === true) {
+					retVal = true;
+					break;
+				}
+			}
+		}
+		return new ScriptValue(this.returnType, retVal);
+	}
+
+	evalFull(ctx) {
+		return this.players.evalFull(ctx).map(possibility => new ScriptValue(this.returnType, possibility.get(ctx.player).map(player => this.accessProperty(player)).flat()));
+	}
+
+	getChildNodes() {
+		return [this.fights];
+	}
+
+	accessProperty(fight, ctx) {
+		switch(this.property) {
+			case "counterattackFirst": {
+				return fight.counterattackFirst;
+			}
+			case "dealDamageTo": {
+				return fight.dealDamageTo;
+			}
+			case "participants": {
+				return fight.attackers.concat([fight.target]);
+			}
+			// TODO: unset life damage overrides should calculate the base amount
+			//       (maybe that should just get calculated as the initial value?)
+			case "opponentLifeDamage": {
+				return fight.lifeDamageOverrides.get(ctx.player.next()) ?? 0;
+			}
+			case "yourLifeDamage": {
+				return fight.lifeDamageOverrides.get(ctx.player) ?? 0;
 			}
 		}
 	}

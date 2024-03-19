@@ -404,6 +404,24 @@ export class AbilityCancelModification extends ValueModification {
 	}
 }
 
+// This is a special modification for the yourLifeDamage/opponentLifeDamage values on fights.
+// It also never affects base values and is only used in static abilities, therefore baking is not needed.
+export class DamageOverrideSetModification extends ValueModification {
+	constructor(value, newValue, condition) {
+		super(value, false, condition);
+		this.newValue = newValue;
+	}
+
+	modify(values, ctx, toBaseValues) {
+		if (toBaseValues) return values;
+
+		const affectedPlayer = this.value === "yourLifeDamage"? ctx.player : ctx.player.next();
+		values.lifeDamageOverrides.set(affectedPlayer, this.newValue.evalFull(ctx)[0].get(ctx.player));
+
+		return values;
+	}
+}
+
 // These are intentionally very empty since the actual functionality is inside of the Timing class
 export class ActionModification extends Modification {
 	constructor(toModify, condition) {

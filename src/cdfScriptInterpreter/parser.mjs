@@ -284,17 +284,26 @@ function parseValue() {
 			return new ast.UnaryNotNode(parseValue());
 		}
 		case "player": {
-			let player = parsePlayer();
-			if (tokens[pos] && tokens[pos].type == "dotOperator") {
+			const player = parsePlayer();
+			if (tokens[pos] && tokens[pos].type === "dotOperator") {
 				pos++;
 				return parsePlayerDotAccess(player);
 			}
 			return player;
 		}
+		case "fights": {
+			const node = new ast.FightsNode();
+			pos++;
+			if (tokens[pos] && tokens[pos].type === "dotOperator") {
+				pos++;
+				return parseFightDotAccess(player);
+			}
+			return node;
+		}
 		case "leftBracket": {
-			if (tokens[pos+1].type == "from") {
+			if (tokens[pos+1].type === "from") {
 				let cardMatcher = parseCardMatcher();
-				if (tokens[pos] && tokens[pos].type == "dotOperator") {
+				if (tokens[pos] && tokens[pos].type === "dotOperator") {
 					pos++;
 					return parseCardDotAccess(cardMatcher);
 				}
@@ -404,6 +413,9 @@ function parseValue() {
 		case "playerProperty": {
 			return parsePlayerDotAccess(new ast.ImplicitValuesNode("player"));
 		}
+		case "fightProperty": {
+			return parseFightDotAccess(new ast.ImplicitValuesNode("fight"));
+		}
 		case "actionAccessor": {
 			return parseActionAccessor(new ast.ImplicitValuesNode("action"));
 		}
@@ -486,12 +498,18 @@ function parseCardDotAccess(card) {
 	}
 	return parseCardProperty(card);
 }
+function parseFightDotAccess(card) {
+	if (tokens[pos].type != "fightProperty") {
+		throw new ScriptParserError("'" + tokens[pos].value + "' does not begin a valid fight property.", tokens[pos]);
+	}
+	return parseFightProperty(card);
+}
 
 function parseCardProperty(cardsNode) {
 	let property = tokens[pos].value;
 	let node = new ast.CardPropertyNode(cardsNode, tokens[pos].value);
 	pos++;
-	if (tokens[pos] && tokens[pos].type == "dotOperator") {
+	if (tokens[pos] && tokens[pos].type === "dotOperator") {
 		pos++;
 		switch (property) {
 			case "owner":
@@ -507,7 +525,26 @@ function parseCardProperty(cardsNode) {
 				throw new ScriptParserError("Cannot access any properties of '" + property + "'.", tokens[pos-1]);
 			}
 		}
-
+	}
+	return node;
+}
+function parseFightProperty(fightsNode) {
+	let property = tokens[pos].value;
+	let node = new ast.FightPropertyNode(fightsNode, tokens[pos].value);
+	pos++;
+	if (tokens[pos] && tokens[pos].type === "dotOperator") {
+		pos++;
+		switch (property) {
+			case "dealDamageTo": {
+				return parsePlayerDotAccess(node);
+			}
+			case "participants": {
+				return parseCardDotAccess(node);
+			}
+			default: {
+				throw new ScriptParserError("Cannot access any properties of '" + property + "'.", tokens[pos-1]);
+			}
+		}
 	}
 	return node;
 }
@@ -548,7 +585,7 @@ function parseVariable() {
 	return node;
 }
 function parsePlayer() {
-	let node = new ast.PlayerNode(tokens[pos].value);
+	const node = new ast.PlayerNode(tokens[pos].value);
 	pos++;
 	return node;
 }
@@ -643,16 +680,15 @@ function parseZoneToken(player) {
 }
 
 function parseCardMatcher() {
-	pos++;
-	pos++; // just skip over the 'from' token
-	let cardLists = [];
+	pos += 2; // just skip over the 'from' token
+	const objectLists = [];
 	while (tokens[pos].type != "where" && tokens[pos].type != "rightBracket") {
 		const valueStartPos = pos;
 		const source = parseValue();
-		if (!["zone", "card"].includes(source.returnType)) {
+		if (!["zone", "card", "fight"].includes(source.returnType)) {
 			throw new ScriptParserError("Card matcher can only select from zones or card lists.", tokens[valueStartPos], tokens[pos-1]);
 		}
-		cardLists.push(source);
+		objectLists.push(source);
 		if (tokens[pos].type == "separator") {
 			pos++;
 		}
@@ -669,7 +705,7 @@ function parseCardMatcher() {
 	}
 
 	pos++;
-	return new ast.CardMatchNode(cardLists, conditions);
+	return new ast.ObjectMatchNode(objectLists, conditions);
 }
 
 function parseModifier(forStaticAbility = false) {
@@ -680,7 +716,8 @@ function parseModifier(forStaticAbility = false) {
 	while (tokens[pos] && tokens[pos].type != "rightBrace") {
 		switch (tokens[pos+1].type) {
 			case "cardProperty":
-			case "playerProperty": {
+			case "playerProperty":
+			case "fightProperty": {
 				valueModifications = valueModifications.concat(parseValueModifications());
 				hasNonReplaceModification = true;
 				break;
@@ -755,13 +792,15 @@ function parseAbilityCancelModification() {
 	return new valueModifiers.AbilityCancelModification("abilities", false, parseIfCondition());
 }
 
+// TODO: Make number modifiers work on yourLifeDamage and opponentLifeDamage and figure out if they need to be in this list for that.
+const numberProperties = ["level", "attack", "defense", "manaGainAmount", "standardDrawAmount"];
 function parseValueModifications() {
 	const modificationStartPos = pos;
 	let valueIdentifiers = [];
 	let propertyType = null;
 	do {
 		pos++;
-		if (!["cardProperty", "playerProperty"].includes(tokens[pos].type)) {
+		if (!["cardProperty", "playerProperty", "fightProperty"].includes(tokens[pos].type)) {
 			throw new ScriptParserError("'" + tokens[pos].value + "' is not a property that can be modified.", tokens[pos]);
 		}
 		if (propertyType && tokens[pos].type != propertyType) {
@@ -814,11 +853,15 @@ function parseValueModifications() {
 				break;
 			}
 			case "equals": {
-				valueModifications.push(new valueModifiers.ValueSetModification(valueIdentifier, rightHandSide, toBaseValues[i], condition));
+				if (["yourLifeDamage", "opponentLifeDamage"].includes(valueIdentifier)) {
+					valueModifications.push(new valueModifiers.DamageOverrideSetModification(valueIdentifier, rightHandSide, condition));
+				} else {
+					valueModifications.push(new valueModifiers.ValueSetModification(valueIdentifier, rightHandSide, toBaseValues[i], condition));
+				}
 				break;
 			}
 			case "plusAssignment": {
-				if (["level", "attack", "defense", "manaGainAmount", "standardDrawAmount"].includes(valueIdentifier)) {
+				if (numberProperties.includes(valueIdentifier)) {
 					valueModifications.push(new valueModifiers.NumericChangeModification(valueIdentifier, rightHandSide, toBaseValues[i], condition));
 				} else {
 					valueModifications.push(new valueModifiers.ValueAppendModification(valueIdentifier, rightHandSide, toBaseValues[i], condition));
@@ -826,14 +869,14 @@ function parseValueModifications() {
 				break;
 			}
 			case "minusAssignment": {
-				if (!["level", "attack", "defense", "manaGainAmount", "standardDrawAmount"].includes(valueIdentifier)) {
+				if (!numberProperties.includes(valueIdentifier)) {
 					throw new ScriptParserError("Modifier cannot subtract from non-number card property '" + valueIdentifier + "'.", tokens[modificationStartPos], tokens[assignmentPos]);
 				}
 				valueModifications.push(new valueModifiers.NumericChangeModification(valueIdentifier, new ast.UnaryMinusNode(rightHandSide), toBaseValues[i], condition));
 				break;
 			}
 			case "divideAssignment": {
-				if (!["level", "attack", "defense", "manaGainAmount", "standardDrawAmount"].includes(valueIdentifier)) {
+				if (!numberProperties.includes(valueIdentifier)) {
 					throw new ScriptParserError("Modifier cannot divide non-number card property '" + valueIdentifier + "'.", tokens[modificationStartPos], tokens[assignmentPos]);
 				}
 				valueModifications.push(new valueModifiers.NumericDivideModification(valueIdentifier, rightHandSide, toBaseValues[i], condition));

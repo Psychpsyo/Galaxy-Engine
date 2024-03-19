@@ -1,5 +1,5 @@
 
-// not a superclass for Card/PlayerValues but a container.
+// not a superclass for Card/Player/Fight Values but a container.
 export class ObjectValues {
 	constructor(initial) {
 		this.initial = initial;
@@ -73,14 +73,14 @@ export class CardValues {
 
 	// returns a list of all properties that are different between this and other
 	compareTo(other) {
-		let differences = [];
-		for (let property of ["level", "attack", "defense", "attackRights"]) {
+		const differences = [];
+		for (const property of ["level", "attack", "defense", "attackRights"]) {
 			if (this[property] != other[property]) {
 				differences.push(property);
 			}
 		}
 
-		for (let property of ["cardTypes", "names", "types", "abilities"]) {
+		for (const property of ["cardTypes", "names", "types", "abilities"]) {
 			if (this[property].length != other[property].length) {
 				differences.push(property);
 			} else {
@@ -117,12 +117,57 @@ export class PlayerValues {
 
 	// returns a list of all properties that are different between this and other
 	compareTo(other) {
-		let differences = [];
-		for (let property of ["manaGainAmount", "standardDrawAmount", "needsToPayForPartner", "canEnterBattlePhase"]) {
+		const differences = [];
+		for (const property of ["manaGainAmount", "standardDrawAmount", "needsToPayForPartner", "canEnterBattlePhase"]) {
 			if (this[property] != other[property]) {
 				differences.push(property);
 			}
 		}
+		return differences;
+	}
+};
+
+export class FightValues {
+	constructor(dealDamageTo, counterattackFirst = false, lifeDamageOverrides = new Map()) {
+		this.dealDamageTo = dealDamageTo; // list of players that damage can be dealt to by this fight
+		this.counterattackFirst = counterattackFirst; // if true, the counterattack happens before the attack for this fight
+		this.lifeDamageOverrides = lifeDamageOverrides; // maps player objects to how much damage will be dealt to them (or doesnt, in case it isn't being overriden)
+	}
+
+	clone() {
+		return new FightValues(
+			[...this.dealDamageTo],
+			this.counterattackFirst,
+			new Map(this.lifeDamageOverrides)
+		);
+	}
+
+	// returns a list of all properties that are different between this and other
+	compareTo(other) {
+		const differences = [];
+		for (const property of ["counterattackFirst"]) {
+			if (this[property] != other[property]) {
+				differences.push(property);
+			}
+		}
+		for (const property of ["dealDamageTo"]) {
+			if (this[property].length != other[property].length) {
+				differences.push(property);
+			} else {
+				for (let i = 0; i < this[property].length; i++) {
+					if (this[property][i] !== other[property][i]) {
+						differences.push(property);
+						break;
+					}
+				}
+			}
+		}
+		if (other.lifeDamageOverrides.size !== this.lifeDamageOverrides.size) {
+			differences.push("lifeDamageOverrides");
+		} else {
+			// TODO: also check all the individual overrides.
+		}
+
 		return differences;
 	}
 };

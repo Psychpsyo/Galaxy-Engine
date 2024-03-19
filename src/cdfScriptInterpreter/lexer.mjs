@@ -28,6 +28,8 @@ const keywordTokenTypes = {
 	both: "player",
 	own: "player",
 
+	fights: "fights",
+
 	life: "playerProperty",
 	mana: "playerProperty",
 	partner: "playerProperty",
@@ -62,6 +64,12 @@ const keywordTokenTypes = {
 	self: "cardProperty",
 	zone: "cardProperty",
 	isToken: "cardProperty",
+
+	participants: "fightProperty",
+	counterattackFirst: "fightProperty",
+	dealDamageTo: "fightProperty",
+	yourLifeDamage: "fightProperty",
+	opponentLifeDamage: "fightProperty",
 
 	field: "zone",
 	deck: "zone",

@@ -4,6 +4,7 @@ import * as actions from "./actions.mjs";
 import * as abilities from "./abilities.mjs";
 import * as timingGenerators from "./timingGenerators.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
+import {ObjectValues, FightValues} from "./objectValues.mjs";
 
 // Base class for all blocks
 class Block {
@@ -179,10 +180,20 @@ export class AttackDeclaration extends Block {
 
 export class Fight extends Block {
 	constructor(stack, player) {
+		// holds modifiable values about the fight, only gets recognized as an active object once the block executes
+		const attackDeclaration = stack.phase.turn.game.currentAttackDeclaration;
+		const fight = {
+			values: new ObjectValues(new FightValues(player.game.players)),
+			cdfScriptType: "fight",
+			// these two are used for calculating the participants property
+			attackers: attackDeclaration.attackers,
+			target: attackDeclaration.target
+		};
 		super("fightBlock", stack, player, new timingGenerators.TimingRunner(() => {
-			return timingGenerators.fightTimingGenerator(stack.phase.turn.game.currentAttackDeclaration);
+			return timingGenerators.fightTimingGenerator(stack.phase.turn.game.currentAttackDeclaration, fight);
 		}, player.game));
-		this.attackDeclaration = stack.phase.turn.game.currentAttackDeclaration;
+		this.attackDeclaration = attackDeclaration;
+		this.fight = fight;
 	}
 
 	async* run() {
