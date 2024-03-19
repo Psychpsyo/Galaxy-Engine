@@ -272,12 +272,13 @@ function* attackGenerator(attackDeclaration, fight, isCounterattack) {
 	// RULES: Compare the attacker’s Attack to the target’s Defense.
 	let totalAttack = 0;
 	for (const unit of attackers) {
-		totalAttack += unit.values.current.attack;
+		totalAttack += unit.values[fight.values.current.useBaseValuesFor.includes(unit)? "base" : "current"].attack;
 	}
+	const defense = target.values[fight.values.current.useBaseValuesFor.includes(target)? "base" : "current"].defense;
 
 	// RULES: If the Attack is greater the attacker destroys the target.
 	yield [createCardsAttackedEvent(attackers, target)];
-	if (totalAttack > target.values.current.defense) {
+	if (totalAttack > defense) {
 		let discard = new actions.Discard(
 			target.owner,
 			target,
@@ -288,7 +289,7 @@ function* attackGenerator(attackDeclaration, fight, isCounterattack) {
 		const actionList = [new actions.Destroy(discard), discard];
 		const player = target.currentOwner();
 		if (target.zone.type === "partner" && fight.values.current.dealDamageTo.includes(player)) {
-			let playerDamage = totalAttack - target.values.current.defense;
+			let playerDamage = totalAttack - defense;
 			if (fight.values.current.lifeDamageOverrides.get(player) !== undefined) {
 				playerDamage = fight.values.current.lifeDamageOverrides.get(player);
 			}

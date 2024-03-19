@@ -128,17 +128,19 @@ export class PlayerValues {
 };
 
 export class FightValues {
-	constructor(dealDamageTo, counterattackFirst = false, lifeDamageOverrides = new Map()) {
+	constructor(dealDamageTo, counterattackFirst = false, lifeDamageOverrides = new Map(), useBaseValuesFor = []) {
 		this.dealDamageTo = dealDamageTo; // list of players that damage can be dealt to by this fight
 		this.counterattackFirst = counterattackFirst; // if true, the counterattack happens before the attack for this fight
 		this.lifeDamageOverrides = lifeDamageOverrides; // maps player objects to how much damage will be dealt to them (or doesnt, in case it isn't being overriden)
+		this.useBaseValuesFor = useBaseValuesFor; // a list of cards for which the fight process should use base attack and defense instead of the regular ones
 	}
 
 	clone() {
 		return new FightValues(
 			[...this.dealDamageTo],
 			this.counterattackFirst,
-			new Map(this.lifeDamageOverrides)
+			new Map(this.lifeDamageOverrides),
+			[...this.useBaseValuesFor]
 		);
 	}
 
@@ -150,7 +152,7 @@ export class FightValues {
 				differences.push(property);
 			}
 		}
-		for (const property of ["dealDamageTo"]) {
+		for (const property of ["dealDamageTo", "useBaseValuesFor"]) {
 			if (this[property].length != other[property].length) {
 				differences.push(property);
 			} else {

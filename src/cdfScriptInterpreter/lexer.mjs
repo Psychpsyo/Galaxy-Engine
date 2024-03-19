@@ -70,6 +70,7 @@ const keywordTokenTypes = {
 	dealDamageTo: "fightProperty",
 	yourLifeDamage: "fightProperty",
 	opponentLifeDamage: "fightProperty",
+	useBaseValuesFor: "fightProperty",
 
 	field: "zone",
 	deck: "zone",
