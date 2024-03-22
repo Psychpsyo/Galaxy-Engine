@@ -109,15 +109,17 @@ export let functions = null;
 export function initFunctions() {
 	functions =
 {
-	// Applies a value modifier to a card or player (TODO: extend for fights)
 	APPLY: new ScriptFunction(
-		["card", "player", "modifier", "untilIndicator"],
+		["card", "player", "fight", "modifier", "untilIndicator"],
 		[null, null, null, new ast.UntilIndicatorNode("forever")],
 		"action",
 		function*(astNode, ctx) {
 			let until = (yield* this.getParameter(astNode, "untilIndicator").eval(ctx)).get(ctx.player);
 			let applyActions = [];
-			let objects = (yield* (this.getParameter(astNode, "card") ?? this.getParameter(astNode, "player")).eval(ctx));
+			let objects = (yield* (
+				this.getParameter(astNode, "card") ??
+				this.getParameter(astNode, "player") ??
+				this.getParameter(astNode, "fight")).eval(ctx));
 			if (objects.type === "card") {
 				objects = objects.get(ctx.player).map(card => card.current());
 			} else {
@@ -134,7 +136,9 @@ export function initFunctions() {
 			return new ScriptValue("tempActions", applyActions);
 		},
 		function(astNode, ctx) { // for checking if any cards are available for the first card parameter
-			let target = this.getParameter(astNode, "card") ?? this.getParameter(astNode, "player");
+			let target = this.getParameter(astNode, "card") ??
+			             this.getParameter(astNode, "player") ??
+			             this.getParameter(astNode, "fight");
 			return target.evalFull(ctx).find(list => list.get(ctx.player).length > 0) !== undefined;
 		},
 		undefined // TODO: Write evalFull
@@ -508,12 +512,14 @@ export function initFunctions() {
 		[null, null, null],
 		"action",
 		function*(astNode, ctx) {
-			let cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
-			// TODO: re-evaluate these with the first parameter as teh implicit card
-			let type = (yield* this.getParameter(astNode, "counter").eval(ctx)).get(ctx.player)[0];
-			let amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
-
-			return new ScriptValue("tempActions", cards.map(card => new actions.ChangeCounters(ctx.player, card, type, amount)));
+			const cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
+			const actions = [];
+			for (const card of cards) {
+				const type = (yield* this.getParameter(astNode, "counter").eval(ctx)).get(ctx.player)[0];
+				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
+				actions.push(new actions.ChangeCounters(ctx.player, card, type, amount));
+			}
+			return new ScriptValue("tempActions", actions);
 		},
 		hasCardTarget,
 		undefined // TODO: Write evalFull
@@ -526,10 +532,13 @@ export function initFunctions() {
 		"action",
 		function*(astNode, ctx) {
 			let cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
-			let type = (yield* this.getParameter(astNode, "counter").eval(ctx)).get(ctx.player)[0];
-			let amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
-
-			return new ScriptValue("tempActions", cards.map(card => new actions.ChangeCounters(ctx.player, card, type, -amount)));
+			const actions = [];
+			for (const card of cards) {
+				const type = (yield* this.getParameter(astNode, "counter").eval(ctx)).get(ctx.player)[0];
+				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
+				actions.push(new actions.ChangeCounters(ctx.player, card, type, -amount));
+			}
+			return new ScriptValue("tempActions", actions);
 		},
 		hasCardTarget,
 		undefined // TODO: Write evalFull
@@ -565,7 +574,6 @@ export function initFunctions() {
 			const atRandom = (yield* this.getParameter(astNode, "bool", 1).eval(ctx)).get(ctx.player);
 			const validator = this.getParameter(astNode, "bool");
 			// If the player can't choose enough and the card doesn't say 'as many as possible', no cards are chosen.
-			// TODO: In theory, the effect should interrupt here, but SELECT() is currently a request, not an action.
 			const chooseAtLeast = (choiceAmounts === "any" || astNode.asManyAsPossible)? 1 : Math.min(...choiceAmounts);
 			if (eligibleCards.length < chooseAtLeast) {
 				return new ScriptValue("tempActions", []);
