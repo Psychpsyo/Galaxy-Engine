@@ -648,13 +648,32 @@ export class VariableNode extends AstNode {
 	}
 }
 
-export class ValueArrayNode extends AstNode {
+export class ValueNode extends AstNode {
 	constructor(values, returnType) {
 		super(returnType);
 		this.values = values;
 	}
 	* eval(ctx) {
 		return new ScriptValue(this.returnType, this.values);
+	}
+}
+// Yes, all values are arrays but a ValueNode can only hold direct objects while an ArrayNode can hold expressions.
+// This is strictly required for things like arrays of zones which are always ZoneNodes, not ValueNodes.
+export class ArrayNode extends AstNode {
+	constructor(valueNodes, returnType) {
+		super(returnType);
+		this.valueNodes = valueNodes;
+	}
+	* eval(ctx) {
+		const values = [];
+		for (const node of this.valueNodes) {
+			values.push((yield* node.eval(ctx)).get(ctx.player));
+		}
+		return new ScriptValue(this.returnType, values.flat(1));
+	}
+
+	getChildNodes() {
+		return this.valueNodes;
 	}
 }
 

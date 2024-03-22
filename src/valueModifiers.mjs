@@ -237,7 +237,7 @@ export class ValueSetModification extends ValueModification {
 		if (valueArray.length == 0) {
 			return null;
 		}
-		return new ValueSetModification(this.value, new ast.ValueArrayNode(valueArray), this.toBase, this.condition);
+		return new ValueSetModification(this.value, new ast.ValueNode(valueArray), this.toBase, this.condition);
 	}
 }
 
@@ -277,7 +277,7 @@ export class ValueAppendModification extends ValueModification {
 				ability.card = target;
 			}
 		}
-		return new ValueAppendModification(this.value, new ast.ValueArrayNode(valueArray, type), this.toBase, this.condition);
+		return new ValueAppendModification(this.value, new ast.ValueNode(valueArray, type), this.toBase, this.condition);
 	}
 
 	bakeStatic(ctx, target) {
@@ -289,7 +289,7 @@ export class ValueAppendModification extends ValueModification {
 		for (const ability of valueArray) {
 			ability.card = target;
 		}
-		return new ValueAppendModification(this.value, new ast.ValueArrayNode(valueArray, type), this.toBase, this.condition);
+		return new ValueAppendModification(this.value, new ast.ValueNode(valueArray, type), this.toBase, this.condition);
 	}
 }
 
@@ -312,7 +312,7 @@ export class NumericChangeModification extends ValueModification {
 		if (valueArray.length == 0) {
 			return null;
 		}
-		return new NumericChangeModification(this.value, new ast.ValueArrayNode(valueArray), this.toBase, this.condition);
+		return new NumericChangeModification(this.value, new ast.ValueNode(valueArray), this.toBase, this.condition);
 	}
 	canFullyApplyTo(target, ctx) {
 		if (!this.canApplyTo(target, ctx)) return false;
@@ -340,7 +340,7 @@ export class NumericDivideModification extends ValueModification {
 		if (valueArray.length == 0) {
 			return null;
 		}
-		return new NumericDivideModification(this.value, new ast.ValueArrayNode(valueArray), this.toBase, this.condition);
+		return new NumericDivideModification(this.value, new ast.ValueNode(valueArray), this.toBase, this.condition);
 	}
 }
 

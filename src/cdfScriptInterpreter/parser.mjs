@@ -316,7 +316,7 @@ function parseValue() {
 		}
 		case "cardId":
 		case "abilityId": {
-			const node = new ast.ValueArrayNode([tokens[pos].value.substring(2)], tokens[pos].type);
+			const node = new ast.ValueNode([tokens[pos].value.substring(2)], tokens[pos].type);
 			pos++;
 			return node;
 		}
@@ -324,7 +324,7 @@ function parseValue() {
 		case "counter":
 		case "dueToReason":
 		case "type": {
-			const node = new ast.ValueArrayNode([tokens[pos].value], tokens[pos].type);
+			const node = new ast.ValueNode([tokens[pos].value], tokens[pos].type);
 			pos++;
 			return node;
 		}
@@ -592,7 +592,7 @@ function parsePlayer() {
 
 function parseNumber() {
 	let negative = false;
-	if (tokens[pos].type == "minus") {
+	if (tokens[pos].type === "minus") {
 		negative = true;
 		pos++;
 	}
@@ -600,7 +600,7 @@ function parseNumber() {
 	if (negative) {
 		value *= -1;
 	}
-	const node = new ast.ValueArrayNode([value], "number");
+	const node = new ast.ValueNode([value], "number");
 	pos++;
 	return node;
 }
@@ -614,32 +614,23 @@ function parseBool() {
 function parseList() {
 	const listStartPos = pos;
 	const elements = [];
-	pos++;
-	const type = tokens[pos].type;
-	while (tokens[pos].type === type) {
-		let value = tokens[pos].value;
-		switch (type) {
-			case "number": {
-				value = parseInt(value);
-				break;
-			}
-			case "cardId":
-			case "abilityId": {
-				value = value.substring(2);
-				break;
-			}
+	let type = null;
+	do {
+		pos++;
+		const itemStartPos = pos;
+		const value = parseValue();
+		type ??= value.returnType;
+		if (value.returnType !== type) {
+			throw new ScriptParserError(`All values in a list must be of the same type. Expected '${type}' but got '${value.returnType}'.`, tokens[itemStartPos], tokens[pos-1]);
 		}
 		elements.push(value);
-		pos++;
-		if (tokens[pos].type === "separator") {
-			pos++;
-		}
-	}
+	} while (tokens[pos].type === "separator");
+
 	if (tokens[pos].type !== "rightBracket") {
 		throw new ScriptParserError("Expected a ']' at the end of this list.", tokens[listStartPos], tokens[pos]);
 	}
 	pos++;
-	return new ast.ValueArrayNode(elements, type);
+	return new ast.ArrayNode(elements, type);
 }
 
 function parseZone() {

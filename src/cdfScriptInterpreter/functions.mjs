@@ -17,7 +17,7 @@ function equalityCompare(a, b) {
 	}
 	return a === b;
 }
-// Used by the MOVE() and RETURN() functions, primarily to figure out which field zone a given card needs to go to.
+// Used by the MOVE() function, primarily to figure out which field zone a given card needs to return to.
 function getZoneForCard(zoneList, card, ctx) {
 	let rightType = [];
 	for (let zone of zoneList) {
@@ -752,7 +752,7 @@ export function initFunctions() {
 	// The executing player shuffles their deck without the given cards
 	SHUFFLE: new ScriptFunction(
 		["card"],
-		[new ast.ValueArrayNode([], "card")],
+		[new ast.ValueNode([], "card")],
 		"action",
 		function*(astNode, ctx) {
 			return new ScriptValue("tempActions", [new actions.Shuffle(ctx.player)]);
@@ -860,7 +860,7 @@ export function initFunctions() {
 	// summons some number of the specified tokens to the given zone
 	SUMMONTOKENS: new ScriptFunction(
 		["number", "cardId", "number", "type", "number", "number", "abilityId", "zone"],
-		[null, null, null, null, null, null, new ast.ValueArrayNode([], "abilityId"), new ast.ZoneNode("unitZone", new ast.PlayerNode("you"))],
+		[null, null, null, null, null, null, new ast.ValueNode([], "abilityId"), new ast.ZoneNode("unitZone", new ast.PlayerNode("you"))],
 		"card",
 		function*(astNode, ctx) {
 			const amounts = (yield* this.getParameter(astNode, "number", 0).eval(ctx)).get(ctx.player);
