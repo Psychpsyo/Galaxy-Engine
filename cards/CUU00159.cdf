@@ -14,5 +14,5 @@ opponent.DAMAGE(100);
 
 o: trigger
 mandatory: yes
-condition: discarded = thisCard
+after: discarded = thisCard
 DISCARD?(opponent.DECKTOP?(2));
