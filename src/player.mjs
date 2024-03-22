@@ -28,11 +28,14 @@ export class Player {
 	}
 
 	setDeck(cdfList) {
+		if (!Array.isArray(cdfList)) {
+			throw new deckErrors.DeckFormatError();
+		}
 		if (cdfList.length < this.game.config.lowerDeckLimit) {
-			throw new deckErrors.DeckSizeError("Deck has not enough cards!", false);
+			throw new deckErrors.DeckSizeError("Deck has not enough cards", false);
 		}
 		if (cdfList.length > this.game.config.upperDeckLimit) {
-			throw new deckErrors.DeckSizeError("Deck has too many cards!", true);
+			throw new deckErrors.DeckSizeError("Deck has too many cards", true);
 		}
 		let cardList = [];
 		let cardAmounts = {}

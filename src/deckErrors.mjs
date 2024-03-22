@@ -27,3 +27,9 @@ export class DeckTokenError extends InvalidDeckError {
 		this.cardId = cardId;
 	}
 }
+export class DeckFormatError extends InvalidDeckError {
+	constructor() {
+		super("Deck must be an array");
+		this.name = "DeckFormatError";
+	}
+}

@@ -213,7 +213,7 @@ export class BaseCard {
 
 export class Card extends BaseCard {
 	constructor(player, cdf) {
-		let data = parseCdfValues(cdf);
+		let data = parseCdfValues(cdf, player.game);
 		let baseCardTypes = [data.cardType];
 		if (data.cardType == "token") {
 			baseCardTypes = ["unit"];
@@ -387,7 +387,7 @@ export class SnapshotCard extends BaseCard {
 	}
 }
 
-function parseCdfValues(cdf) {
+function parseCdfValues(cdf, game) {
 	let data = {
 		abilities: [],
 		deckLimit: 3,

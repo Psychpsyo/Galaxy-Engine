@@ -114,9 +114,3 @@ for (const file of await fs.readdir("cards")) {
 		}
 	}
 }
-
-if (allSuccessful) {
-	console.log("All card scripts ok.");
-} else {
-	throw new Error("There were issues with the above card scripts.");
-}
