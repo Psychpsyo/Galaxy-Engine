@@ -807,7 +807,7 @@ export class EqualsNode extends ComparisonNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right) {
-		for (let element of left) {
+		for (const element of left) {
 			if (right.some(elem => equalityCompare(elem, element))) {
 				return true;
 			}
@@ -820,7 +820,7 @@ export class NotEqualsNode extends ComparisonNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right) {
-		for (let element of left) {
+		for (const element of left) {
 			if (right.some(elem => equalityCompare(elem, element))) {
 				return false;
 			}
@@ -833,8 +833,8 @@ export class GreaterThanNode extends ComparisonNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right) {
-		for (let rightSide of right) {
-			for (let leftSide of left) {
+		for (const rightSide of right) {
+			for (const leftSide of left) {
 				if (leftSide > rightSide) {
 					return true;
 				}
@@ -848,8 +848,8 @@ export class LessThanNode extends ComparisonNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right) {
-		for (let rightSide of right) {
-			for (let leftSide of left) {
+		for (const rightSide of right) {
+			for (const leftSide of left) {
 				if (leftSide < rightSide) {
 					return true;
 				}
@@ -887,7 +887,7 @@ export class UnaryMinusNode extends AstNode {
 		this.operand = operand;
 	}
 	* eval(ctx) {
-		return (yield* this.operand.eval(ctx)).map(value => -value.get(ctx.player));
+		return new ScriptValue("number", -(yield* this.operand.eval(ctx).get(ctx.player)));
 	}
 	evalFull(ctx) {
 		return this.operand.evalFull(ctx).map(values => new ScriptValue("number", values.get(ctx.player).map(value => -value)));
@@ -902,7 +902,7 @@ export class UnaryNotNode extends AstNode {
 		this.operand = operand;
 	}
 	* eval(ctx) {
-		return new ScriptValue("bool", !(yield* this.operand.eval(ctx)).get(ctx.player));
+		return new ScriptValue("bool", !(yield* this.operand.eval(ctx)).get(ctx.player)[0]);
 	}
 	evalFull(ctx) {
 		return this.operand.evalFull(ctx).map(value => new ScriptValue("bool", !value.get(ctx.player)));
