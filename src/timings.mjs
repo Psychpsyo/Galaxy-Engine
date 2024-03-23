@@ -406,15 +406,16 @@ export class Timing {
 		}
 
 		// decks need to be shuffled after cards are added to them.
-		let unshuffledDecks = [];
+		const unshuffledDecks = [];
 		for (const action of lastActions) {
 			if (action.isCancelled) continue;
-			if (action instanceof actions.Move && action.zone instanceof zones.DeckZone && action.targetIndex === null) {
-				if (unshuffledDecks.indexOf(action.zone) === -1) {
-					unshuffledDecks.push(action.zone);
-				}
+			if (action instanceof actions.Move && action.card.zone instanceof zones.DeckZone) {
+				unshuffledDecks.push(action.card.zone);
 			}
-			if (action instanceof actions.Swap && action.cardA?.zone instanceof zones.DeckZone || action.cardB?.zone instanceof zones.DeckZone) {
+			if (action instanceof actions.Move && action.zone instanceof zones.DeckZone && action.targetIndex === null) {
+				unshuffledDecks.push(action.zone);
+			}
+			if (action instanceof actions.Swap && (action.cardA?.zone instanceof zones.DeckZone || action.cardB?.zone instanceof zones.DeckZone)) {
 				if (action.cardA.zone instanceof zones.DeckZone) {
 					unshuffledDecks.push(action.cardA.zone);
 				}
@@ -424,7 +425,12 @@ export class Timing {
 			}
 		}
 
-		const allActions = unshuffledDecks.map(deck => new actions.Shuffle(deck.player)).concat(unrevealedCards.map(card => new actions.View(card.currentOwner().next(), card.current())));
+		const allActions = unrevealedCards.map(card => new actions.View(card.currentOwner().next(), card.current()));
+		for (const deck of unshuffledDecks) {
+			if (!allActions.find(action => action instanceof actions.Shuffle && action.player === deck.player)) {
+				allActions.push(new actions.Shuffle(deck.player));
+			}
+		}
 		if (allActions.length > 0) {
 			return allActions;
 		}
