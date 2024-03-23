@@ -9,7 +9,7 @@ defense: 800
 o: optional
 turnLimit: 1
 condition: thisCard.zone = field
-SUMMON(SELECT(1, [from you.hand where types = Light]));
+SUMMON(SELECT(1, [from you.hand where types = Light & cardType = unit]));
 
 o: static
 applyTo: [from you.field where self != thisCard & types = Light]

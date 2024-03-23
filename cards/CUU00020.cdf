@@ -4,7 +4,7 @@ name: CUU00020
 level: 1
 types: Ice, Angel
 attack: 100
-defense: 100
+defense: 0
 
 o: optional
 turnLimit: 1
