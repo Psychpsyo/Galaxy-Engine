@@ -261,7 +261,7 @@ export class MainPhase extends StackPhase {
 					if (card) {
 						// RULES: Note that you cannot retire units that have been summoned this turn or the turn before.
 						let recentTurnActions = this.turn.getActions();
-						if (this.turn.game.turns.lenght > 1) {
+						if (this.turn.game.turns.length > 1) {
 							recentTurnActions = this.turn.game.turns[this.turn.game.turns.length - 2].getActions().concat(recentTurnActions);
 						}
 						let summons = recentTurnActions.filter(action => action instanceof actions.Summon && action.card.globalId === card.globalId);
