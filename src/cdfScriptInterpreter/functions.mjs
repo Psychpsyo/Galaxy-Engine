@@ -111,7 +111,7 @@ export function initFunctions() {
 {
 	APPLY: new ScriptFunction(
 		["card", "player", "fight", "modifier", "untilIndicator"],
-		[null, null, null, new ast.UntilIndicatorNode("forever")],
+		[null, null, null, null, new ast.UntilIndicatorNode("forever")],
 		"action",
 		function*(astNode, ctx) {
 			let until = (yield* this.getParameter(astNode, "untilIndicator").eval(ctx)).get(ctx.player);
