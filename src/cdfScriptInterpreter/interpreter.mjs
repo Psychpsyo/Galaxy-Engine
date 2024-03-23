@@ -17,6 +17,7 @@ let alreadyParsed = {
 	globalTurnLimit: {},
 	modifier: {},
 	trigger: {},
+	triggerPrecondition: {},
 	turnLimit: {}
 };
 

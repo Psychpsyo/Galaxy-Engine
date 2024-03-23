@@ -224,7 +224,11 @@ export class Place extends Action {
 
 export class Summon extends Action {
 	constructor(player, placeAction, reason, source) {
-		let properties = {dueTo: reason, from: new ScriptValue("zone", [placeAction.card.zone])};
+		let properties = {
+			dueTo: reason,
+			from: new ScriptValue("zone", [placeAction.card.zone]),
+			to: new ScriptValue("zone", [placeAction.zone])
+		};
 		if (source) { // standard summons have no source
 			properties.by = source;
 		}
@@ -261,7 +265,11 @@ export class Summon extends Action {
 
 export class Deploy extends Action {
 	constructor(player, placeAction, reason, source) {
-		let properties = {dueTo: reason, from: new ScriptValue("zone", [placeAction.card.zone])};
+		let properties = {
+			dueTo: reason,
+			from: new ScriptValue("zone", [placeAction.card.zone]),
+			to: new ScriptValue("zone", [placeAction.zone])
+		};
 		if (source) { // only exists if deployed by card effect
 			properties.by = source;
 		}
@@ -300,7 +308,11 @@ export class Deploy extends Action {
 
 export class Cast extends Action {
 	constructor(player, placeAction, reason, source) {
-		let properties = {dueTo: reason, from: new ScriptValue("zone", [placeAction.card.zone])};
+		let properties = {
+			dueTo: reason,
+			from: new ScriptValue("zone", [placeAction.card.zone]),
+			to: new ScriptValue("zone", [placeAction.zone])
+		};
 		if (source) { // only exists if cast by card effect
 			properties.by = source;
 		}
@@ -512,7 +524,11 @@ export class DealDamage extends Action {
 
 export class Discard extends Action {
 	constructor(player, card, reason, source) {
-		let properties = {dueTo: reason, from: new ScriptValue("zone", [card.zone])};
+		let properties = {
+			dueTo: reason,
+			from: new ScriptValue("zone", [card.zone]),
+			to: new ScriptValue("zone", [card.owner.discardPile])
+		};
 		if (source) { // source only exists if discarded by card effect
 			properties.by = source;
 		}

@@ -295,6 +295,32 @@ export class Timing {
 			return;
 		}
 
+		// sometimes actions prompt certain other actions to be performed at the same time
+		// TODO: These need to be checked for legality and substitution just like the original actions
+		let followupActions = this.actions;
+		do {
+			followupActions = this.getFollowupActions(game, followupActions);
+			for (const action of followupActions) {
+				this.actions.push(action);
+			}
+		} while (followupActions.length > 0);
+
+		// check trigger ability preconditions
+		if (!isPrediction) {
+			if (this.game.currentPhase() instanceof phases.StackPhase) {
+				for (const player of game.players) {
+					for (const card of player.getAllCards()) {
+						for (const ability of card.values.current.abilities) {
+							if (ability instanceof abilities.TriggerAbility ||
+								ability instanceof abilities.CastAbility) {
+								ability.checkTriggerPrecondition(player);
+							}
+						}
+					}
+				}
+			}
+		}
+
 		// run actions and collect events
 		let events = [];
 		for (const action of this.actions) {
@@ -305,20 +331,6 @@ export class Timing {
 				events.push(event);
 			}
 		}
-
-		// sometimes actions prompt certain other actions to be performed at the same time
-		// TODO: These need to be checked for legality and substitution just like the original actions
-		let followupActions = this.actions;
-		do {
-			followupActions = this.getFollowupActions(game, followupActions);
-			for (const action of followupActions) {
-				this.actions.push(action);
-				let event = await (yield* action.run());
-				if (event) {
-					events.push(event);
-				}
-			}
-		} while (followupActions.length > 0);
 
 		if (events.length > 0) {
 			yield events;
@@ -412,22 +424,24 @@ export class Timing {
 			}
 		}
 
-		let allActions = unshuffledDecks.map(deck => new actions.Shuffle(deck.player)).concat(unrevealedCards.map(card => new actions.View(card.currentOwner().next(), card.current())));
+		const allActions = unshuffledDecks.map(deck => new actions.Shuffle(deck.player)).concat(unrevealedCards.map(card => new actions.View(card.currentOwner().next(), card.current())));
 		if (allActions.length > 0) {
 			return allActions;
 		}
 
 		// Equipments might need to be destroyed
-		let invalidEquipments = [];
+		const invalidEquipments = [];
 		for (const equipment of game.players.map(player => player.spellItemZone.cards).flat()) {
 			if (equipment && (equipment.values.current.cardTypes.includes("equipableItem") || equipment.values.current.cardTypes.includes("enchantSpell")) &&
 				(equipment.equippedTo === null || !equipment.equipableTo.evalFull(new ScriptContext(equipment, equipment.currentOwner()))[0].get(equipment.currentOwner()).includes(equipment.equippedTo))
 			) {
-				invalidEquipments.push(equipment);
+				if (!this.actions.find(action => action instanceof actions.Discard && action.card === equipment)) {
+					invalidEquipments.push(equipment);
+				}
 			}
 		}
 		if (invalidEquipments.length > 0) {
-			let discards = invalidEquipments.map(equipment => new actions.Discard(
+			const discards = invalidEquipments.map(equipment => new actions.Discard(
 				equipment.owner,
 				equipment,
 				new ScriptValue("dueToReason", ["invalidEquipment"]),

@@ -133,6 +133,7 @@ const keywordTokenTypes = {
 	PUTCOUNTERS: "function",
 	REMOVECOUNTERS: "function",
 	REVEAL: "function",
+	SAME: "function",
 	SELECT: "function",
 	SELECTABILITY: "function",
 	SELECTDECKSIDE: "function",
@@ -160,8 +161,9 @@ const keywordTokenTypes = {
 	targeted: "actionAccessor",
 	viewed: "actionAccessor",
 
-	dueTo: "accessorProperty",
 	by: "accessorProperty",
+	dueTo: "accessorProperty",
+	to: "accessorProperty",
 
 	effect: "dueToReason",
 	fight: "dueToReason",

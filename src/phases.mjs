@@ -71,6 +71,7 @@ export class StackPhase extends Phase {
 							ability.after
 						) {
 							ability.triggerMetOnStacks = [];
+							ability.triggerPreconditionMetOnStacks = [];
 						}
 					}
 				}
@@ -356,14 +357,14 @@ export class EndPhase extends StackPhase {
 					i++;
 				}
 			}
-		} while (this.triggerAbilitiesMet());
+		} while (await this.triggerAbilitiesMet());
 	}
 
-	triggerAbilitiesMet() {
-		for (let player of this.turn.game.players) {
-			for (let card of player.getActiveCards()) {
-				for (let ability of card.values.current.abilities) {
-					if (ability instanceof abilities.TriggerAbility && ability.after && ability.triggerMetOnStacks.length > 0) {
+	async triggerAbilitiesMet() {
+		for (const player of this.turn.game.players) {
+			for (const card of player.getActiveCards()) {
+				for (const ability of card.values.current.abilities) {
+					if (ability instanceof abilities.TriggerAbility && await ability.canActivate(card, player)) {
 						return true;
 					}
 				}

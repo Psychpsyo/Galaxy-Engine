@@ -561,6 +561,27 @@ export function initFunctions() {
 		}
 	),
 
+	// Returns wether or not the elements in the passed-in variable are all the same.
+	SAME: new ScriptFunction(
+		["*"],
+		[null],
+		"bool",
+		function*(astNode, ctx) {
+			let list = (yield* this.getParameter(astNode, "*").eval(ctx)).get(ctx.player);
+			if (list.length === 1) {
+				return new ScriptValue("bool", true);
+			}
+			for (let i = 1; i < list.length; i++) {
+				if (!equalityCompare(list[i], list[i-1])) {
+					return new ScriptValue("bool", false);
+				}
+			}
+			return new ScriptValue("bool", true);
+		},
+		alwaysHasTarget,
+		undefined // TODO: Write evalFull
+	),
+
 	// Makes the executing player choose X cards from the given ones, either selecting at random or not.
 	// The first bool parameter is a validator that takes any possible selection as implicit cards and returns whether
 	// those conform to any additional constraints the card text imposes. (all having different names, for example)

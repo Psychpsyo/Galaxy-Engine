@@ -436,13 +436,23 @@ function parseCdfValues(cdf, game) {
 					break;
 				}
 				case "after": {
-					if (!["trigger", "cast", "deploy"].includes(ability.type)) {
+					if (!["trigger", "cast"].includes(ability.type)) {
 						throw new Error("CDF Parser Error: " + ability.type + " abilities can't have an 'after' clause.");
 					}
 					if (ability.during) {
 						throw new Error("CDF Parser Error: 'after' and 'during' clauses are mutually exclusive. Use a condition instead of the during.");
 					}
 					ability.after = parts[1];
+					break;
+				}
+				case "afterPrecondition": {
+					if (!["trigger", "cast"].includes(ability.type)) {
+						throw new Error("CDF Parser Error: " + ability.type + " abilities can't have an 'afterPrecondition' clause.");
+					}
+					if (ability.during) {
+						throw new Error("CDF Parser Error: 'afterPrecondition' and 'during' clauses are mutually exclusive. Use a condition instead of the during.");
+					}
+					ability.afterPrecondition = parts[1];
 					break;
 				}
 				case "during": {
@@ -505,6 +515,7 @@ function parseCdfValues(cdf, game) {
 						zoneDurationLimit: "any",
 						during: null,
 						after: null,
+						afterPrecondition: null,
 						condition: null,
 						exec: "",
 						applyTo: "",
@@ -600,6 +611,7 @@ function parseCdfValues(cdf, game) {
 					zoneDurationLimit: "any",
 					during: null,
 					after: null,
+					afterPrecondition: null,
 					condition: null,
 					exec: "",
 					applyTo: "",

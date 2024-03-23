@@ -49,6 +49,7 @@ export function parseScript(tokenList, newEffectId, type, originalCodeString) {
 		case "applyTarget":
 		case "cardCondition":
 		case "condition":
+		case "triggerPrecondition":
 		case "during":
 		case "equipableTo":
 		case "gameLimit":
