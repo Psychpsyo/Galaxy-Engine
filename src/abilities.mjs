@@ -103,25 +103,21 @@ export class CastAbility extends Ability {
 			this.afterPrecondition = interpreter.buildAST("triggerPrecondition", ability.id, ability.afterPrecondition, game);
 		}
 		this.triggerMetOnStacks = [];
-		this.triggerPreconditionMetOnStacks = [];
+		this.triggerPreconditionMet = false;
 	}
 
 	// does not call super.canActivate() to not perform a redundant and inaccurate cost check during spell casting
 	canActivate(card, player, evaluatingPlayer = player) {
-		return (this.isConditionMet(player, evaluatingPlayer)) &&
-			(this.after === null || this.triggerMetOnStacks.includes(player.game.currentStack().index - 1)) &&
-			(this.afterPrecondition === null || this.triggerPreconditionMetOnStacks.includes(player.game.currentStack().index - 1));
+		return (this.isConditionMet(player, evaluatingPlayer)) && (this.after === null || this.triggerMetOnStacks.includes(player.game.currentStack().index - 1));
 	}
 
 	checkTrigger(player) {
-		if (this.after == null || this.after.evalFull(new ScriptContext(this.card, player, this))[0].get(player)) {
+		if (this.triggerPreconditionMet && (this.after === null || this.after.evalFull(new ScriptContext(this.card, player, this))[0].get(player))) {
 			this.triggerMetOnStacks.push(player.game.currentStack().index);
 		}
 	}
 	checkTriggerPrecondition(player) {
-		if (this.afterPrecondition == null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this))[0].get(player)) {
-			this.triggerPreconditionMetOnStacks.push(player.game.currentStack().index);
-		}
+		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this))[0].get(player);
 	}
 }
 
@@ -240,14 +236,13 @@ export class TriggerAbility extends Ability {
 			this.afterPrecondition = interpreter.buildAST("triggerPrecondition", ability.id, ability.afterPrecondition, game);
 		}
 		this.triggerMetOnStacks = [];
-		this.triggerPreconditionMetOnStacks = [];
+		this.triggerPreconditionMet = false;
 		this.turnActivationCount = 0;
 		this.zoneActivationCount = 0;
 	}
 
 	async canActivate(card, player, evaluatingPlayer = player) {
 		if (!this.triggerMetOnStacks.includes(player.game.currentStack().index - 1)) return false;
-		if (this.afterPrecondition !== null && !this.triggerPreconditionMetOnStacks.includes(player.game.currentStack().index - 1)) return false;
 
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
 		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx)[0].getJsNum(player)) return false;
@@ -268,15 +263,12 @@ export class TriggerAbility extends Ability {
 
 	checkTrigger(player) {
 		if (this.after === null) return;
-		if (this.after.evalFull(new ScriptContext(this.card, player, this))[0].get(player)) {
+		if (this.triggerPreconditionMet && this.after.evalFull(new ScriptContext(this.card, player, this))[0].get(player)) {
 			this.triggerMetOnStacks.push(player.game.currentStack().index);
 		}
 	}
 	checkTriggerPrecondition(player) {
-		if (this.afterPrecondition === null) return;
-		if (this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this))[0].get(player)) {
-			this.triggerPreconditionMetOnStacks.push(player.game.currentStack().index);
-		}
+		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this))[0].get(player);
 	}
 
 	checkDuring(player) {

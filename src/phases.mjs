@@ -71,7 +71,6 @@ export class StackPhase extends Phase {
 							ability.after
 						) {
 							ability.triggerMetOnStacks = [];
-							ability.triggerPreconditionMetOnStacks = [];
 						}
 					}
 				}
