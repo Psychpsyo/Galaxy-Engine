@@ -8,6 +8,28 @@ import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {Timing} from "./timings.mjs";
 
 // helper functions
+
+// exported helper functions
+export function replaceActionInList(list, action, replacements) {
+	// replacing a destroy also replaces the corresponding discard
+	if (action instanceof Destroy) {
+		list.splice(list.indexOf(action.discard), 1);
+	}
+	// replacing a destroy's internal discard needs to update the destroy.
+	for (const destroy of list) {
+		if (destroy instanceof Destroy && destroy.discard === action) {
+			// TODO: figure out if a destroy's discard action can ever be replaced by multiple things
+			destroy.replaceDiscardWith(replacements[0]);
+		}
+	}
+	// actually replace the action
+	list.splice(list.indexOf(action), 1, ...replacements);
+	for (const replacement of replacements) {
+		replacement.costIndex = action.costIndex;
+	}
+}
+
+// internal helper functions
 function getAvailableZoneSlots(zone) {
 	let slots = [];
 	for (let i = 0; i < zone.cards.length; i++) {
@@ -56,7 +78,8 @@ export class Action {
 		this.player = player;
 		this.timing = null; // Is set by the Timing itself
 		this.costIndex = -1; // If this is positive, it indicates that this action is to be treated as a cost, together with other actions of the same costIndex
-		this.properties = properties;
+		this.properties = properties; // properties are accessible to cdfScript via action accessors, like retired(byPlayer: you)
+		this.properties.byPlayer = new ScriptValue("player", [player]);
 		this.isCancelled = false; // even cancelled timings stay in the game logs for abilities like that of 'Firewall Golem'
 	}
 
@@ -89,7 +112,7 @@ export class Action {
 	}
 }
 
-export class ChangeMana extends Action {
+export class GainMana extends Action {
 	constructor(player, amount) {
 		super(player);
 		this.amount = amount;
@@ -104,16 +127,32 @@ export class ChangeMana extends Action {
 		this.player.mana -= this.amount;
 		return events.createManaChangedEvent(this.player);
 	}
+}
+export class LoseMana extends Action {
+	constructor(player, amount) {
+		super(player);
+		this.amount = amount;
+	}
+
+	async* run() {
+		this.player.mana -= this.amount;
+		return events.createManaChangedEvent(this.player);
+	}
+
+	undo() {
+		this.player.mana += this.amount;
+		return events.createManaChangedEvent(this.player);
+	}
 
 	isImpossible() {
-		return this.player.mana == 0 && this.amount < 0;
+		return this.player.mana === 0 && this.amount > 0;
 	}
 	isFullyPossible() {
-		return this.player.mana + this.amount >= 0;
+		return this.player.mana - this.amount >= 0;
 	}
 }
 
-export class ChangeLife extends Action {
+export class LoseLife extends Action {
 	constructor(player, amount) {
 		super(player);
 		this.amount = amount;
@@ -122,7 +161,7 @@ export class ChangeLife extends Action {
 
 	async* run() {
 		this._oldAmount = this.player.life;
-		this.player.life = Math.max(this.player.life + this.amount, 0);
+		this.player.life = Math.max(this.player.life - this.amount, 0);
 		if (this.player.life === 0) {
 			this.player.next().victoryConditions.push("lifeZero");
 		}
@@ -138,7 +177,23 @@ export class ChangeLife extends Action {
 	}
 
 	isFullyPossible() {
-		return this.player.life + this.amount >= 0;
+		return this.player.life - this.amount >= 0;
+	}
+}
+export class GainLife extends Action {
+	constructor(player, amount) {
+		super(player);
+		this.amount = amount;
+	}
+
+	async* run() {
+		this.player.life += this.amount;
+		return events.createLifeChangedEvent(this.player);
+	}
+
+	undo() {
+		this.player.life -= this.amount;
+		return events.createLifeChangedEvent(this.player);
 	}
 }
 

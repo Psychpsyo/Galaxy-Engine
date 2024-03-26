@@ -2,7 +2,6 @@
 
 import * as actions from "../actions.mjs";
 import * as blocks from "../blocks.mjs";
-import * as zones from "../zones.mjs";
 import {BaseCard} from "../card.mjs";
 import {Modifier} from "../valueModifiers.mjs";
 import {ScriptValue, ScriptContext, DeckPosition} from "./structs.mjs";
@@ -1098,7 +1097,12 @@ export class ActionAccessorNode extends AstNode {
 			"retired": "card",
 			"summoned": "card",
 			"targeted": "card",
-			"viewed": "card"
+			"viewed": "card",
+
+			"lifeGained": "number",
+			"lifeLost": "number",
+			"manaGained": "number",
+			"manaLost": "number"
 		}[accessor]);
 		this.actionsNode = actionsNode;
 		this.accessor = accessor;
@@ -1208,6 +1212,32 @@ export class ActionAccessorNode extends AstNode {
 					return [action.attackTarget];
 				} else if (action instanceof actions.SetAttackTarget) {
 					return [action.newTarget];
+				}
+				break;
+			}
+
+			// number values
+			case "lifeGained": {
+				if (action instanceof actions.GainLife) {
+					return [action.amount];
+				}
+				break;
+			}
+			case "lifeLost": {
+				if (action instanceof actions.LoseLife) {
+					return [action.amount];
+				}
+				break;
+			}
+			case "manaGained": {
+				if (action instanceof actions.GainMana) {
+					return [action.amount];
+				}
+				break;
+			}
+			case "manaLost": {
+				if (action instanceof actions.LoseMana) {
+					return [action.amount];
 				}
 				break;
 			}

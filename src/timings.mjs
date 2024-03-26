@@ -29,23 +29,6 @@ export class Timing {
 		this.staticAbilitiesApplied = [];
 	}
 
-	// replaces the given action, if possible
-	_replaceAction(action, replacements) {
-		// replacing a destroy also replaces the corresponding discard
-		if (action instanceof actions.Destroy) {
-			this.actions.splice(this.actions.indexOf(action.discard), 1);
-		}
-		// replacing a destroy's internal discard needs to update the destroy.
-		for (const destroy of this.actions) {
-			if (destroy instanceof actions.Destroy && destroy.discard === action) {
-				// TODO: figure out if a destroy's discard action can ever be replaced by multiple things
-				destroy.replaceDiscardWith(replacements[0]);
-			}
-		}
-		// actually replace the action
-		this.actions.splice(this.actions.indexOf(action), 1, ...replacements);
-	}
-
 	// cancels the given action and any implied actions and returns the actionCancelledEvents for all of them
 	_cancelAction(action) {
 		const events = [];
@@ -102,6 +85,8 @@ export class Timing {
 							let replacementsValid = true;
 							// TODO: This currently yields requests to the user but should ideally play through all options to figure out if a valid
 							//       replacement can be constructed. This does not currently matter on any official cards.
+							// TODO: evaluating the replacement needs to have the replaced action as an implicit one so this needs to be moved down into the actions loop
+							//       (this currently does not matter on any implemented cards)
 							for (const output of modifier.modifications[0].replacement.eval(modifier.ctx)) {
 								if (output[0] instanceof actions.Action) {
 									replacements = output;
@@ -184,6 +169,7 @@ export class Timing {
 						let replacements;
 						// gather replacements
 						if (modifier.modifications[0] instanceof ActionReplaceModification) {
+							ast.setImplicit([this.actions[i]], "action");
 							for (const output of modifier.modifications[0].replacement.eval(modifier.ctx)) {
 								if (output[0] instanceof actions.Action) {
 									replacements = output;
@@ -191,11 +177,11 @@ export class Timing {
 								}
 								yield output;
 							}
+							ast.clearImplicit("action");
 
 							// process replacements
 							let foundInvalidReplacement = false;
 							for (const replacement of replacements) {
-								replacement.costIndex = this.actions[i].costIndex;
 								replacement.timing = this;
 
 								if (!replacement.isFullyPossible()) {
@@ -216,7 +202,7 @@ export class Timing {
 						// apply the modification
 						yield [createActionModificationAbilityAppliedEvent(ability)];
 						if (modifier.modifications[0] instanceof ActionReplaceModification) {
-							this._replaceAction(this.actions[i], replacements);
+							actions.replaceActionInList(this.actions, this.actions[i], replacements);
 						} else { // cancel ability instead
 							yield this._cancelAction(this.actions[i]);
 						}

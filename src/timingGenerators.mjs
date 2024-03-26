@@ -232,7 +232,7 @@ export function* retireTimingGenerator(player, units) {
 		}
 	}
 	if (gainedMana > 0) {
-		yield [new actions.ChangeMana(player, gainedMana)];
+		yield [new actions.GainMana(player, gainedMana)];
 	}
 	return true;
 }

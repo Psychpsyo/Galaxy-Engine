@@ -161,7 +161,13 @@ const keywordTokenTypes = {
 	targeted: "actionAccessor",
 	viewed: "actionAccessor",
 
+	lifeGained: "actionAccessor",
+	lifeLost: "actionAccessor",
+	manaGained: "actionAccessor",
+	manaLost: "actionAccessor",
+
 	by: "accessorProperty",
+	byPlayer: "accessorProperty",
 	dueTo: "accessorProperty",
 	to: "accessorProperty",
 

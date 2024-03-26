@@ -7,6 +7,7 @@ import {Card, BaseCard} from "../card.mjs";
 import {nChooseK} from "../math.mjs";
 import {ScriptValue, ScriptContext, DeckPosition} from "./structs.mjs";
 import {buildAST} from "./interpreter.mjs"
+import {ActionReplaceModification} from "../valueModifiers.mjs";
 
 // general helper functions
 
@@ -339,7 +340,7 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.ChangeLife(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
+			return new ScriptValue("tempActions", [new actions.GainLife(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
 		},
 		alwaysHasTarget,
 		undefined, // TODO: Write evalFull
@@ -354,7 +355,7 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.ChangeMana(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
+			return new ScriptValue("tempActions", [new actions.GainMana(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
 		},
 		alwaysHasTarget,
 		undefined, // TODO: Write evalFull
@@ -404,7 +405,7 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.ChangeLife(ctx.player, -(yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
+			return new ScriptValue("tempActions", [new actions.LoseLife(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
 		},
 		alwaysHasTarget,
 		undefined, // TODO: Write evalFull
@@ -419,7 +420,7 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.ChangeMana(ctx.player, -(yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
+			return new ScriptValue("tempActions", [new actions.LoseMana(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
 		},
 		alwaysHasTarget,
 		undefined, // TODO: Write evalFull
@@ -802,15 +803,17 @@ export function initFunctions() {
 		undefined // TODO: Write evalFull
 	),
 
-	// Summons the given cards
+	// Summons the given cards and applies the given modifier to the summoning process.
+	// If a modifier is given, the bool refers to whether or not it is mandatory, otherwise it indicates whether or not the cost needs to be paid.
 	SUMMON: new ScriptFunction(
-		["card", "zone", "bool"],
-		[null, new ast.ZoneNode("unitZone", new ast.PlayerNode("you")), new ast.BoolNode("yes")],
+		["card", "zone", "modifier", "bool"],
+		[null, new ast.ZoneNode("unitZone", new ast.PlayerNode("you")), null, new ast.BoolNode("yes")],
 		"card",
 		function*(astNode, ctx) {
 			let cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
 			const zone = (yield* this.getParameter(astNode, "zone").eval(ctx)).get(ctx.player).find(zone => zone.type === "unit");
-			const payCost = (yield* this.getParameter(astNode, "bool").eval(ctx)).get(ctx.player);
+			const modifier = this.getParameter(astNode, "modifier")? (yield* this.getParameter(astNode, "modifier").eval(ctx)).get(ctx.player) : null;
+			const boolParam = (yield* this.getParameter(astNode, "bool").eval(ctx)).get(ctx.player);
 
 			// remove cards that can no longer be summoned
 			for (let i = cards.length - 1; i >= 0; i--) {
@@ -846,7 +849,7 @@ export function initFunctions() {
 				costs.push(placeCost);
 				placeActions.push(placeCost);
 
-				if (payCost) {
+				if (modifier || boolParam) {
 					const costActions = cards[i].getSummoningCost(ctx.player);
 					// TODO: Figure out if this needs to account for multi-action costs and how to handle those.
 					for (const actionList of costActions) {
@@ -855,8 +858,46 @@ export function initFunctions() {
 							costs.push(action);
 						}
 					}
+
+					// Apply cost modifications
+					// only replacements are valid SUMMON() cost modifications
+					// cancels could also be made to work but they seem unneccessary due to how the bool parameter works
+					if (modifier?.modifications[0] instanceof ActionReplaceModification) {
+						for (const action of costs) {
+							// can this modification be applied to this cost action?
+							ast.setImplicit([action], "action");
+							const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).get();
+							ast.clearImplicit("action");
+							if (!doesMatch) continue;
+
+							// gather replacements
+							let replacements;
+							ast.setImplicit([action], "action");
+							for (const output of modifier.modifications[0].replacement.eval(modifier.ctx)) {
+								if (output[0] instanceof actions.Action) {
+									replacements = output;
+									break;
+								}
+								yield output;
+							}
+							ast.clearImplicit("action");
+
+							// ask player if they want to apply optional modification
+							if (!boolParam) {
+								// TODO: modify this to fit here
+								//const response = yield [applyActionModificationAbility.create(ability.card.currentOwner(), ability, target)];
+								//response.value = applyActionModificationAbility.validate(response.value);
+								//if (!response.value) continue;
+							}
+
+							// apply the modification, then stop iterating
+							actions.replaceActionInList(costs, action, replacements);
+							break;
+						}
+					}
 				}
 			}
+
 			const timing = yield costs;
 			const summons = [];
 			for (let i = 0; i < timing.costCompletions.length; i++) {

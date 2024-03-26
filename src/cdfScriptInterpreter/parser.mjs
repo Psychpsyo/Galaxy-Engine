@@ -729,7 +729,6 @@ function parseModifier(forStaticAbility = false) {
 			}
 			case "replace": {
 				const modificationStartToken = tokens[pos+1];
-				if (!forStaticAbility) throw new ScriptParserError("Replace modifiers are not allowed outside of static abilities.", modificationStartToken);
 				valueModifications.push(parseReplaceModification());
 				if (hasActionModification) throw new ScriptParserError("A modifier can't have more than one replace or cancel modification.", modificationStartToken, tokens[pos-1]);
 				hasActionModification = true;

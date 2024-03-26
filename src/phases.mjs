@@ -150,7 +150,7 @@ export class ManaSupplyPhase extends Phase {
 		const firstReduceManaActions = [];
 		for (const player of this.turn.game.players) {
 			if (player.mana > 5) {
-				firstReduceManaActions.push(new actions.ChangeMana(player, 5 - player.mana));
+				firstReduceManaActions.push(new actions.LoseMana(player, player.mana - 5));
 			}
 		}
 		if (firstReduceManaActions.length > 0) {
@@ -163,7 +163,7 @@ export class ManaSupplyPhase extends Phase {
 			// manaPlyers is the list of players that need to gain mana this turn.
 			// usually this is only the turn player, but when using the old mana rule, both players gain mana on the first player's turn
 			const manaPlayers = this.turn.game.config.useOldManaRule? this.turn.game.players : [this.turn.player];
-			this.timings.push(new Timing(this.turn.game, manaPlayers.map(player => new actions.ChangeMana(player, player.values.current.manaGainAmount))));
+			this.timings.push(new Timing(this.turn.game, manaPlayers.map(player => new actions.GainMana(player, player.values.current.manaGainAmount))));
 			await (yield* this.runTiming());
 
 			// RULES: Then they pay their partner's level in mana. If they can't pay, they loose the game.
@@ -174,7 +174,7 @@ export class ManaSupplyPhase extends Phase {
 					if (player.mana < partnerLevel) {
 						player.next().victoryConditions.push("partnerCostTooHigh");
 					} else {
-						payForPartnerActions.push(new actions.ChangeMana(player, -partnerLevel));
+						payForPartnerActions.push(new actions.LoseMana(player, partnerLevel));
 					}
 				}
 			}
@@ -190,7 +190,7 @@ export class ManaSupplyPhase extends Phase {
 			const secondReduceManaActions = [];
 			for (const player of manaPlayers) {
 				if (player.mana > 5) {
-					secondReduceManaActions.push(new actions.ChangeMana(player, 5 - player.mana));
+					secondReduceManaActions.push(new actions.LoseMana(player, player.mana - 5));
 				}
 			}
 			if (secondReduceManaActions.length > 0) {

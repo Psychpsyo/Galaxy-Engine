@@ -89,13 +89,13 @@ export class BaseCard {
 
 	getSummoningCost(player) {
 		return timingGenerators.arrayTimingGenerator([
-			[new actions.ChangeMana(player, -this.values.current.level)]
+			[new actions.LoseMana(player, this.values.current.level)]
 		]);
 	}
 	getCastingCost(player) {
 		let generators = [
 			timingGenerators.arrayTimingGenerator([
-				[new actions.ChangeMana(player, -this.values.current.level)]
+				[new actions.LoseMana(player, this.values.current.level)]
 			])
 		];
 		for (let ability of this.values.current.abilities) {
@@ -111,7 +111,7 @@ export class BaseCard {
 	getDeploymentCost(player) {
 		let generators = [
 			timingGenerators.arrayTimingGenerator([
-				[new actions.ChangeMana(player, -this.values.current.level)]
+				[new actions.LoseMana(player, this.values.current.level)]
 			])
 		];
 		for (let ability of this.values.current.abilities) {
