@@ -6,6 +6,6 @@ types:
 
 o: trigger
 mandatory: no
-after: COUNT([from retired(byPlayer: you) where level > 0]) > 1
+after: COUNT([from retired(byPlayer: you) where level >= 1]) >= 2
 condition: thisCard.zone = field
 DRAW(2);

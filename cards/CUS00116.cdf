@@ -6,7 +6,7 @@ types: Gravity
 deckLimit: 1
 
 o: cast
-condition: COUNT([from discard]) > 14
+condition: COUNT([from discard]) >= 15
 cost:
 LOSELIFE(you.life / 2);
 exec:

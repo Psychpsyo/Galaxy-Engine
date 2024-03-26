@@ -3,7 +3,7 @@ cardType: standardSpell
 name: CUS00179
 level: 0
 types:
-condition: COUNT([from you.discard where level > 5 & types = Mage & cardType = unit]) > 0
+condition: COUNT([from you.discard where level >= 6 & types = Mage & cardType = unit]) > 0
 
 o: cast
 cost:

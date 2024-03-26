@@ -6,6 +6,6 @@ types: Light
 
 o: cast
 cost:
-DISCARD(SELECT(1, [from you.hand where level > 3 & types = Light]));
+DISCARD(SELECT(1, [from you.hand where level >= 4 & types = Light]));
 exec:
 DESTROY(SELECT(1, [from field where cardType = [spell, item]]));

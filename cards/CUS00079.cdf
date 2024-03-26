@@ -3,7 +3,7 @@ cardType: standardSpell
 name: CUS00079
 level: 2
 types:
-condition: COUNT([from exile]) > 5
+condition: COUNT([from exile]) >= 6
 turnLimit: 1
 
 o: cast

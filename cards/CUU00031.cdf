@@ -13,5 +13,5 @@ SUMMON(SELECT(1, [from you.hand where types = thisCard.types & cardType = unit])
 
 o: optional
 turnLimit: 1
-condition: thisCard.zone = field & COUNT(currentTurn.retired(byPlayer: you)) > 1
-MOVE(SELECT(1, [from you.deck where level > 5 & cardType = unit]), you.hand);
+condition: thisCard.zone = field & COUNT(currentTurn.retired(byPlayer: you)) >= 2
+MOVE(SELECT(1, [from you.deck where level >= 6 & cardType = unit]), you.hand);

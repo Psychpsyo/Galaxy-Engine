@@ -8,4 +8,4 @@ o: cast
 cost:
 LOSELIFE(100);
 exec:
-MOVE(SELECT(1, [from exile where level < 5 & cardType = unit]), baseOwner.hand);
+MOVE(SELECT(1, [from exile where level <= 4 & cardType = unit]), baseOwner.hand);

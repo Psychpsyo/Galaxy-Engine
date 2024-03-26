@@ -12,5 +12,5 @@ condition: thisCard.zone = field
 cost:
 LOSELIFE(100);
 exec:
-$discarded = DISCARD(SELECT(1, [from you.hand where COUNT(types) > 0]));
+$discarded = DISCARD(SELECT(1, [from you.hand where COUNT(types) >= 1]));
 MOVE(SELECT(1, [from you.deck where types = Wind & level = $discarded.level]), hand);

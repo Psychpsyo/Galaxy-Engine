@@ -5,7 +5,7 @@ level: 4
 types: Earth, Myth
 
 o: deploy
-condition: you.life > 1999
+condition: you.life >= 2000
 cost:
 LOSELIFE(you.life / 2);
 exec:

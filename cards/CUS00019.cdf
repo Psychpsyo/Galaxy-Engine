@@ -7,4 +7,4 @@ types: Water
 o: fast
 turnLimit: 1
 condition: thisCard.zone = field & currentTurn = you.turn & COUNT([from you.unitZone]) = 0
-SUMMON(SELECT(1, [from you.discard where level > 0 & types = Water & cardType = unit]));
+SUMMON(SELECT(1, [from you.discard where level >= 1 & types = Water & cardType = unit]));

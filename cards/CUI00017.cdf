@@ -3,7 +3,7 @@ cardType: equipableItem
 name: CUI00017
 level: 2
 types: Earth
-equipableTo: level > 4 & types = Earth
+equipableTo: level >= 5 & types = Earth
 
 o: static
 applyTo: thisCard.equippedUnit

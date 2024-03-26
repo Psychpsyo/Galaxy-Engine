@@ -14,4 +14,4 @@ GAINLIFE(100);
 o: trigger
 mandatory: no
 after: retired = thisCard
-MOVE(SELECT(1, [from you.deck where types = [Earth, Plant] & level > 4 & cardType = unit]), hand);
+MOVE(SELECT(1, [from you.deck where types = [Earth, Plant] & level >= 5 & cardType = unit]), hand);

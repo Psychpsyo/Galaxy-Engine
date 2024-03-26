@@ -8,6 +8,6 @@ defense: 0
 
 o: trigger
 mandatory: yes
-after: COUNT([from summoned where level < 2 & owner = you]) > 0
+after: COUNT([from summoned where level <= 1 & owner = you]) > 0
 condition: thisCard.zone = field
 GAINLIFE(50);

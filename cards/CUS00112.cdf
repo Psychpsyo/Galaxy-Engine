@@ -6,5 +6,5 @@ types:
 
 o: cast
 condition: attackers.owner = opponent
-DISCARD(SELECT(1, [from you.deck where level < 2 & cardType = unit]));
+DISCARD(SELECT(1, [from you.deck where level <= 1 & cardType = unit]));
 CANCELATTACK();

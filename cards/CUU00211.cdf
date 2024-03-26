@@ -15,6 +15,6 @@ exec:
 APPLY(thisCard, {abilities += CUU00211:1:1}, endOfNextTurn)
 
 |o: static
-applyTo: [from field where cardType = unit & level < 3]
+applyTo: [from field where cardType = unit & level <= 2]
 condition: thisCard.zone = field
 modifier: {canAttack = no}

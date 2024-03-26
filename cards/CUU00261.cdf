@@ -12,5 +12,5 @@ after: summoned = thisCard
 cost:
 DISCARD(1, [from you.hand]);
 exec:
-DESTROY(SELECT(1, [from field where level < 7]));
+DESTROY(SELECT(1, [from field where level <= 6]));
 APPLY(thisCard, {canAttack = no}, endOfTurn);

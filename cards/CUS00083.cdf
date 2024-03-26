@@ -10,4 +10,4 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(2, [from you.hand where types = Earth]));
 exec:
-EXILE(SELECT(1, [from you.field where level < 5 & cardType = unit]), endOfTurn);
+EXILE(SELECT(1, [from you.field where level <= 4 & cardType = unit]), endOfTurn);

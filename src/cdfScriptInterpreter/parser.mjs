@@ -210,8 +210,16 @@ function parseExpression() {
 					expression.push(new ast.GreaterThanNode(null, null));
 					break;
 				}
+				case "greaterEquals": {
+					expression.push(new ast.GreaterEqualsNode(null, null));
+					break;
+				}
 				case "lessThan": {
 					expression.push(new ast.LessThanNode(null, null));
+					break;
+				}
+				case "lessEquals": {
+					expression.push(new ast.LessEqualsNode(null, null));
 					break;
 				}
 				case "andOperator": {

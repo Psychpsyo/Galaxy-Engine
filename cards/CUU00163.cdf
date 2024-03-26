@@ -8,12 +8,12 @@ defense: 0
 
 o: trigger
 mandatory: yes
-during: currentPhase = endPhase & COUNT([from currentTurn.destroyed where owner = you & level > 0 & types = Machine & types = Angel & cardType = unit]) > 0
+during: currentPhase = endPhase & COUNT([from currentTurn.destroyed where owner = you & level >= 1 & types = Machine & types = Angel & cardType = unit]) > 0
 condition: thisCard.zone = field
 $moved = MOVE?(
 	[from discard where
 		owner = you &
-		level > 0 &
+		level >= 1 &
 		types = Machine &
 		types = Angel &
 		cardType = unit &

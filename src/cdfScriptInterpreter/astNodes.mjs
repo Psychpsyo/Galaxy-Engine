@@ -846,6 +846,21 @@ export class GreaterThanNode extends ComparisonNode {
 		return false;
 	}
 }
+export class GreaterEqualsNode extends ComparisonNode {
+	constructor(leftSide, rightSide) {
+		super(leftSide, rightSide);
+	}
+	doOperation(left, right) {
+		for (const rightSide of right) {
+			for (const leftSide of left) {
+				if (leftSide >= rightSide) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+}
 export class LessThanNode extends ComparisonNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
@@ -854,6 +869,21 @@ export class LessThanNode extends ComparisonNode {
 		for (const rightSide of right) {
 			for (const leftSide of left) {
 				if (leftSide < rightSide) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+}
+export class LessEqualsNode extends ComparisonNode {
+	constructor(leftSide, rightSide) {
+		super(leftSide, rightSide);
+	}
+	doOperation(left, right) {
+		for (const rightSide of right) {
+			for (const leftSide of left) {
+				if (leftSide <= rightSide) {
 					return true;
 				}
 			}

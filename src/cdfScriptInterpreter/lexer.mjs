@@ -351,17 +351,32 @@ export function tokenize(code, effectId, game) {
 				break;
 			}
 			case ">": {
-				if (code[pos+1] == "<") {
-					tokens.push(new ScriptToken("swapAssignment", "><", line, pos - lineStart));
-					pos++;
-				} else {
-					tokens.push(new ScriptToken("greaterThan", ">", line, pos - lineStart));
+				switch (code[pos+1]) {
+					case "<": {
+						tokens.push(new ScriptToken("swapAssignment", "><", line, pos - lineStart));
+						pos++;
+						break;
+					}
+					case "=": {
+						tokens.push(new ScriptToken("greaterEquals", ">=", line, pos - lineStart));
+						pos++;
+						break;
+					}
+					default: {
+						tokens.push(new ScriptToken("greaterThan", ">", line, pos - lineStart));
+						break;
+					}
 				}
 				pos++;
 				break;
 			}
 			case "<": {
-				tokens.push(new ScriptToken("lessThan", "<", line, pos - lineStart));
+				if (code[pos+1] === "=") {
+					tokens.push(new ScriptToken("lessEquals", "<=", line, pos - lineStart));
+					pos++;
+				} else {
+					tokens.push(new ScriptToken("lessThan", "<", line, pos - lineStart));
+				}
 				pos++;
 				break;
 			}

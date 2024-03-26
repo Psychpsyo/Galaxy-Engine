@@ -8,7 +8,7 @@ defense: 700
 
 o: static
 applyTo: thisCard
-condition: thisCard.zone = field & COUNT([from you.field, you.discard where types = Book]) > 2
+condition: thisCard.zone = field & COUNT([from you.field, you.discard where types = Book]) >= 3
 modifier: {attack += 800}
 
 o: static
@@ -22,5 +22,5 @@ condition: thisCard.zone = field & COUNT([from you.field where types = Book & ca
 cost:
 DISCARD(SELECT(1, [from you.hand]));
 exec:
-EXILE(SELECT(1, [from opponent.field where level < 5 & cardType = [spell, item]]));
+EXILE(SELECT(1, [from opponent.field where level <= 4 & cardType = [spell, item]]));
 opponent.DAMAGE(100);

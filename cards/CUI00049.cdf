@@ -11,4 +11,4 @@ cost:
 LOSELIFE(100);
 exec:
 $discarded = DISCARD(SELECT(1, [from you.field where types = Bug]));
-SUMMON(SELECT(1, [from you.deck where level != $discarded.level & level < 5 & types = Bug]));
+SUMMON(SELECT(1, [from you.deck where level != $discarded.level & level <= 4 & types = Bug]));

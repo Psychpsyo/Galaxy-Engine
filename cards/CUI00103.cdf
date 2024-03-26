@@ -5,5 +5,5 @@ level: 0
 types:
 
 o: deploy
-MOVE(SELECT(3, [from you.discard where types = [Warrior, Mage] & level < 5 & cardType = unit], DIFFERENT(name)), baseOwner.deck);
+MOVE(SELECT(3, [from you.discard where types = [Warrior, Mage] & level <= 4 & cardType = unit], DIFFERENT(name)), baseOwner.deck);
 DRAW(2);
