@@ -1,3 +1,8 @@
+// TODO: forgetting the semicolon in a replace modifier's replacement can give
+// weird error message as it seems to consume too many tokens.
+// Script to replicate:
+// SUMMON(SELECT(1, [from you.hand]), {replace manaLost > 0 with LOSEMANA(manaLost * 2) });
+
 import * as ast from "./astNodes.mjs";
 import * as valueModifiers from "../valueModifiers.mjs";
 
@@ -712,19 +717,19 @@ function parseModifier(forStaticAbility = false) {
 	const modifierStartPos = pos;
 	let valueModifications = [];
 	let hasActionModification = false;
-	let hasNonReplaceModification = false;
+	let hasNonActionModification = false;
 	while (tokens[pos] && tokens[pos].type != "rightBrace") {
 		switch (tokens[pos+1].type) {
 			case "cardProperty":
 			case "playerProperty":
 			case "fightProperty": {
 				valueModifications = valueModifications.concat(parseValueModifications());
-				hasNonReplaceModification = true;
+				hasNonActionModification = true;
 				break;
 			}
 			case "cancelAbilities": {
 				valueModifications.push(parseAbilityCancelModification());
-				hasNonReplaceModification = true;
+				hasNonActionModification = true;
 				break;
 			}
 			case "cancel": {
@@ -747,7 +752,7 @@ function parseModifier(forStaticAbility = false) {
 			}
 		}
 	}
-	if (hasActionModification && hasNonReplaceModification) {
+	if (hasActionModification && hasNonActionModification) {
 		throw new ScriptParserError("Modifier cannot contain both action modification effects and non-action modification effects.", tokens[modifierStartPos], tokens[pos]);
 	}
 	pos++;
