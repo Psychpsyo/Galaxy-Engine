@@ -5,4 +5,4 @@ level: 1
 types:
 
 o: deploy
-SUMMON(SELECT(any, [from you.hand where cardType = unit & types = you.partner.types]));
+SUMMON?(SELECT(any, [from you.hand where cardType = unit & types = you.partner.types]));

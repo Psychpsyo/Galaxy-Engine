@@ -6,4 +6,4 @@ types: Light, Dark
 
 o: deploy
 $unit = SELECT(1, [from you.field where cardType = unit]);
-SUMMON(SELECT(any, [from you.deck where name = $unit.name]));
+SUMMON?(SELECT(any, [from you.deck where name = $unit.name]));
