@@ -163,7 +163,7 @@ export class FunctionNode extends AstNode {
 
 			if (value.type === "tempActions") { // actions need to be executed
 				const actions = value.get(ctx.player);
-				const timing = yield actions;
+				const timing = yield [...actions]; // necessary for actions to not be modified
 				let values = [];
 				for (const action of timing.actions) {
 					if (actions.includes(action) && !action.isCancelled) {
@@ -195,7 +195,7 @@ export class FunctionNode extends AstNode {
 			for (const iterPlayer of players) {
 				actions = actions.concat(valueMap.get(iterPlayer));
 			}
-			const timing = yield actions;
+			const timing = yield [...actions]; // necessary for actions to not be modified
 			valueMap = new Map();
 
 			for (const action of timing.actions) {
