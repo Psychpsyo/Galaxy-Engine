@@ -105,8 +105,7 @@ export async function generateOptionTree(runner, endOfTreeCheck, generator = nul
 	}
 	// if we are at a user input request, generate child nodes
 	if (!events.done) {
-		let validResponses = requests[events.value[0].type].generateValidResponses(events.value[0]);
-		for (const response of validResponses) {
+		for (const response of requests[events.value[0].type].generateValidResponses(events.value[0])) {
 			let child = await generateOptionTree(runner, endOfTreeCheck, generator, node, {type: events.value[0].type, value: response});
 			node.childNodes.push(child);
 			if (child.valid) {

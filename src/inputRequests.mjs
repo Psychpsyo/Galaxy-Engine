@@ -38,8 +38,7 @@ export const chooseCards = {
 		}
 		return cards;
 	},
-	generateValidResponses: function(request) {
-		const combinations = [];
+	generateValidResponses: function*(request) {
 		// we need to account for an empty list representing 'any amount'
 		const validAmounts = request.validAmounts;
 		if (validAmounts.length === 0) {
@@ -51,13 +50,13 @@ export const chooseCards = {
 			if (amount > request.from.length) {
 				continue;
 			}
-			for (const newCombination of nChooseK(request.from.length, amount)) {
-				if (request.validate(newCombination.map(cardIndex => request.from[cardIndex]))) {
-					combinations.push(newCombination);
+			for (const combination of nChooseK(request.from.length, amount)) {
+				console.log("Considering combination...");
+				if (request.validate(combination.map(cardIndex => request.from[cardIndex]))) {
+					yield combination;
 				}
 			}
 		}
-		return combinations;
 	}
 }
 
@@ -76,8 +75,9 @@ export const choosePlayer = {
 		}
 		return request.player.game.players[response];
 	},
-	generateValidResponses: function(request) {
-		return [0, 1];
+	generateValidResponses: function*(request) {
+		yield 0;
+		yield 1;
 	}
 }
 
@@ -97,12 +97,10 @@ export const chooseType = {
 		}
 		return request.from[response];
 	},
-	generateValidResponses: function(request) {
-		let options = [];
+	generateValidResponses: function*(request) {
 		for (let i = 0; i < request.from.length; i++) {
-			options.push(i);
+			yield i;
 		}
-		return options;
 	}
 }
 
@@ -122,8 +120,9 @@ export const chooseDeckSide = {
 		}
 		return new DeckPosition([request.player.deckZone], response === "top");
 	},
-	generateValidResponses: function(request) {
-		return [new DeckPosition([request.player.deckZone], true), new DeckPosition([request.player.deckZone], false)];
+	generateValidResponses: function*(request) {
+		yield new DeckPosition([request.player.deckZone], true);
+		yield new DeckPosition([request.player.deckZone], false);
 	}
 }
 
@@ -143,12 +142,10 @@ export const chooseAbility = {
 		}
 		return request.from[response];
 	},
-	generateValidResponses: function(request) {
-		let options = [];
+	generateValidResponses: function*(request) {
 		for (let i = 0; i < request.from.length; i++) {
-			options.push(i);
+			yield i;
 		}
-		return options;
 	}
 }
 
@@ -174,8 +171,10 @@ export const orderCards = {
 		}
 		return response.map(cardIndex => request.cards[cardIndex]);
 	},
-	generateValidResponses: function(request) {
-		return nChooseK(request.cards.length, request.cards.length);
+	generateValidResponses: function*(request) {
+		for (const order of nChooseK(request.cards.length, request.cards.length)) {
+			yield order;
+		}
 	}
 }
 
@@ -428,12 +427,10 @@ export const chooseZoneSlot = {
 		}
 		return request.eligibleSlots[response];
 	},
-	generateValidResponses: function(request) {
-		let options = [];
+	generateValidResponses: function*(request) {
 		for (let i = 0; i < request.eligibleSlots.length; i++) {
-			options.push(i);
+			yield i;
 		}
-		return options;
 	}
 }
 
@@ -459,8 +456,10 @@ export const chooseAbilityOrder = {
 		}
 		return response;
 	},
-	generateValidResponses: function(request) {
-		return nChooseK(request.abilities.length, request.abilities.length);
+	generateValidResponses: function*(request) {
+		for (const order of nChooseK(request.abilities.length, request.abilities.length)) {
+			yield order;
+		}
 	}
 }
 
@@ -479,7 +478,9 @@ export const selectTokenAmount = {
 		}
 		return response;
 	},
-	generateValidResponses: function(request) {
-		return request.eligibleAmounts;
+	generateValidResponses: function*(request) {
+		for (const amount of request.eligibleAmounts) {
+			yield amount;
+		}
 	}
 }

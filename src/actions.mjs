@@ -1115,6 +1115,7 @@ export class SelectCards extends Action {
 	}
 
 	isImpossible() {
-		return requests.chooseCards.generateValidResponses(this.selectionRequest).length === 0;
+		const responses = requests.chooseCards.generateValidResponses(this.selectionRequest);
+		return responses.next().done;
 	}
 }
