@@ -51,7 +51,6 @@ export const chooseCards = {
 				continue;
 			}
 			for (const combination of nChooseK(request.from.length, amount)) {
-				console.log("Considering combination...");
 				if (request.validate(combination.map(cardIndex => request.from[cardIndex]))) {
 					yield combination;
 				}

@@ -139,9 +139,9 @@ export class BaseCard {
 			return false;
 		}
 		let cardCtx = new ScriptContext(this, player, null, evaluatingPlayer);
-		if ((player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.CastSpell && block.card.cardId === this.cardId && block.player === player).length >= this.turnLimit.evalFull(cardCtx)[0].getJsNum(player)) ||
-			(this.condition !== null && !this.condition.evalFull(cardCtx)[0].get(player)) ||
-			(this.values.current.cardTypes.includes("enchantSpell") && this.equipableTo.evalFull(cardCtx)[0].get(player).length == 0)
+		if ((player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.CastSpell && block.card.cardId === this.cardId && block.player === player).length >= this.turnLimit.evalFull(cardCtx).next().value.getJsNum(player)) ||
+			(this.condition !== null && !this.condition.evalFull(cardCtx).next().value.get(player)) ||
+			(this.values.current.cardTypes.includes("enchantSpell") && this.equipableTo.evalFull(cardCtx).next().value.get(player).length == 0)
 		) {
 			return false;
 		}
@@ -168,9 +168,9 @@ export class BaseCard {
 			return false;
 		}
 		let cardCtx = new ScriptContext(this, player, null, evaluatingPlayer);
-		if ((player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.DeployItem && block.card.cardId === this.cardId && block.player === player).length >= this.turnLimit.evalFull(cardCtx)[0].getJsNum(player)) ||
-			(this.condition !== null && !this.condition.evalFull(cardCtx)[0].get(player)) ||
-			(this.values.current.cardTypes.includes("equipableItem") && this.equipableTo.evalFull(cardCtx)[0].get(player).length == 0)
+		if ((player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.DeployItem && block.card.cardId === this.cardId && block.player === player).length >= this.turnLimit.evalFull(cardCtx).next().value.getJsNum(player)) ||
+			(this.condition !== null && !this.condition.evalFull(cardCtx).next().value.get(player)) ||
+			(this.values.current.cardTypes.includes("equipableItem") && this.equipableTo.evalFull(cardCtx).next().value.get(player).length == 0)
 		) {
 			return false;
 		}

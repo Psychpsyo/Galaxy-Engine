@@ -83,7 +83,7 @@ export class Modifier {
 			if (this.ctx.ability instanceof abilities.StaticAbility) {
 				ast.setImplicit([this.ctx.card], "card");
 				for (const unaffection of object.values.unaffectedBy) {
-					if (unaffection.value === modification.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, this.ctx.player, unaffection.sourceAbility))[0].get(this.ctx.player)) {
+					if (unaffection.value === modification.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, this.ctx.player, unaffection.sourceAbility)).next().value.get(this.ctx.player)) {
 						worksOnObject = false;
 						break;
 					}
@@ -94,7 +94,7 @@ export class Modifier {
 			ast.setImplicit([object], object.cdfScriptType);
 			if (worksOnObject &&
 				(modification instanceof ValueUnaffectedModification || modification instanceof AbilityCancelModification) === toUnaffections &&
-				(modification.condition === null || modification.condition.evalFull(this.ctx)[0].get(this.ctx.player))
+				(modification.condition === null || modification.condition.evalFull(this.ctx).next().value.get(this.ctx.player))
 			) {
 				if (modification instanceof ValueUnaffectedModification) {
 					object.values.unaffectedBy.push({
@@ -193,7 +193,7 @@ export class ValueModification extends Modification {
 		}
 		// cards that are unaffected can't have modifications applied
 		for (const unaffection of target.values.unaffectedBy) {
-			if (unaffection.value === this.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, ctx.player, unaffection.sourceAbility))[0].get(ctx.player)) {
+			if (unaffection.value === this.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, ctx.player, unaffection.sourceAbility)).next().value.get(ctx.player)) {
 				return false;
 			}
 		}
@@ -222,7 +222,7 @@ export class ValueSetModification extends ValueModification {
 
 	modify(values, ctx, toBaseValues) {
 		if (toBaseValues === this.toBase) {
-			let newValue = this.newValue.evalFull(ctx)[0].get(ctx.player);
+			let newValue = this.newValue.evalFull(ctx).next().value.get(ctx.player);
 			if (["level", "attack", "defense"].includes(this.value)) {
 				values[this.value] = newValue[0];
 			} else {
@@ -233,7 +233,7 @@ export class ValueSetModification extends ValueModification {
 	}
 
 	bake(ctx, target) {
-		let valueArray = this.newValue.evalFull(ctx)[0].get(ctx.player);
+		let valueArray = this.newValue.evalFull(ctx).next().value.get(ctx.player);
 		if (valueArray.length == 0) {
 			return null;
 		}
@@ -249,7 +249,7 @@ export class ValueAppendModification extends ValueModification {
 
 	modify(values, ctx, toBaseValues) {
 		if (toBaseValues === this.toBase) {
-			const newValues = this.newValues.evalFull(ctx)[0].get(ctx.player);
+			const newValues = this.newValues.evalFull(ctx).next().value.get(ctx.player);
 			for (const newValue of newValues) {
 				// abilities are always put onto cards in an un-cancelled state
 				if (this.value === "abilities") {
@@ -264,7 +264,7 @@ export class ValueAppendModification extends ValueModification {
 	}
 
 	bake(ctx, target) {
-		let valueArray = this.newValues.evalFull(ctx)[0];
+		let valueArray = this.newValues.evalFull(ctx).next().value;
 		const type = valueArray.type;
 		valueArray = valueArray.get(ctx.player);
 		if (valueArray.length == 0) {
@@ -281,7 +281,7 @@ export class ValueAppendModification extends ValueModification {
 	}
 
 	bakeStatic(ctx, target) {
-		let valueArray = this.newValues.evalFull(ctx)[0];
+		let valueArray = this.newValues.evalFull(ctx).next().value;
 		if (valueArray.type != "abilityId") return this;
 
 		const type = valueArray.type;
@@ -301,14 +301,14 @@ export class NumericChangeModification extends ValueModification {
 
 	modify(values, ctx, toBaseValues) {
 		if (toBaseValues === this.toBase) {
-			let amount = this.amount.evalFull(ctx)[0].get(ctx.player)[0];
+			let amount = this.amount.evalFull(ctx).next().value.get(ctx.player)[0];
 			values[this.value] = Math.max(0, values[this.value] + amount);
 		}
 		return values;
 	}
 
 	bake(ctx, target) {
-		let valueArray = this.amount.evalFull(ctx)[0].get(ctx.player);
+		let valueArray = this.amount.evalFull(ctx).next().value.get(ctx.player);
 		if (valueArray.length == 0) {
 			return null;
 		}
@@ -316,7 +316,7 @@ export class NumericChangeModification extends ValueModification {
 	}
 	canFullyApplyTo(target, ctx) {
 		if (!this.canApplyTo(target, ctx)) return false;
-		if (target.values.current[this.value] + this.amount.evalFull(ctx)[0].get(ctx.player)[0] < 0) return false;
+		if (target.values.current[this.value] + this.amount.evalFull(ctx).next().value.get(ctx.player)[0] < 0) return false;
 		return true;
 	}
 }
@@ -329,14 +329,14 @@ export class NumericDivideModification extends ValueModification {
 
 	modify(values, ctx, toBaseValues) {
 		if (toBaseValues === this.toBase) {
-			let byAmount = this.byAmount.evalFull(ctx)[0].get(ctx.player)[0];
+			let byAmount = this.byAmount.evalFull(ctx).next().value.get(ctx.player)[0];
 			values[this.value] = Math.ceil(values[this.value] / byAmount);
 		}
 		return values;
 	}
 
 	bake(ctx, target) {
-		let valueArray = this.byAmount.evalFull(ctx)[0].get(ctx.player);
+		let valueArray = this.byAmount.evalFull(ctx).next().value.get(ctx.player);
 		if (valueArray.length == 0) {
 			return null;
 		}
@@ -395,7 +395,7 @@ export class AbilityCancelModification extends ValueModification {
 	canFullyApplyTo(target, ctx) {
 		if (!this.canApplyTo(target, ctx)) return false;
 
-		for (const ability of target.values.current.abilities.evalFull(ctx)[0].get(ctx.player)) {
+		for (const ability of target.values.current.abilities.evalFull(ctx).next().value.get(ctx.player)) {
 			if (!ability.cancellable || ability.isCancelled) {
 				return false;
 			}
@@ -416,7 +416,7 @@ export class DamageOverrideSetModification extends ValueModification {
 		if (toBaseValues) return values;
 
 		const affectedPlayer = this.value === "yourLifeDamage"? ctx.player : ctx.player.next();
-		values.lifeDamageOverrides.set(affectedPlayer, this.newValue.evalFull(ctx)[0].get(ctx.player));
+		values.lifeDamageOverrides.set(affectedPlayer, this.newValue.evalFull(ctx).next().value.get(ctx.player));
 
 		return values;
 	}

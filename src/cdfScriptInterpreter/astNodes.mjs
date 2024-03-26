@@ -35,18 +35,17 @@ class AstNode {
 	}
 
 	* eval(ctx) {}
-	// evalFull() does the same as eval without being a generator function itself.
-	// This means that it will return an array of all possible return values for every combination of choices
-	// that the player could make.
+	// evalFull() does the same as eval without yielding any requests to the player.
+	// It instead yields every result for every possible combination of choices that the player could make.
 	// If run with an evaluatingPlayer, information that is hidden from that player is ignored.
 	// This means that card matchers, for example, will always return hidden cards, no matter if they actually match.
-	evalFull(ctx) {
+	* evalFull(ctx) {
 		let generator = this.eval(ctx);
 		let next;
 		do {
 			next = generator.next();
 		} while (!next.done);
-		return [next.value];
+		yield next.value;
 	}
 	// whether or not all actions in this tree have enough targets to specify the target availability rule.
 	hasAllTargets(ctx) {
@@ -121,8 +120,8 @@ export class LineNode extends AstNode {
 		}
 		return returnValue;
 	}
-	evalFull(ctx) {
-		return this.expression.evalFull(ctx);
+	* evalFull(ctx) {
+		yield* this.expression.evalFull(ctx);
 	}
 	getChildNodes() {
 		return [this.expression];
@@ -208,39 +207,42 @@ export class FunctionNode extends AstNode {
 			return new ScriptValue(type, valueMap);
 		}
 	}
-	evalFull(ctx) {
-		let players = this.player.evalFull(ctx)[0].get(ctx.player);
-		if (players.length == 1) {
-			const result =
+	* evalFull(ctx) {
+		const players = this.player.evalFull(ctx).next().value.get(ctx.player);
+		if (players.length === 1) {
+			const results =
 				this.function.runFull?.(this, new ScriptContext(ctx.card, players[0], ctx.ability, ctx.evaluatingPlayer)) ??
 				super.evalFull(new ScriptContext(ctx.card, players[0], ctx.ability, ctx.evaluatingPlayer));
-			if (result.type === "tempActions") { // actions need to be executed
-				return new ScriptValue(
-					this.function.returnType,
-					result.get(ctx.player).map(action => this.function.finalizeReturnValue(action)).filter(val => val !== undefined).flat()
-				);
+			for (const output of results) {
+				if (output.type === "tempActions") { // actions need to be executed
+					yield new ScriptValue(
+						this.function.returnType,
+						output.get(ctx.player).map(action => this.function.finalizeReturnValue(action)).filter(val => val !== undefined).flat()
+					);
+				}
+				yield output;
 			}
-			return result;
 		}
 		// otherwise this is a both.FUNCTION() and must create split values, while executing for the turn player first
 		players.unshift(players.splice(players.indexOf(ctx.game.currentTurn().player), 1)[0]);
 		let values = [];
+		// TODO: cartesianProduct() should to be able to take generators (and be a generator itself) to avoid Array.from()ing here.
 		for (const player of players) {
-			values.push(this.function.runFull?.(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer)));
+			values.push(Array.from(this.function.runFull?.(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer))));
 		}
-		return cartesianProduct(values).map(list => {
-			let valueMap = new Map();
+		for (const list of cartesianProduct(values)) {
+			const valueMap = new Map();
 			for (let i = 0; i < list.length; i++) {
 				valueMap.set(
 					players[i],
 					list[i].get(players[i]).map(action => this.function.finalizeReturnValue(action)).filter(val => val !== undefined).flat()
 				);
 			}
-			return new ScriptValue(this.function.returnType, valueMap);
-		});
+			yield new ScriptValue(this.function.returnType, valueMap);
+		}
 	}
 	hasAllTargets(ctx) {
-		let players = this.player.evalFull(ctx)[0].get(ctx.player);
+		let players = this.player.evalFull(ctx).next().value.get(ctx.player);
 		for (const player of players) {
 			let context = new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer);
 			// checks if all child nodes have their targets
@@ -266,13 +268,13 @@ export class ObjectMatchNode extends AstNode {
 	* eval(ctx) {
 		return new ScriptValue("card", yield* this.getMatchingCards(ctx));
 	}
-	evalFull(ctx) {
+	* evalFull(ctx) {
 		let generator = this.getMatchingCards(ctx);
 		let next;
 		do {
 			next = generator.next();
 		} while (!next.done);
-		return [new ScriptValue("card", next.value)];
+		yield new ScriptValue("card", next.value);
 	}
 	getChildNodes() {
 		return this.objectNodes.concat(this.conditions);
@@ -416,8 +418,10 @@ export class CardPropertyNode extends AstNode {
 		return new ScriptValue(this.returnType, retVal);
 	}
 
-	evalFull(ctx) {
-		return this.cards.evalFull(ctx).map(possibility => new ScriptValue(this.returnType, possibility.get(ctx.player).map(card => this.accessProperty(card)).flat()));
+	* evalFull(ctx) {
+		for (const possibility of this.cards.evalFull(ctx)) {
+			yield new ScriptValue(this.returnType, possibility.get(ctx.player).map(card => this.accessProperty(card)).flat());
+		}
 	}
 
 	getChildNodes() {
@@ -544,8 +548,10 @@ export class PlayerPropertyNode extends AstNode {
 		return new ScriptValue(this.returnType, retVal);
 	}
 
-	evalFull(ctx) {
-		return this.players.evalFull(ctx).map(possibility => new ScriptValue(this.returnType, possibility.get(ctx.player).map(player => this.accessProperty(player)).flat()));
+	* evalFull(ctx) {
+		for (const possibility of this.players.evalFull(ctx)) {
+			yield new ScriptValue(this.returnType, possibility.get(ctx.player).map(player => this.accessProperty(player)).flat());
+		}
 	}
 
 	getChildNodes() {
@@ -602,8 +608,10 @@ export class FightPropertyNode extends AstNode {
 		return new ScriptValue(this.returnType, retVal);
 	}
 
-	evalFull(ctx) {
-		return this.players.evalFull(ctx).map(possibility => new ScriptValue(this.returnType, possibility.get(ctx.player).map(player => this.accessProperty(player)).flat()));
+	* evalFull(ctx) {
+		for (const possibility of this.players.evalFull(ctx)) {
+			yield new ScriptValue(this.returnType, possibility.get(ctx.player).map(player => this.accessProperty(player)).flat());
+		}
 	}
 
 	getChildNodes() {
@@ -706,16 +714,12 @@ export class MathNode extends AstNode {
 		let right = (yield* this.rightSide.eval(ctx)).get(ctx.player);
 		return new ScriptValue(this.returnType, this.doOperation(left, right));
 	}
-	evalFull(ctx) {
-		let left = this.leftSide.evalFull(ctx).map(value => value.get(ctx.player));
-		let right = this.rightSide.evalFull(ctx).map(value => value.get(ctx.player));
-		let results = [];
-		for (const leftValue of left) {
-			for (const rightValue of right) {
-				results.push(new ScriptValue(this.returnType, this.doOperation(leftValue, rightValue)));
+	* evalFull(ctx) {
+		for (const left of this.leftSide.evalFull(ctx)) {
+			for (const right of this.rightSide.evalFull(ctx)) {
+				yield new ScriptValue(this.returnType, this.doOperation(left.get(ctx.player), right.get(ctx.player)));
 			}
 		}
-		return results;
 	}
 	getChildNodes() {
 		return [this.leftSide, this.rightSide];
@@ -886,10 +890,12 @@ export class UnaryMinusNode extends AstNode {
 		this.operand = operand;
 	}
 	* eval(ctx) {
-		return new ScriptValue("number", -(yield* this.operand.eval(ctx).get(ctx.player)));
+		return new ScriptValue("number", (yield* this.operand.eval(ctx).get(ctx.player)).map(value => -value));
 	}
-	evalFull(ctx) {
-		return this.operand.evalFull(ctx).map(values => new ScriptValue("number", values.get(ctx.player).map(value => -value)));
+	* evalFull(ctx) {
+		for (const values of this.operand.evalFull(ctx)) {
+			yield new ScriptValue("number", values.get(ctx.player).map(value => -value));
+		}
 	}
 	getChildNodes() {
 		return [this.operand];
@@ -903,8 +909,10 @@ export class UnaryNotNode extends AstNode {
 	* eval(ctx) {
 		return new ScriptValue("bool", !(yield* this.operand.eval(ctx)).get(ctx.player)[0]);
 	}
-	evalFull(ctx) {
-		return this.operand.evalFull(ctx).map(value => new ScriptValue("bool", !value.get(ctx.player)));
+	* evalFull(ctx) {
+		for (const value of this.operand.evalFull(ctx)) {
+			yield new ScriptValue("bool", !value.get(ctx.player))
+		}
 	}
 	getChildNodes() {
 		return [this.operand];
@@ -955,14 +963,15 @@ export class ZoneNode extends AstNode {
 		}
 		return new ScriptValue("zone", this.getZone(player));
 	}
-	evalFull(ctx) {
-		let players;
-		if (this.playerNode) {
-			players = this.playerNode.evalFull(ctx).map(p => p.get(ctx.player));
-		} else {
-			players = [ctx.player];
+	* evalFull(ctx) {
+		if (!this.playerNode) {
+			yield new ScriptValue("zone", this.getZone(ctx.player));
+			return;
 		}
-		return players.map(player => new ScriptValue("zone", this.getZone(player)));
+
+		for (const player of this.playerNode.evalFull(ctx)) {
+			yield new ScriptValue("zone", this.getZone(player.get(ctx.player)));
+		}
 	}
 	getChildNodes() {
 		return this.playerNode? [this.playerNode] : [];
@@ -1002,8 +1011,10 @@ export class DeckPositionNode extends AstNode {
 	* eval(ctx) {
 		return new ScriptValue("zone", new DeckPosition((yield* this.playerNode.eval(ctx)).get(ctx.player).map(player => player.deckZone), this.top));
 	}
-	evalFull(ctx) {
-		return this.playerNode.evalFull(ctx).map(p => new ScriptValue("zone", new DeckPosition(p.get(ctx.player).map(player => player.deckZone), this.top)));
+	* evalFull(ctx) {
+		for (const player of this.playerNode.evalFull(ctx)) {
+			yield new ScriptValue("zone", new DeckPosition(player.get(ctx.player).map(player => player.deckZone), this.top));
+		}
 	}
 	getChildNodes() {
 		return [this.playerNode];

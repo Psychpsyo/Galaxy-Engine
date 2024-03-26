@@ -19,7 +19,7 @@ export class BaseAbility {
 	}
 
 	isConditionMet(player, evaluatingPlayer = player) {
-		return this.condition === null || this.condition.evalFull(new ScriptContext(this.card, player, this, evaluatingPlayer))[0].get(player);
+		return this.condition === null || this.condition.evalFull(new ScriptContext(this.card, player, this, evaluatingPlayer)).next().value.get(player);
 	}
 
 	canActivate(card, player, evaluatingPlayer = player) {
@@ -112,12 +112,12 @@ export class CastAbility extends Ability {
 	}
 
 	checkTrigger(player) {
-		if (this.triggerPreconditionMet && (this.after === null || this.after.evalFull(new ScriptContext(this.card, player, this))[0].get(player))) {
+		if (this.triggerPreconditionMet && (this.after === null || this.after.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player))) {
 			this.triggerMetOnStacks.push(player.game.currentStack().index);
 		}
 	}
 	checkTriggerPrecondition(player) {
-		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this))[0].get(player);
+		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player);
 	}
 }
 
@@ -145,16 +145,16 @@ export class OptionalAbility extends Ability {
 
 	async canActivate(card, player, evaluatingPlayer = player) {
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
-		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx)[0].getJsNum(player)) return false;
+		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
 
-		const gameLimit = this.gameLimit.evalFull(ctx)[0].getJsNum(player);
+		const gameLimit = this.gameLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (gameLimit !== Infinity && player.game.getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= gameLimit)
 			return false;
 
-		if (this.zoneActivationCount >= this.zoneDurationLimit.evalFull(ctx)[0].getJsNum(player))
+		if (this.zoneActivationCount >= this.zoneDurationLimit.evalFull(ctx).next().value.getJsNum(player))
 			return false;
 
-		const globalTurnLimit = this.globalTurnLimit.evalFull(ctx)[0].getJsNum(player);
+		const globalTurnLimit = this.globalTurnLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (globalTurnLimit !== Infinity && player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= globalTurnLimit)
 			return false;
 
@@ -186,16 +186,16 @@ export class FastAbility extends Ability {
 
 	async canActivate(card, player, evaluatingPlayer = player) {
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
-		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx)[0].getJsNum(player)) return false;
+		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
 
-		let gameLimit = this.gameLimit.evalFull(ctx)[0].getJsNum(player);
+		let gameLimit = this.gameLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (gameLimit !== Infinity && player.game.getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= gameLimit)
 			return false;
 
-		if (this.zoneActivationCount >= this.zoneDurationLimit.evalFull(ctx)[0].getJsNum(player))
+		if (this.zoneActivationCount >= this.zoneDurationLimit.evalFull(ctx).next().value.getJsNum(player))
 			return false;
 
-		let globalTurnLimit = this.globalTurnLimit.evalFull(ctx)[0].getJsNum(player);
+		let globalTurnLimit = this.globalTurnLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (globalTurnLimit !== Infinity && player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= globalTurnLimit)
 			return false;
 
@@ -245,16 +245,16 @@ export class TriggerAbility extends Ability {
 		if (!this.triggerMetOnStacks.includes(player.game.currentStack().index - 1)) return false;
 
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
-		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx)[0].getJsNum(player)) return false;
+		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
 
-		let gameLimit = this.gameLimit.evalFull(ctx)[0].getJsNum(player);
+		let gameLimit = this.gameLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (gameLimit !== Infinity && player.game.getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= gameLimit)
 			return false;
 
-		if (this.zoneActivationCount >= this.zoneDurationLimit.evalFull(ctx)[0].getJsNum(player))
+		if (this.zoneActivationCount >= this.zoneDurationLimit.evalFull(ctx).next().value.getJsNum(player))
 			return false;
 
-		let globalTurnLimit = this.globalTurnLimit.evalFull(ctx)[0].getJsNum(player);
+		let globalTurnLimit = this.globalTurnLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (globalTurnLimit !== Infinity && player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= globalTurnLimit)
 			return false;
 
@@ -263,17 +263,17 @@ export class TriggerAbility extends Ability {
 
 	checkTrigger(player) {
 		if (this.after === null) return;
-		if (this.triggerPreconditionMet && this.after.evalFull(new ScriptContext(this.card, player, this))[0].get(player)) {
+		if (this.triggerPreconditionMet && this.after.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player)) {
 			this.triggerMetOnStacks.push(player.game.currentStack().index);
 		}
 	}
 	checkTriggerPrecondition(player) {
-		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this))[0].get(player);
+		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player);
 	}
 
 	checkDuring(player) {
 		if (this.during === null) return;
-		if (!this.during.evalFull(new ScriptContext(this.card, player, this))[0].get(player)) {
+		if (!this.during.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player)) {
 			this.triggerMetOnStacks = [];
 			this.usedDuring = false;
 		} else if (!this.usedDuring) {
@@ -316,14 +316,14 @@ export class StaticAbility extends BaseAbility {
 
 	getTargets(player, evaluatingPlayer = player) {
 		if (this.isConditionMet(player, evaluatingPlayer = player)) {
-			return this.applyTo.evalFull(new ScriptContext(this.card, player, this, evaluatingPlayer))[0].get(player);
+			return this.applyTo.evalFull(new ScriptContext(this.card, player, this, evaluatingPlayer)).next().value.get(player);
 		}
 		return [];
 	}
 
 	getModifier() {
 		const player = this.card.currentOwner();
-		return this.modifier.evalFull(new ScriptContext(this.card, player, this))[0].get(player);
+		return this.modifier.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player);
 	}
 
 	// only for replacement and cancel abilities
@@ -333,11 +333,11 @@ export class StaticAbility extends BaseAbility {
 		if (!this.isConditionMet(player, evaluatingPlayer)) return false;
 
 		const ctx = new ScriptContext(card, player, this, evaluatingPlayer);
-		if (this.turnApplicationCount >= this.turnLimit.evalFull(ctx)[0].getJsNum(player)) return false;
+		if (this.turnApplicationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
 
-		if (this.zoneApplicationCount >= this.zoneDurationLimit.evalFull(ctx)[0].getJsNum(player)) return false;
+		if (this.zoneApplicationCount >= this.zoneDurationLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
 
-		let gameLimit = this.gameLimit.evalFull(ctx)[0].getJsNum(player);
+		let gameLimit = this.gameLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (gameLimit !== Infinity && player.game.getTimings().map(timing => timing.staticAbilitiesApplied.filter(a => a.player === player && a.ability.id === this.id)).flat().length >= gameLimit)
 			return false;
 

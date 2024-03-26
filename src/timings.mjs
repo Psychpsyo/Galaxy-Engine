@@ -425,7 +425,7 @@ export class Timing {
 		const invalidEquipments = [];
 		for (const equipment of game.players.map(player => player.spellItemZone.cards).flat()) {
 			if (equipment && (equipment.values.current.cardTypes.includes("equipableItem") || equipment.values.current.cardTypes.includes("enchantSpell")) &&
-				(equipment.equippedTo === null || !equipment.equipableTo.evalFull(new ScriptContext(equipment, equipment.currentOwner()))[0].get(equipment.currentOwner()).includes(equipment.equippedTo))
+				(equipment.equippedTo === null || !equipment.equipableTo.evalFull(new ScriptContext(equipment, equipment.currentOwner())).next().value.get(equipment.currentOwner()).includes(equipment.equippedTo))
 			) {
 				if (!this.actions.find(action => action instanceof actions.Discard && action.card === equipment)) {
 					invalidEquipments.push(equipment);

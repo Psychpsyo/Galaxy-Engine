@@ -98,7 +98,10 @@ class ScriptFunction {
 
 // common hasAllTargets functions
 function hasCardTarget(astNode, ctx) { // for checking if any cards are available for the first card parameter
-	return this.getParameter(astNode, "card").evalFull(ctx).find(list => list.get(ctx.player).length > 0) !== undefined;
+	for (const list of this.getParameter(astNode, "card").evalFull(ctx)) {
+		if (list.get(ctx.player).length > 0) return true;
+	}
+	return false;
 }
 function alwaysHasTarget(astNode, ctx) {
 	return true;
@@ -140,7 +143,10 @@ export function initFunctions() {
 			let target = this.getParameter(astNode, "card") ??
 			             this.getParameter(astNode, "player") ??
 			             this.getParameter(astNode, "fight");
-			return target.evalFull(ctx).find(list => list.get(ctx.player).length > 0) !== undefined;
+			for (const list of target.evalFull(ctx)) {
+				if (list.get(ctx.player).length > 0) return true;
+			}
+			return false;
 		},
 		undefined // TODO: Write evalFull
 	),
@@ -223,8 +229,8 @@ export function initFunctions() {
 			return new ScriptValue("tempActions", discards.concat(discards.map(discard => new actions.Destroy(discard))));
 		},
 		hasCardTarget,
-		function(astNode, ctx) {
-			return this.getParameter(astNode, "card").evalFull(ctx);
+		function*(astNode, ctx) {
+			yield* this.getParameter(astNode, "card").evalFull(ctx);
 		},
 		function(action) {
 			if (action instanceof actions.Destroy) {
@@ -270,8 +276,8 @@ export function initFunctions() {
 			)));
 		},
 		hasCardTarget,
-		function(astNode, ctx) {
-			return this.getParameter(astNode, "card").evalFull(ctx);
+		function*(astNode, ctx) {
+			yield* this.getParameter(astNode, "card").evalFull(ctx);
 		},
 		function(action) {
 			return [action.card];
@@ -289,9 +295,11 @@ export function initFunctions() {
 			yield* buildAST("exec", abilityId).eval(ctx);
 		},
 		function(astNode, ctx) {
-			const abilityId = this.getParameter(astNode, "abilityId").evalFull(ctx)[0].get(ctx.player)[0];
-			// Calling buildAST without a cdfScript or game is fine here since the ability has already been parsed
-			return buildAST("exec", abilityId).hasAllTargets(ctx);
+			for (const abilityId of this.getParameter(astNode, "abilityId").evalFull(ctx)) {
+				// Calling buildAST without a cdfScript or game is fine here since the ability has already been parsed
+				if (buildAST("exec", abilityId.get(ctx.player)[0]).hasAllTargets(ctx)) return true;
+			}
+			return false;
 		},
 		undefined, // evalFull is not needed since this has no return value and is therefore never called from inside another function
 		() => {} // this has no return value
@@ -326,8 +334,8 @@ export function initFunctions() {
 			return new ScriptValue("tempActions", (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current()).map(card => new actions.Exile(ctx.player, card.current(), until)));
 		},
 		hasCardTarget,
-		function(astNode, ctx) {
-			return this.getParameter(astNode, "card").evalFull(ctx);
+		function*(astNode, ctx) {
+			yield* this.getParameter(astNode, "card").evalFull(ctx);
 		},
 		function(action) {
 			return [action.card];
@@ -474,8 +482,8 @@ export function initFunctions() {
 			return new ScriptValue("tempActions", moveActions);
 		},
 		hasCardTarget,
-		function(astNode, ctx) {
-			return this.getParameter(astNode, "card").evalFull(ctx);
+		function*(astNode, ctx) {
+			yield* this.getParameter(astNode, "card").evalFull(ctx);
 		},
 		function(action) {
 			return [action.card];
@@ -497,13 +505,13 @@ export function initFunctions() {
 			return new ScriptValue("card", requests.orderCards.validate(response.value, orderRequest).map(card => card.current().snapshot()));
 		},
 		alwaysHasTarget, // technically you can't order nothing but that should never matter in practice
-		function(astNode, ctx) {
-			let toOrder = this.getParameter(astNode, "card").evalFull(ctx).map(toOrder => toOrder.get(ctx.player));
-			let options = [];
-			for (const cards of toOrder) {
-				options = options.concat(new ScriptValue("number", nChooseK(cards.length, cards.length).map(i => toOrder[i])));
+		function*(astNode, ctx) {
+			for (const toOrder of this.getParameter(astNode, "card").evalFull(ctx)) {
+				const cards = toOrder.get(ctx.player);
+				for (const order of nChooseK(cards.length, cards.length)) {
+					yield new ScriptValue("card", order.map(i => cards[i]));
+				}
 			}
-			return options;
 		}
 	),
 
@@ -554,8 +562,8 @@ export function initFunctions() {
 			return new ScriptValue("tempActions", (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).map(card => new actions.Reveal(ctx.player, card)));
 		},
 		hasCardTarget,
-		function(astNode, ctx) {
-			return this.getParameter(astNode, "card").evalFull(ctx);
+		function*(astNode, ctx) {
+			yield* this.getParameter(astNode, "card").evalFull(ctx);
 		},
 		function(action) {
 			return [action.card];
@@ -608,7 +616,7 @@ export function initFunctions() {
 				ctx.ability.id,
 				cards => {
 					ast.setImplicit(cards, "card");
-					const result = validator.evalFull(ctx)[0].get(ctx.player);
+					const result = validator.evalFull(ctx).next().value.get(ctx.player);
 					ast.clearImplicit("card");
 					return result;
 				},
@@ -619,39 +627,39 @@ export function initFunctions() {
 		},
 		function(astNode, ctx) {
 			// Use the full eval to see if there is any valid choices for the player.
-			// Yes, this could lazily stop after finding the first valid choice but for now this is good enough.
-			return this.runFull(astNode, ctx).length > 0;
+			return !this.runFull(astNode, ctx).next().done;
 		},
-		function(astNode, ctx) {
-			// TODO: iterate over every combination of eligible cards & choice amounts
-			const eligibleCards = this.getParameter(astNode, "card").evalFull(ctx)[0].get(ctx.player);
-			let choiceAmounts = this.getParameter(astNode, "number").evalFull(ctx)[0].get(ctx.player);
-			const chooseAtLeast = (choiceAmounts === "any" || astNode.asManyAsPossible)? 1 : Math.min(...choiceAmounts);
+		function*(astNode, ctx) {
+			for (let eligibleCards of this.getParameter(astNode, "card").evalFull(ctx)) {
+				eligibleCards = eligibleCards.get(ctx.player);
+				for (let choiceAmounts of this.getParameter(astNode, "number").evalFull(ctx)) {
+					choiceAmounts = choiceAmounts.get(ctx.player);
+					const chooseAtLeast = (choiceAmounts === "any" || astNode.asManyAsPossible)? 1 : Math.min(...choiceAmounts);
 
-			if (eligibleCards.length < chooseAtLeast) return [];
+					if (eligibleCards.length < chooseAtLeast) continue;
 
-			// expand 'any' to a list of all possible numbers
-			if (choiceAmounts === "any") {
-				choiceAmounts = [];
-				for (let i = 1; i <= eligibleCards.length; i++) {
-					choiceAmounts.push(i);
-				}
-			}
-
-			const combinations = [];
-			const validator = this.getParameter(astNode, "bool");
-			for (const amount of choiceAmounts) {
-				if (amount > eligibleCards.length) continue;
-				const cardLists = nChooseK(eligibleCards.length, amount).map(list => list.map(i => eligibleCards[i]));
-				for (const list of cardLists) {
-					ast.setImplicit(list, "card");
-					if(validator.evalFull(ctx)[0].get(ctx.player)) {
-						combinations.push(new ScriptValue("card", list));
+					// expand 'any' to a list of all possible numbers
+					if (choiceAmounts === "any") {
+						choiceAmounts = [];
+						for (let i = 1; i <= eligibleCards.length; i++) {
+							choiceAmounts.push(i);
+						}
 					}
-					ast.clearImplicit("card");
+
+					const validator = this.getParameter(astNode, "bool");
+					for (const amount of choiceAmounts) {
+						if (amount > eligibleCards.length) continue;
+						const cardLists = nChooseK(eligibleCards.length, amount).map(list => list.map(i => eligibleCards[i]));
+						for (const list of cardLists) {
+							ast.setImplicit(list, "card");
+							if(validator.evalFull(ctx).next().value.get(ctx.player)) {
+								yield new ScriptValue("card", list);
+							}
+							ast.clearImplicit("card");
+						}
+					}
 				}
 			}
-			return combinations;
 		},
 		function(action) {
 			return action.selected;
@@ -675,13 +683,17 @@ export function initFunctions() {
 		},
 		function(astNode, ctx) {
 			// Use the full eval to see if there is any valid choices for the player.
-			// Yes, this could lazily stop after finding the first valid choice but for now this is good enough.
-			return this.runFull(astNode, ctx).length > 0;
+			return !this.runFull(astNode, ctx).next().done;
 		},
-		function(astNode, ctx) {
-			let abilities = this.getParameter(astNode, "abilityId").evalFull(ctx).map(value => value.get(ctx.player)).flat();
-			abilities = [...new Set(abilities)];
-			return abilities.map(ability => new ScriptValue("abilityId", [ability]));
+		function*(astNode, ctx) {
+			const alreadyYielded = [];
+			for (const abilities of this.getParameter(astNode, "abilityId").evalFull(ctx)) {
+				for (const ability of abilities.get(ctx.player)) {
+					if (alreadyYielded.includes(ability)) continue;
+					yield new ScriptValue("abilityId", [ability]);
+					alreadyYielded.push(ability);
+				}
+			}
 		}
 	),
 
@@ -701,9 +713,12 @@ export function initFunctions() {
 			return new ScriptValue("zone", deckSide);
 		},
 		alwaysHasTarget,
-		function(astNode, ctx) {
-			const player = this.getParameter(astNode, "player").evalFull(ctx).get(ctx.player)[0];
-			return [new ScriptValue("zone", new DeckPosition(player.deckZone, true)), new ScriptValue("zone", new DeckPosition(player.deckZone, false))];
+		function*(astNode, ctx) {
+			for (const player of this.getParameter(astNode, "player").evalFull(ctx)) {
+				const zone = player.get(ctx.player).deckZone;
+				yield new ScriptValue("zone", new DeckPosition(zone, true));
+				yield new ScriptValue("zone", new DeckPosition(zone, false));
+			}
 		}
 	),
 
@@ -723,8 +738,10 @@ export function initFunctions() {
 			return new ScriptValue("player", [chosenPlayer]);
 		},
 		alwaysHasTarget,
-		function(astNode, ctx) {
-			return ctx.game.players.map(player => new ScriptValue("player", [player]));
+		function*(astNode, ctx) {
+			for (const player of ctx.game.players) {
+				yield new ScriptValue("player", [player]);
+			}
 		}
 	),
 
@@ -745,13 +762,17 @@ export function initFunctions() {
 		},
 		function(astNode, ctx) {
 			// Use the full eval to see if there is any valid choices for the player.
-			// Yes, this could lazily stop after finding the first valid choice but for now this is good enough.
-			return this.runFull(astNode, ctx).length > 0;
+			return !this.runFull(astNode, ctx).next().done;
 		},
-		function(astNode, ctx) {
-			let types = this.getParameter(astNode, "type").evalFull(ctx).map(value => value.get(ctx.player)).flat();
-			types = [...new Set(types)];
-			return types.map(type => new ScriptValue("type", [type]));
+		function*(astNode, ctx) {
+			const alreadyYielded = [];
+			for (const types of this.getParameter(astNode, "abilityId").evalFull(ctx)) {
+				for (const type of types.get(ctx.player)) {
+					if (alreadyYielded.includes(type)) continue;
+					yield new ScriptValue("type", [type]);
+					alreadyYielded.push(type);
+				}
+			}
 		}
 	),
 
@@ -780,8 +801,13 @@ export function initFunctions() {
 			return new ScriptValue("tempActions", [new actions.Shuffle(ctx.player)]);
 		},
 		function(astNode, ctx) {
-			const excludableCardAmounts = this.getParameter(astNode, "card")?.evalFull(ctx)?.map(cardList => cardList.get(ctx.player).length) ?? [0];
-			return ctx.player.deckZone.cards.length > Math.min(...excludableCardAmounts);
+			const excludeCards = this.getParameter(astNode, "card")?.evalFull(ctx);
+			if (!excludeCards) return ctx.player.deckZone.cards.length > 0;
+
+			for (const cardList of excludeCards) {
+				if (ctx.player.deckZone.cards.length > cardList.get(ctx.player).length) return true;
+			}
+			return false;
 		},
 		undefined // TODO: Write evalFull
 	),
@@ -1025,8 +1051,23 @@ defense: ${defense}`;
 			return new ScriptValue("tempActions", [new actions.Swap(ctx.player, cardA, cardB, transferEquipments)]);
 		},
 		function(astNode, ctx) {
-			return this.getParameter(astNode, "card", 0).evalFull(ctx).find(list => list.get(ctx.player).length > 0) !== undefined &&
-				   this.getParameter(astNode, "card", 1).evalFull(ctx).find(list => list.get(ctx.player).length > 0) !== undefined;
+			let hasCardA = false;
+			for (const cardList of this.getParameter(astNode, "card", 0).evalFull(ctx)) {
+				if (cardList.get(ctx.player).length > 0) {
+					hasCardA = true;
+					break;
+				}
+			}
+			if (!hasCardA) return false;
+
+			let hasCardB = false;
+			for (const cardList of this.getParameter(astNode, "card", 1).evalFull(ctx)) {
+				if (cardList.get(ctx.player).length > 0) {
+					hasCardB = true;
+					break;
+				}
+			}
+			return hasCardB;
 		},
 		undefined // TODO: Write evalFull
 	),
@@ -1040,8 +1081,8 @@ defense: ${defense}`;
 			return new ScriptValue("tempActions", (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current()).map(card => new actions.View(ctx.player, card.current())));
 		},
 		hasCardTarget,
-		function(astNode, ctx) {
-			return this.getParameter(astNode, "card").evalFull(ctx);
+		function*(astNode, ctx) {
+			yield* this.getParameter(astNode, "card").evalFull(ctx);
 		},
 		function(action) {
 			return [action.card];
