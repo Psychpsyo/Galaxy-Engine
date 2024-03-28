@@ -59,7 +59,7 @@ export class Timing {
 		const activeCards = this.game.players.map(player => player.getAllCards()).flat();
 		const possibleTargets = activeCards.concat(game.players);
 		const applicableAbilities = new Map();
-		const targets = new Map();
+		const targets = new Map(); // cards that modification abilities will apply tozz
 		for (const player of this.game.players) {
 			targets.set(player, []);
 		}
@@ -124,7 +124,6 @@ export class Timing {
 						abilities.push(ability);
 						applicableAbilities.set(target, abilities);
 						// also keep track of which targets will need to be affected
-						const player = ability.card.currentOwner();
 						const oldTargets = targets.get(target.currentOwner());
 						oldTargets.push(target);
 						targets.set(target.currentOwner(), oldTargets);

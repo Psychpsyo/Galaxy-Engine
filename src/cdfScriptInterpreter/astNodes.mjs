@@ -965,8 +965,7 @@ export class PlayerNode extends AstNode {
 		this.playerKeyword = playerKeyword;
 	}
 	* eval(ctx) {
-		// a card that is not in a zone belongs to its owner as it is in the process of being summoned/cast/deployed
-		let you = ctx.card.currentOwner();
+		const you = ctx.card.currentOwner();
 		switch(this.playerKeyword) {
 			case "you":
 				return new ScriptValue("player", [you]);

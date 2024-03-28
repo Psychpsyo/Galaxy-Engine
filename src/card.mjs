@@ -72,6 +72,7 @@ export class BaseCard {
 	}
 
 	currentOwner() {
+		// a card that is not in a zone belongs to its owner as it is in the process of being summoned/cast/deployed
 		return this.zone?.player ?? this.placedTo?.player ?? this.owner;
 	}
 

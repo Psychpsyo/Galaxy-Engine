@@ -5,7 +5,7 @@ import * as requests from "../inputRequests.mjs";
 import * as zones from "../zones.mjs";
 import {Card, BaseCard} from "../card.mjs";
 import {nChooseK} from "../math.mjs";
-import {ScriptValue, ScriptContext, DeckPosition} from "./structs.mjs";
+import {ScriptValue, DeckPosition} from "./structs.mjs";
 import {buildAST} from "./interpreter.mjs"
 import {ActionReplaceModification} from "../valueModifiers.mjs";
 
@@ -20,8 +20,8 @@ function equalityCompare(a, b) {
 }
 // Used by the MOVE() function, primarily to figure out which field zone a given card needs to return to.
 function getZoneForCard(zoneList, card, ctx) {
-	let rightType = [];
-	for (let zone of zoneList) {
+	const rightType = [];
+	for (const zone of zoneList) {
 		if (zone instanceof zones.FieldZone) {
 			switch (zone.type) {
 				case "unit":
@@ -42,7 +42,7 @@ function getZoneForCard(zoneList, card, ctx) {
 			rightType.push(zone);
 		}
 	}
-	for (let zone of rightType) {
+	for (const zone of rightType) {
 		// RULES: When a card is being returned to the field, it is returned to the player's field it was most recently on.
 		// ルール：また、フィールドに戻す場合は直前に存在していたプレイヤー側のフィールドに置くことになります。
 		if (zone instanceof zones.FieldZone) {
@@ -210,7 +210,11 @@ export function initFunctions() {
 			}
 			return false;
 		},
-		undefined // TODO: Write evalFull
+		function*(astNode, ctx) {
+			for (const amount of (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)) {
+				yield new ScriptValue("card", ctx.player.deckZone.cards.slice(Math.max(0, ctx.player.deckZone.cards.length - amount[0]), ctx.player.deckZone.cards.length));
+			}
+		}
 	),
 
 	// Destroys the passed-in cards
@@ -448,10 +452,11 @@ export function initFunctions() {
 			const zoneMoveCards = new Map();
 			for (const card of cards) {
 				ast.setImplicit([card], "card");
-				const zoneValue = (yield* this.getParameter(astNode, "zone").eval(new ScriptContext(card, ctx.player, ctx.ability, ctx.evaluatingPlayer))).get(ctx.player);
+				const zoneValue = (yield* this.getParameter(astNode, "zone").eval(ctx)).get(ctx.player);
 				const zone = getZoneForCard(zoneValue instanceof DeckPosition? zoneValue.decks : zoneValue, card, ctx);
 				let index = (zone instanceof zones.FieldZone || zone instanceof zones.DeckZone)? null : -1;
 				if (zoneValue instanceof DeckPosition) {
+					console.log(zoneValue, zoneValue.decks, zone);
 					index = zoneValue.isTop? -1 : 0;
 				}
 				moveActions.push(new actions.Move(ctx.player, card, zone, index));
@@ -715,7 +720,7 @@ export function initFunctions() {
 		alwaysHasTarget,
 		function*(astNode, ctx) {
 			for (const player of this.getParameter(astNode, "player").evalFull(ctx)) {
-				const zone = player.get(ctx.player).deckZone;
+				const zone = player.get(ctx.player)[0].deckZone;
 				yield new ScriptValue("zone", new DeckPosition(zone, true));
 				yield new ScriptValue("zone", new DeckPosition(zone, false));
 			}
