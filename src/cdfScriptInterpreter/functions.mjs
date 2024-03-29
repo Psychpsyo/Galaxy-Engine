@@ -527,13 +527,13 @@ export function initFunctions() {
 		"action",
 		function*(astNode, ctx) {
 			const cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
-			const actions = [];
+			const actionList = [];
 			for (const card of cards) {
 				const type = (yield* this.getParameter(astNode, "counter").eval(ctx)).get(ctx.player)[0];
 				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
-				actions.push(new actions.ChangeCounters(ctx.player, card, type, amount));
+				actionList.push(new actions.ChangeCounters(ctx.player, card, type, amount));
 			}
-			return new ScriptValue("tempActions", actions);
+			return new ScriptValue("tempActions", actionList);
 		},
 		hasCardTarget,
 		undefined // TODO: Write evalFull
@@ -546,13 +546,13 @@ export function initFunctions() {
 		"action",
 		function*(astNode, ctx) {
 			let cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
-			const actions = [];
+			const actionList = [];
 			for (const card of cards) {
 				const type = (yield* this.getParameter(astNode, "counter").eval(ctx)).get(ctx.player)[0];
 				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
-				actions.push(new actions.ChangeCounters(ctx.player, card, type, -amount));
+				actionList.push(new actions.ChangeCounters(ctx.player, card, type, -amount));
 			}
-			return new ScriptValue("tempActions", actions);
+			return new ScriptValue("tempActions", actionList);
 		},
 		hasCardTarget,
 		undefined // TODO: Write evalFull
