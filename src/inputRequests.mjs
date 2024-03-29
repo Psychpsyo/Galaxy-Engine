@@ -117,11 +117,11 @@ export const chooseDeckSide = {
 		if (response != "top" && response != "bottom") {
 			throw new Error("Chose an invalid deck side: " + response + " (must be either 'top' or 'bottom')");
 		}
-		return new DeckPosition([request.player.deckZone], response === "top");
+		return new DeckPosition([request.deckOwner.deckZone], response === "top");
 	},
 	generateValidResponses: function*(request) {
-		yield new DeckPosition([request.player.deckZone], true);
-		yield new DeckPosition([request.player.deckZone], false);
+		yield new DeckPosition([request.deckOwner.deckZone], true);
+		yield new DeckPosition([request.deckOwner.deckZone], false);
 	}
 }
 
