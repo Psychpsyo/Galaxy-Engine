@@ -456,7 +456,6 @@ export function initFunctions() {
 				const zone = getZoneForCard(zoneValue instanceof DeckPosition? zoneValue.decks : zoneValue, card, ctx);
 				let index = (zone instanceof zones.FieldZone || zone instanceof zones.DeckZone)? null : -1;
 				if (zoneValue instanceof DeckPosition) {
-					console.log(zoneValue, zoneValue.decks, zone);
 					index = zoneValue.isTop? -1 : 0;
 				}
 				moveActions.push(new actions.Move(ctx.player, card, zone, index));
