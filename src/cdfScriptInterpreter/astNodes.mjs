@@ -4,7 +4,7 @@ import * as actions from "../actions.mjs";
 import * as blocks from "../blocks.mjs";
 import {BaseCard} from "../card.mjs";
 import {Modifier} from "../valueModifiers.mjs";
-import {ScriptValue, ScriptContext, DeckPosition} from "./structs.mjs";
+import {ScriptValue, ScriptContext, DeckPosition, SomeOrMore} from "./structs.mjs";
 import {functions, initFunctions} from "./functions.mjs";
 import {cartesianProduct} from "../math.mjs";
 
@@ -684,12 +684,13 @@ export class ArrayNode extends AstNode {
 	}
 }
 
-export class AnyAmountNode extends AstNode {
-	constructor() {
+export class SomeOrMoreNode extends AstNode {
+	constructor(min) {
 		super("number");
+		this.min = min;
 	}
 	* eval(ctx) {
-		return new ScriptValue("number", "any");
+		return new ScriptValue("number", new SomeOrMore(this.min));
 	}
 }
 

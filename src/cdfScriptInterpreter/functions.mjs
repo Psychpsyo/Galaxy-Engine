@@ -5,7 +5,7 @@ import * as requests from "../inputRequests.mjs";
 import * as zones from "../zones.mjs";
 import {Card, BaseCard} from "../card.mjs";
 import {nChooseK} from "../math.mjs";
-import {ScriptValue, DeckPosition} from "./structs.mjs";
+import {ScriptValue, DeckPosition, SomeOrMore} from "./structs.mjs";
 import {buildAST} from "./interpreter.mjs"
 import {ActionReplaceModification} from "../valueModifiers.mjs";
 
@@ -113,6 +113,7 @@ export let functions = null;
 export function initFunctions() {
 	functions =
 {
+	// Applies a modification to a card
 	APPLY: new ScriptFunction(
 		["card", "player", "fight", "modifier", "untilIndicator"],
 		[null, null, null, null, new ast.UntilIndicatorNode("forever")],
@@ -149,6 +150,50 @@ export function initFunctions() {
 			return false;
 		},
 		undefined // TODO: Write evalFull
+	),
+
+	// Checks if there exist X cards in the given location that satisfy a given condition
+	ARE:  new ScriptFunction(
+		["number", "card", "bool"],
+		[null, null, new ast.BoolNode("yes")],
+		"bool",
+		function*(astNode, ctx) {
+			let eligibleAmounts = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
+			const eligibleCards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
+			
+			// If there isn't even enough cards, return false.
+			const chooseAtLeast = astNode.asManyAsPossible?
+			                      1 : eligibleAmounts instanceof SomeOrMore?
+								  eligibleAmounts.lowest : Math.min(...eligibleAmounts);
+			if (eligibleCards.length < chooseAtLeast) {
+				return new ScriptValue("bool", false);
+			}
+
+			// clamp 'any' (or 'X+') to the amount of cards we have available
+			if (eligibleAmounts instanceof SomeOrMore) {
+				const newAmounts = [];
+				for (let i = eligibleAmounts.lowest; i <= eligibleCards.length; i++) {
+					newAmounts.push(i);
+				}
+				eligibleAmounts = newAmounts;
+			}
+
+			const validator = this.getParameter(astNode, "bool");
+			for (const amount of eligibleAmounts) {
+				if (amount > eligibleCards.length) continue;
+				const cardLists = nChooseK(eligibleCards.length, amount).map(list => list.map(i => eligibleCards[i]));
+				for (const list of cardLists) {
+					ast.setImplicit(list, "card");
+					if(validator.evalFull(ctx).next().value.get(ctx.player)) {
+						return new ScriptValue("bool", true);
+					}
+					ast.clearImplicit("card");
+				}
+			}
+
+			return new ScriptValue("bool", false);
+		},
+		alwaysHasTarget
 	),
 
 	// Cancels an attack
@@ -603,20 +648,32 @@ export function initFunctions() {
 		[null, null, new ast.BoolNode("yes"), new ast.BoolNode("no")],
 		"card",
 		function*(astNode, ctx) {
-			const choiceAmounts = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
+			let choiceAmounts = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
 			const eligibleCards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
 			const atRandom = (yield* this.getParameter(astNode, "bool", 1).eval(ctx)).get(ctx.player);
-			const validator = this.getParameter(astNode, "bool");
+
 			// If the player can't choose enough and the card doesn't say 'as many as possible', no cards are chosen.
-			const chooseAtLeast = (choiceAmounts === "any" || astNode.asManyAsPossible)? 1 : Math.min(...choiceAmounts);
+			const chooseAtLeast = astNode.asManyAsPossible?
+			                      1 : choiceAmounts instanceof SomeOrMore?
+								  choiceAmounts.lowest : Math.min(...choiceAmounts);
 			if (eligibleCards.length < chooseAtLeast) {
 				return new ScriptValue("tempActions", []);
 			}
 
+			// clamp 'any' (or 'X+') to the amount of cards we have available
+			if (choiceAmounts instanceof SomeOrMore) {
+				const newAmounts = [];
+				for (let i = choiceAmounts.lowest; i <= eligibleCards.length; i++) {
+					newAmounts.push(i);
+				}
+				choiceAmounts = newAmounts;
+			}
+
+			const validator = this.getParameter(astNode, "bool");
 			const selectAction = new actions.SelectCards(
 				ctx.player,
 				eligibleCards,
-				choiceAmounts === "any"? [] : choiceAmounts,
+				choiceAmounts,
 				ctx.ability.id,
 				cards => {
 					ast.setImplicit(cards, "card");
@@ -638,16 +695,19 @@ export function initFunctions() {
 				eligibleCards = eligibleCards.get(ctx.player);
 				for (let choiceAmounts of this.getParameter(astNode, "number").evalFull(ctx)) {
 					choiceAmounts = choiceAmounts.get(ctx.player);
-					const chooseAtLeast = (choiceAmounts === "any" || astNode.asManyAsPossible)? 1 : Math.min(...choiceAmounts);
+					const chooseAtLeast = astNode.asManyAsPossible?
+					                      1 : choiceAmounts instanceof SomeOrMore?
+										  choiceAmounts.lowest : Math.min(...choiceAmounts);
 
 					if (eligibleCards.length < chooseAtLeast) continue;
 
 					// expand 'any' to a list of all possible numbers
-					if (choiceAmounts === "any") {
-						choiceAmounts = [];
-						for (let i = 1; i <= eligibleCards.length; i++) {
-							choiceAmounts.push(i);
+					if (choiceAmounts instanceof SomeOrMore) {
+						const newAmounts = [];
+						for (let i = choiceAmounts.lowest; i <= eligibleCards.length; i++) {
+							newAmounts.push(i);
 						}
+						choiceAmounts = newAmounts;
 					}
 
 					const validator = this.getParameter(astNode, "bool");
@@ -967,7 +1027,7 @@ export function initFunctions() {
 
 			// get how many tokens to summon
 			let amount;
-			if (amounts === "any") {
+			if (amounts instanceof SomeOrMore) {
 				amount = Infinity;
 			} else if (amounts.length === 1) {
 				amount = amounts[0];

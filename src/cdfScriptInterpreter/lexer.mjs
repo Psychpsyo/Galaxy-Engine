@@ -112,6 +112,7 @@ const keywordTokenTypes = {
 	equipableItem: "cardType",
 
 	APPLY: "function",
+	ARE: "function",
 	CANCELATTACK: "function",
 	COUNT: "function",
 	DAMAGE: "function",
