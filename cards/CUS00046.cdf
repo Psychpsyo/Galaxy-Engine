@@ -6,4 +6,4 @@ types: Dark
 
 o: cast
 $destroyed = DESTROY([from opponent.field where cardType = unit]);
-opponent.DAMAGE(SUM($destroyed.level) * 50);
+DAMAGE(opponent, SUM($destroyed.level) * 50);

@@ -162,6 +162,7 @@ const keywordTokenTypes = {
 	targeted: "actionAccessor",
 	viewed: "actionAccessor",
 
+	damageDealt: "actionAccessor",
 	lifeGained: "actionAccessor",
 	lifeLost: "actionAccessor",
 	manaGained: "actionAccessor",

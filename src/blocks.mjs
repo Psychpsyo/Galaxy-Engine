@@ -161,7 +161,7 @@ export class AttackDeclaration extends Block {
 		yield* super.run();
 
 		this.attackTarget = this.establishAction.attackTarget; // already a snapshot
-		this.player.game.currentAttackDeclaration = new game.AttackDeclaration(this.player.game, this.attackers, this.attackTarget.current());
+		this.player.game.currentAttackDeclaration = new game.AttackDeclaration(this.player, this.attackers, this.attackTarget.current());
 		this.attackers = this.attackers.map(attacker => attacker.snapshot());
 	}
 

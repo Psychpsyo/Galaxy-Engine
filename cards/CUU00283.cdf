@@ -23,4 +23,4 @@ cost:
 DISCARD(SELECT(1, [from you.hand]));
 exec:
 EXILE(SELECT(1, [from opponent.field where level <= 4 & cardType = [spell, item]]));
-opponent.DAMAGE(100);
+DAMAGE(opponent, 100);

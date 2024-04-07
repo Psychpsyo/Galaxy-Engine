@@ -13,4 +13,4 @@ cost:
 DISCARD(SELECT(1, [from you.hand where types = Machine]));
 exec:
 DESTROY(SELECT(1, [from field where cardType = [spell, item]]));
-opponent.DAMAGE(100);
+DAMAGE(opponent, 100);

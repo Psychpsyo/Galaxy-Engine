@@ -553,27 +553,32 @@ export class EstablishAttackDeclaration extends Action {
 }
 
 export class DealDamage extends Action {
-	constructor(player, amount) {
-		super(player);
+	constructor(player, target, amount, reason, source) {
+		super(player, {
+			to: new ScriptValue("player", target),
+			dueTo: reason,
+			by: source
+		});
+		this.target = target;
 		this.amount = amount;
 		this.oldAmount = null;
 	}
 
 	async* run() {
-		this.oldAmount = this.player.life;
-		this.player.life = Math.max(this.player.life - this.amount, 0);
-		if (this.player.life == 0) {
-			this.player.next().victoryConditions.push("lifeZero");
+		this.oldAmount = this.target.life;
+		this.target.life = Math.max(this.target.life - this.amount, 0);
+		if (this.target.life == 0) {
+			this.target.next().victoryConditions.push("lifeZero");
 		}
-		return events.createDamageDealtEvent(this.player, this.amount);
+		return events.createDamageDealtEvent(this.target, this.amount);
 	}
 
 	undo() {
-		if (this.player.life === 0) {
-			this.player.next().victoryConditions.pop();
+		if (this.target.life === 0) {
+			this.target.next().victoryConditions.pop();
 		}
-		this.player.life = this.oldAmount;
-		return events.createLifeChangedEvent(this.player);
+		this.target.life = this.oldAmount;
+		return events.createLifeChangedEvent(this.target);
 	}
 }
 

@@ -10,4 +10,4 @@ o: trigger
 mandatory: no
 after: COUNT([from summoned where types = thisCard.types & owner = you]) > 0
 condition: thisCard.zone = field
-opponent.DAMAGE(50);
+DAMAGE(opponent, 50);

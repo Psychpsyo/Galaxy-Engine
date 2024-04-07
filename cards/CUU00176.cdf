@@ -11,7 +11,7 @@ mandatory: no
 during: currentPhase = opponent.endPhase
 condition: thisCard.zone = field
 DISCARD(SELECT(1, [from you.hand where types = Ice]));
-opponent.DAMAGE(200)
+DAMAGE(opponent, 200)
 
 o: trigger
 mandatory: no

@@ -124,7 +124,7 @@ export class Game {
 			}
 		}
 
-		let deckShuffledEvents = [];
+		const deckShuffledEvents = [];
 		await currentPlayer.deckZone.shuffle();
 		await currentPlayer.next().deckZone.shuffle();
 		deckShuffledEvents.push(createDeckShuffledEvent(currentPlayer));
@@ -134,8 +134,8 @@ export class Game {
 		// RULES: Randomly decide the first player and the second player.
 		// not rules: starting player may be manually chosen.
 		if (this.config.startingPlayerChooses) {
-			let selectionRequest = new requests.choosePlayer.create(currentPlayer, "chooseStartingPlayer");
-			let response = yield [selectionRequest];
+			const selectionRequest = new requests.choosePlayer.create(currentPlayer, "chooseStartingPlayer");
+			const response = yield [selectionRequest];
 			if (response.type != "choosePlayer") {
 				throw new Error("Incorrect response type supplied during player selection. (expected \"choosePlayer\", got \"" + response.type + "\" instead)");
 			}
@@ -302,8 +302,8 @@ export class Game {
 }
 
 export class AttackDeclaration {
-	constructor(game, attackers, target) {
-		this.game = game;
+	constructor(creator, attackers, target) {
+		this.creator = creator;
 		this.attackers = attackers;
 		this.target = target;
 		this.isCombined = attackers.length > 1;
@@ -327,7 +327,7 @@ export class AttackDeclaration {
 	}
 
 	clear() {
-		this.game.currentAttackDeclaration = null;
+		this.creator.game.currentAttackDeclaration = null;
 		for (let attacker of this.attackers) {
 			attacker.isAttacking = false;
 			attacker.attackCount++;
@@ -345,7 +345,7 @@ export class AttackDeclaration {
 		for (let attacker of this.attackers) {
 			attacker.isAttacking = true;
 		}
-		this.game.currentAttackDeclaration = this;
+		this.creator.game.currentAttackDeclaration = this;
 	}
 
 	removeCard(card) {

@@ -6,4 +6,4 @@ types:
 
 o: cast
 $destroyed = DESTROY([from you.field]);
-opponent.DAMAGE(COUNT($destroyed) * 100);
+DAMAGE(opponent, COUNT($destroyed) * 100);

@@ -160,7 +160,7 @@ export function initFunctions() {
 		function*(astNode, ctx) {
 			let eligibleAmounts = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
 			const eligibleCards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
-			
+
 			// If there isn't even enough cards, return false.
 			const chooseAtLeast = astNode.asManyAsPossible?
 			                      1 : eligibleAmounts instanceof SomeOrMore?
@@ -223,11 +223,24 @@ export function initFunctions() {
 
 	// Damages the executing player
 	DAMAGE: new ScriptFunction(
-		["number"],
-		[null],
+		["player", "number"],
+		[new ast.PlayerNode("own"), null],
 		"number",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.DealDamage(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
+			const actionList = [];
+			for (const player of yield* this.getParameter(astNode, "player").eval(ctx)) {
+				ast.setImplicit([player], "player");
+				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
+				ast.clearImplicit("player");
+				actionList.push(new actions.DealDamage(
+					ctx.player,
+					player,
+					amount,
+					new ScriptValue("dueToReason", ["effect"]),
+					new ScriptValue("card", [ctx.card.snapshot()])
+				));
+			}
+			return new ScriptValue("tempActions", actionList);
 		},
 		alwaysHasTarget,
 		undefined, // TODO: Write evalFull
@@ -268,8 +281,8 @@ export function initFunctions() {
 		[null],
 		"card",
 		function*(astNode, ctx) {
-			let cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current());
-			let discards = cards.map(card => new actions.Discard(
+			const cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current());
+			const discards = cards.map(card => new actions.Discard(
 				ctx.player,
 				card.current(),
 				new ScriptValue("dueToReason", ["effect"]),

@@ -1273,6 +1273,12 @@ export class ActionAccessorNode extends AstNode {
 			}
 
 			// number values
+			case "damageDealt": {
+				if (action instanceof actions.DealDamage) {
+					return [action.amount];
+				}
+				break;
+			}
 			case "lifeGained": {
 				if (action instanceof actions.GainLife) {
 					return [action.amount];
