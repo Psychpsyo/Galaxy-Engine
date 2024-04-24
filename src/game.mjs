@@ -100,7 +100,6 @@ export class Game {
 			inputLog: [],
 			rngLog: []
 		}
-		this.isReplaying = false;
 		this.replayPosition = 0;
 		this.replayRngPosition = 0;
 
@@ -181,13 +180,13 @@ export class Game {
 				}
 				if (actionList[0].nature === "event") {
 					playerInput = yield actionList;
-				} else if (this.isReplaying && this.replay.inputLog.length > this.replayPosition) { // we're currently stepping through an unfinished replay
+				} else if (this.replay.inputLog.length > this.replayPosition) { // we're currently stepping through an unfinished replay
 					playerInput = this.replay.inputLog[this.replayPosition++];
 				} else { // a player actually needs to make a choice
 					if (actionList[0].player.aiSystem === null) {
 						playerInput = yield actionList;
 					} else {
-						playerInput = await actionList[0].player.aiSystem.selectMove(actionList);
+						playerInput = await actionList[0].player.aiSystem.selectMove(actionList, actionList[0].player);
 					}
 					this.replay.inputLog.push(playerInput);
 					this.replayPosition++;
@@ -225,20 +224,37 @@ export class Game {
 		}
 	}
 
+	// Loads a replay. The replay doesn't need to be complete.
 	setReplay(replay) {
-		this.replay = replay;
-		this.config = replay.config;
-		this.isReplaying = true;
+		if (replay.config) {
+			this.config = replay.config;
+			this.replay.config = replay.config;
+		}
+		if (replay.players) {
+			for (let i = 0; i < replay.players; i++) {
+				if (replay.players[i]) this.replay.players[i] = replay.players[i];
+			}
+		}
+		if (replay.inputLog) this.replay.inputLog = replay.inputLog;
+		if (replay.rngLog) this.replay.rngLog = replay.rngLog;
+
 		this.replayPosition = 0;
 		this.replayRngPosition = 0;
 		for (const player of this.players) {
-			player.setDeck(replay.players[player.index].deckList);
-			player.setPartner(replay.players[player.index].partnerIndex);
+			const replayPlayer = replay.players?.[player.index];
+			if (replayPlayer) {
+				if (replayPlayer.deckList) {
+					player.setDeck(replayPlayer.deckList);
+				}
+				if (replayPlayer.partnerIndex) {
+					player.setPartner(replayPlayer.partnerIndex);
+				}
+			}
 		}
 	}
 
 	async randomInts(ranges) {
-		if (this.isReplaying) {
+		if (this.replayRngPosition < this.replay.rngLog.length) {
 			return this.replay.rngLog[this.replayRngPosition++];
 		}
 		let results = await this.rng.nextInts(ranges);
@@ -247,7 +263,7 @@ export class Game {
 		return results;
 	}
 	async randomInt(range) {
-		if (this.isReplaying) {
+		if (this.replayRngPosition < this.replay.rngLog.length) {
 			return this.replay.rngLog[this.replayRngPosition++];
 		}
 		let result = await this.rng.nextInt(range);
@@ -256,7 +272,7 @@ export class Game {
 		return result;
 	}
 	async randomPlayer() {
-		if (this.isReplaying) {
+		if (this.replayRngPosition < this.replay.rngLog.length) {
 			return this.players[this.replay.rngLog[this.replayRngPosition++]];
 		}
 		let result = await this.rng.nextPlayerIndex(this);

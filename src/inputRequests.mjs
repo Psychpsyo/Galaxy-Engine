@@ -192,6 +192,10 @@ export const applyActionModificationAbility = {
 			throw new Error("Supplied an incorrect response value. Expected a Boolean but got '" + (typeof response) + "' instead.");
 		}
 		return response;
+	},
+	generateValidResponses: function*(request) {
+		yield true;
+		yield false;
 	}
 }
 
@@ -205,6 +209,10 @@ export const enterBattlePhase = {
 	},
 	validate: function(response, request) {
 		return response;
+	},
+	generateValidResponses: function*(request) {
+		yield true;
+		yield false;
 	}
 }
 
@@ -219,6 +227,9 @@ export const pass = {
 	},
 	validate: function(response, request) {
 		return response;
+	},
+	generateValidResponses: function*(request) {
+		yield null;
 	}
 }
 
@@ -232,6 +243,9 @@ export const doStandardDraw = {
 	},
 	validate: function(response, request) {
 		return response;
+	},
+	generateValidResponses: function*(request) {
+		yield null;
 	}
 }
 
@@ -252,6 +266,13 @@ export const doStandardSummon = {
 			throw new Error("Tried to standard summon a non-eligible unit.");
 		}
 		return response;
+	},
+	generateValidResponses: function*(request) {
+		for (let i = 0; i < request.player.handZone.cards.length; i++) {
+			if (request.eligibleUnits.includes(request.player.handZone.cards[i])) {
+				yield i;
+			}
+		}
 	}
 }
 
@@ -272,6 +293,13 @@ export const deployItem = {
 			throw new Error("Tried to deploy a non-eligible item.");
 		}
 		return response;
+	},
+	generateValidResponses: function*(request) {
+		for (let i = 0; i < request.player.handZone.cards.length; i++) {
+			if (request.eligibleItems.includes(request.player.handZone.cards[i])) {
+				yield i;
+			}
+		}
 	}
 }
 
@@ -292,6 +320,13 @@ export const castSpell = {
 			throw new Error("Tried to cast a non-eligible spell.");
 		}
 		return response;
+	},
+	generateValidResponses: function*(request) {
+		for (let i = 0; i < request.player.handZone.cards.length; i++) {
+			if (request.eligibleSpells.includes(request.player.handZone.cards[i])) {
+				yield i;
+			}
+		}
 	}
 }
 
@@ -337,6 +372,9 @@ export const doFight = {
 	},
 	validate: function(response, request) {
 		return response;
+	},
+	generateValidResponses: function*(request) {
+		yield null;
 	}
 }
 
@@ -356,6 +394,13 @@ export const doRetire = {
 			}
 		}
 		return response.map(cardIndex => request.eligibleUnits[cardIndex]);
+	},
+	generateValidResponses: function*(request) {
+		for (let i = 1; i <= request.eligibleUnits.length; i++) {
+			for (const combination of nChooseK(request.eligibleUnits.length, i)) {
+				yield combination;
+			}
+		}
 	}
 }
 
@@ -373,6 +418,11 @@ export const activateOptionalAbility = {
 			throw new Error("Supplied out-of-range ability index for activating an optional ability.");
 		}
 		return request.eligibleAbilities[response];
+	},
+	generateValidResponses: function*(request) {
+		for (let i = 0; i < request.eligibleAbilities.length; i++) {
+			yield i;
+		}
 	}
 }
 
@@ -390,6 +440,11 @@ export const activateFastAbility = {
 			throw new Error("Supplied out-of-range ability index for activating a fast ability.");
 		}
 		return request.eligibleAbilities[response];
+	},
+	generateValidResponses: function*(request) {
+		for (let i = 0; i < request.eligibleAbilities.length; i++) {
+			yield i;
+		}
 	}
 }
 
@@ -407,6 +462,11 @@ export const activateTriggerAbility = {
 			throw new Error("Supplied out-of-range ability index for activating a trigger ability.");
 		}
 		return request.eligibleAbilities[response];
+	},
+	generateValidResponses: function*(request) {
+		for (let i = 0; i < request.eligibleAbilities.length; i++) {
+			yield i;
+		}
 	}
 }
 

@@ -135,11 +135,11 @@ export class DeckZone extends Zone {
 		for (let i = this.cards.length - 1; i > 0; i--) {
 			randomRanges.push(i);
 		}
-		let randomValues = await this.player.game.randomInts(randomRanges);
+		const randomValues = await this.player.game.randomInts(randomRanges);
 		// Fisher-Yates shuffle
 		for (let i = this.cards.length - 1; i > 0; i--) {
 			// pick a random element and swap it with the current element
-			let rand = randomValues.shift();
+			const rand = randomValues.shift();
 			[this.cards[i], this.cards[rand]] = [this.cards[rand], this.cards[i]];
 		}
 		this.reindex();
@@ -150,7 +150,7 @@ export class DeckZone extends Zone {
 		// reverse Fisher-Yates shuffle
 		for (let i = 1; i < this.cards.length; i++) {
 			// pick a random element and swap it with the current element
-			let rand = randomValues.pop();
+			const rand = randomValues.pop();
 			[this.cards[i], this.cards[rand]] = [this.cards[rand], this.cards[i]];
 		}
 		this.reindex();

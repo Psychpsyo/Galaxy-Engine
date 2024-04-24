@@ -13,6 +13,7 @@ export class Player {
 		this.life = 1000;
 		this.victoryConditions = [];
 
+		// zones
 		this.deckZone = new zones.DeckZone(this);
 		this.handZone = new zones.HandZone(this);
 		this.unitZone = new zones.FieldZone(this, "unit", 5);
@@ -21,9 +22,11 @@ export class Player {
 		this.discardPile = new zones.PileZone(this, "discard");
 		this.exileZone = new zones.PileZone(this, "exile");
 
+		// cdfScript object values
 		this.values = new ObjectValues(new PlayerValues());
 		this.cdfScriptType = "player";
 
+		// non-rules relevant things
 		this.aiSystem = null;
 	}
 
