@@ -228,7 +228,7 @@ export function initFunctions() {
 		"number",
 		function*(astNode, ctx) {
 			const actionList = [];
-			for (const player of yield* this.getParameter(astNode, "player").eval(ctx)) {
+			for (const player of (yield* this.getParameter(astNode, "player").eval(ctx)).get(ctx.player)) {
 				ast.setImplicit([player], "player");
 				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
 				ast.clearImplicit("player");
