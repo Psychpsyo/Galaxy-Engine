@@ -211,7 +211,7 @@ export class Draw extends Action {
 		}
 		let drawnCards = [];
 		for (let i = 0; i < this.amount; i++) {
-			let drawnCard = this.player.deckZone.cards[this.player.deckZone.cards.length - 1];
+			let drawnCard = this.player.deckZone.cards.at(-1);
 			this.drawnCards.push(drawnCard.snapshot());
 			drawnCards.push(drawnCard);
 			this.player.handZone.add(drawnCard, this.player.handZone.cards.length);

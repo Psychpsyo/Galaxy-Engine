@@ -11,7 +11,7 @@ export function nChooseK(n, k) {
 	let combinations = [];
 
 	combinations.push([...choices]);
-	while (choices[choices.length - 1] < n - k) {
+	while (choices.at(-1) < n - k) {
 		for (let i = 0; i < k; i++) {
 			if (choices[i] < n - 1 - i) {
 				choices[i]++;

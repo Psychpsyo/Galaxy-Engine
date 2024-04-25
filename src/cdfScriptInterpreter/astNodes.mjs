@@ -366,7 +366,7 @@ export class ImplicitValuesNode extends AstNode {
 		super(returnType);
 	}
 	* eval(ctx) {
-		return new ScriptValue(this.returnType, implicit[this.returnType][implicit[this.returnType].length - 1]);
+		return new ScriptValue(this.returnType, implicit[this.returnType].at(-1));
 	}
 }
 

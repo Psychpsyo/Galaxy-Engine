@@ -138,7 +138,7 @@ export class Stack {
 	getNextPlayer() {
 		let player = this.phase.turn.player;
 		if (this.blocks.length > 0) {
-			player = this.blocks[this.blocks.length - 1].player.next();
+			player = this.blocks.at(-1).player.next();
 		}
 		return this.passed? player.next() : player;
 	}

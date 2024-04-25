@@ -407,7 +407,7 @@ function parseCdfValues(cdf, game) {
 		}
 		let parts = line.split(/:(.*)/).map(part => part.trim());
 		if (inAbility && parts[0] != "o") {
-			let ability = data.abilities[data.abilities.length - 1];
+			let ability = data.abilities.at(-1);
 			switch (parts[0]) {
 				case "cancellable": {
 					if (!["yes", "no"].includes(parts[1])) {

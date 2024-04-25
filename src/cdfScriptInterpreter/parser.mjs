@@ -239,7 +239,7 @@ function parseExpression() {
 					continue;
 				}
 			}
-			needsReturnType.push(expression[expression.length - 1]);
+			needsReturnType.push(expression.at(-1));
 			pos++;
 		}
 	}

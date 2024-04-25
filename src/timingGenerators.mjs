@@ -19,8 +19,8 @@ export class TimingRunner {
 		const interjected = await (yield* runInterjectedTimings(this.game, isPrediction));
 		if (interjected) {
 			this.timings.push(interjected);
-			while(this.timings[this.timings.length - 1].followupTiming) {
-				this.timings.push(this.timings[this.timings.length - 1].followupTiming);
+			while(this.timings.at(-1).followupTiming) {
+				this.timings.push(this.timings.at(-1).followupTiming);
 			}
 		}
 
@@ -38,8 +38,8 @@ export class TimingRunner {
 			}
 			this.timings.push(timing);
 			await (yield* timing.run(isPrediction));
-			while(this.timings[this.timings.length - 1].followupTiming) {
-				this.timings.push(this.timings[this.timings.length - 1].followupTiming);
+			while(this.timings.at(-1).followupTiming) {
+				this.timings.push(this.timings.at(-1).followupTiming);
 			}
 			if (!timing.successful && this.isCost) {
 				return false;

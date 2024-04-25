@@ -135,7 +135,7 @@ export class StackPhase extends Phase {
 	}
 
 	currentStack() {
-		return this.stacks[this.stacks.length - 1];
+		return this.stacks.at(-1);
 	}
 }
 
@@ -212,9 +212,9 @@ export class ManaSupplyPhase extends Phase {
 	}
 
 	async* runTiming() {
-		await (yield* this.timings[this.timings.length - 1].run());
-		while(this.timings[this.timings.length - 1].followupTiming) {
-			this.timings.push(this.timings[this.timings.length - 1].followupTiming);
+		await (yield* this.timings.at(-1).run());
+		while(this.timings.at(-1).followupTiming) {
+			this.timings.push(this.timings.at(-1).followupTiming);
 		}
 	}
 
@@ -262,7 +262,7 @@ export class MainPhase extends StackPhase {
 						// RULES: Note that you cannot retire units that have been summoned this turn or the turn before.
 						let recentTurnActions = this.turn.getActions();
 						if (this.turn.game.turns.length > 1) {
-							recentTurnActions = this.turn.game.turns[this.turn.game.turns.length - 2].getActions().concat(recentTurnActions);
+							recentTurnActions = this.turn.game.turns.at(-2).getActions().concat(recentTurnActions);
 						}
 						let summons = recentTurnActions.filter(action => action instanceof actions.Summon && action.card.globalId === card.globalId);
 						if (summons.length > 0) {

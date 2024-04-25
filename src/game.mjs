@@ -148,10 +148,10 @@ export class Game {
 		for (let player of this.players) {
 			let drawnCards = [];
 			for (let i = 0; i < this.config.startingHandSize && player.deckZone.cards.length > 0; i++) {
-				let card = player.deckZone.cards[player.deckZone.cards.length - 1];
+				let card = player.deckZone.cards.at(-1);
 				drawnCards.push(card.snapshot());
 				player.handZone.add(card, player.handZone.cards.length);
-				drawnCards[drawnCards.length - 1].globalId = card.globalId;
+				drawnCards.at(-1).globalId = card.globalId;
 			}
 			drawHandEvents.push(createCardsDrawnEvent(player, drawnCards));
 		}
@@ -283,7 +283,7 @@ export class Game {
 	}
 
 	currentTurn() {
-		return this.turns[this.turns.length - 1];
+		return this.turns.at(-1);
 	}
 	currentPhase() {
 		return this.currentTurn().currentPhase();

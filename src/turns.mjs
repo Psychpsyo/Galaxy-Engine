@@ -50,7 +50,7 @@ export class Turn {
 	}
 
 	currentPhase() {
-		return this.phases[this.phases.length - 1];
+		return this.phases.at(-1);
 	}
 	currentStack() {
 		return this.currentPhase().currentStack();
