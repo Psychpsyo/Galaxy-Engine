@@ -9,4 +9,4 @@ defense: 100
 o: trigger
 mandatory: yes
 after: destroyed = thisCard
-both.DAMAGE(100);
+DAMAGE(both, 100);

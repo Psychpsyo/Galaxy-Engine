@@ -175,11 +175,12 @@ function parseFunctionToken(player) {
 	return new ast.FunctionNode(functionName, parameters, player, asManyAsPossible);
 }
 
+const expressionStops = ["rightParen", "rightBracket", "rightBrace", "newLine", "separator", "if", "with"];
 function parseExpression() {
 	const expressionStartPos = pos;
 	let expression = [];
 	let needsReturnType = [];
-	while (tokens[pos] && !["rightParen", "rightBracket", "rightBrace", "newLine", "separator", "if", "with"].includes(tokens[pos].type)) {
+	while (tokens[pos] && !expressionStops.includes(tokens[pos].type)) {
 		expression.push(parseValue());
 		if (tokens[pos]) {
 			switch (tokens[pos].type) {
@@ -248,8 +249,31 @@ function parseExpression() {
 		return null;
 	}
 
+	// consolidate 'X+' notation
+	for (let i = 0; i < expression.length - 1; i++) {
+		// singular numbers followed by a plus and then another math symbol get concatenated
+		if ((expression[i] instanceof ast.ArrayNode || expression[i] instanceof ast.ValueNode) &&
+			expression[i+1] instanceof ast.PlusNode &&
+			expression[i].returnType === "number" &&
+			(expression[i].valueNodes ?? expression[i].values).length === 1 &&
+			(i === expression.length - 2 || expression[i+2] instanceof ast.MathNode)
+		) {
+			const nPlusValue = new ast.SomeOrMoreNode(
+				(expression[i].valueNodes?.[0] ?? expression[i]).values[0]
+			);
+			for (const node of expression.splice(i, 2, nPlusValue)) {
+				const index = needsReturnType.indexOf(node);
+				if (index !== -1) {
+					needsReturnType.splice(index, 1);
+				}
+			}
+		}
+	}
+
+	// consolidate expression
 	for (let type of [ast.DotMathNode, ast.DashMathNode, ast.ComparisonNode, ast.LogicNode]) {
-		for (let i = 0; i < expression.length; i++) {
+		for (let i = 1; i < expression.length - 1; i++) {
+			if (expression.length < 3) break;
 			if (expression[i] instanceof type && expression[i].leftSide === null && expression[i].rightSide === null) {
 				expression[i].leftSide = expression[i-1];
 				expression[i].rightSide = expression[i+1];
@@ -283,7 +307,7 @@ function parseValue() {
 		}
 		case "anyAmount": {
 			pos++;
-			return new ast.AnyAmountNode();
+			return new ast.SomeOrMoreNode(1);
 		}
 		case "allTypes": {
 			pos++;

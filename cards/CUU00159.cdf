@@ -10,7 +10,7 @@ o: trigger
 mandatory: yes
 condition: thisCard.zone = field
 after: COUNT([from destroyed(dueTo: fight, by: thisCard) where cardType = unit]) > 0
-opponent.DAMAGE(100);
+DAMAGE(opponent, 100);
 
 o: trigger
 mandatory: yes

@@ -6,4 +6,4 @@ types: Fire
 
 o: cast
 $discards = DISCARD?(DECKTOP?(4));
-opponent.DAMAGE(COUNT([from $discards.discarded where types = Fire]));
+DAMAGE(opponent, COUNT([from $discards.discarded where types = Fire]));

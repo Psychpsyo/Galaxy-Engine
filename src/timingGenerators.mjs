@@ -293,8 +293,11 @@ function* attackGenerator(attackDeclaration, fight, isCounterattack) {
 				playerDamage = fight.values.current.lifeDamageOverrides.get(player);
 			}
 			actionList.push(new actions.DealDamage(
+				attackDeclaration.creator,
 				player,
-				playerDamage
+				playerDamage,
+				new ScriptValue("dueToReason", ["fight"]),
+				new ScriptValue("card", attackers.map(unit => unit.snapshot()))
 			));
 		}
 		yield actionList;

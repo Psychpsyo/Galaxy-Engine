@@ -9,5 +9,5 @@ defense: 200
 o: optional
 turnLimit: 1
 condition: thisCard.zone = field & currentPhase = you.mainPhase1
-opponent.DAMAGE(COUNT([from you.field where types = Fire & cardType = unit]) * 50);
+DAMAGE(opponent, COUNT([from you.field where types = Fire & cardType = unit]) * 50);
 APPLY(you, {canEnterBattlePhase = no}, endOfTurn);

@@ -394,12 +394,18 @@ export class Timing {
 		const unshuffledDecks = [];
 		for (const action of lastActions) {
 			if (action.isCancelled) continue;
-			if (action instanceof actions.Move && action.card.zone instanceof zones.DeckZone) {
+			// if a card is being MOVEd out of a deck
+			if (action instanceof actions.Move &&
+				action.card.zone instanceof zones.DeckZone &&
+				!(action.zone instanceof zones.DeckZone)
+			) {
 				unshuffledDecks.push(action.card.zone);
 			}
+			// if a card is being MOVEd into an arbitrary spot in a deck
 			if (action instanceof actions.Move && action.zone instanceof zones.DeckZone && action.targetIndex === null) {
 				unshuffledDecks.push(action.zone);
 			}
+			// if a card is being SWAPped out of a deck
 			if (action instanceof actions.Swap && (action.cardA?.zone instanceof zones.DeckZone || action.cardB?.zone instanceof zones.DeckZone)) {
 				if (action.cardA.zone instanceof zones.DeckZone) {
 					unshuffledDecks.push(action.cardA.zone);

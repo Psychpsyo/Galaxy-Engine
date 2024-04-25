@@ -4,7 +4,7 @@ import * as actions from "../actions.mjs";
 import * as blocks from "../blocks.mjs";
 import {BaseCard} from "../card.mjs";
 import {Modifier} from "../valueModifiers.mjs";
-import {ScriptValue, ScriptContext, DeckPosition} from "./structs.mjs";
+import {ScriptValue, ScriptContext, DeckPosition, SomeOrMore} from "./structs.mjs";
 import {functions, initFunctions} from "./functions.mjs";
 import {cartesianProduct} from "../math.mjs";
 
@@ -684,12 +684,13 @@ export class ArrayNode extends AstNode {
 	}
 }
 
-export class AnyAmountNode extends AstNode {
-	constructor() {
+export class SomeOrMoreNode extends AstNode {
+	constructor(min) {
 		super("number");
+		this.min = min;
 	}
 	* eval(ctx) {
-		return new ScriptValue("number", "any");
+		return new ScriptValue("number", new SomeOrMore(this.min));
 	}
 }
 
@@ -1158,22 +1159,37 @@ export class ActionAccessorNode extends AstNode {
 		}
 		for (const action of actionList) {
 			if (action.isCancelled) continue;
-			const actionCards = this.getActionValues(action);
 			let hasProperties = true;
-			setImplicit(actionCards, "card");
 			for (const property of Object.keys(this.actionProperties)) {
-				if (!(property in action.properties) ||
-					!action.properties[property].equals(yield* this.actionProperties[property].eval(ctx), ctx.player)
-				) {
+				// if property doesn't exist, it doesn't match
+				if (!(property in action.properties)) {
 					hasProperties = false;
 					break;
 				}
+				if (action.properties[property].type === this.actionProperties[property].type) {
+					// the property is a direct value that can be compared, like destroyed(by: thisCard)
+					if (!action.properties[property].equals(yield* this.actionProperties[property].eval(ctx), ctx.player)) {
+						hasProperties = false;
+						break;
+					}
+				} else if (this.actionProperties[property].type === "bool") {
+					// the property in question should be implicit and matches if the given expression is true, like destroyed(by: types = Fire)
+					setImplicit(action.properties[property].get(ctx.player), action.properties[property].type);
+					if (!(yield* this.actionProperties[property].eval(ctx)).get(ctx.player)) {
+						hasProperties = false;
+						break;
+					}
+					clearImplicit(action.properties[property].type);
+				}
 			}
-			clearImplicit("card");
 			if (!hasProperties) continue;
 
-			for (const card of actionCards) {
-				pushCardUnique(values, card);
+			for (const value of this.getActionValues(action)) {
+				if (this.returnType === "card") {
+					pushCardUnique(values, value);
+				} else {
+					values.push(value);
+				}
 			}
 		}
 		return new ScriptValue("card", values);
@@ -1257,6 +1273,12 @@ export class ActionAccessorNode extends AstNode {
 			}
 
 			// number values
+			case "damageDealt": {
+				if (action instanceof actions.DealDamage) {
+					return [action.amount];
+				}
+				break;
+			}
 			case "lifeGained": {
 				if (action instanceof actions.GainLife) {
 					return [action.amount];

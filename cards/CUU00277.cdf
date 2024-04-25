@@ -16,5 +16,5 @@ o: trigger
 mandatory: no
 condition: thisCard.zone = field
 during: currentPhase = you.drawPhase
-opponent.DAMAGE(50);
+DAMAGE(opponent, 50);
 APPLY(thisCard, {canAttack = no}, endOfTurn);

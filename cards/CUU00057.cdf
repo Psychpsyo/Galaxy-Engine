@@ -12,7 +12,7 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.field]));
 exec:
-opponent.DAMAGE(100);
+DAMAGE(opponent, 100);
 
 o: optional
 turnLimit: 1

@@ -17,10 +17,10 @@ export class ScriptValue {
 	}
 
 	// Returns this value as a single number.
-	// The 'any' value is represented by infinity, non-number values by NaN.
+	// The 'any' value (and 'x+' values) are represented by infinity, non-number values by NaN.
 	getJsNum(player) {
 		let val = this.get(player);
-		if (val === "any") return Infinity;
+		if (val instanceof SomeOrMore) return Infinity;
 		if (typeof val[0] === "number") return val[0];
 		return NaN;
 	}
@@ -60,6 +60,15 @@ export class ScriptContext {
 	}
 }
 
+// A number value that represents things like "5 or more"
+// (written in cdfScript as "5+")
+export class SomeOrMore {
+	constructor(lowest) {
+		this.lowest = lowest;
+	}
+}
+
+// A zone value that represents either the top or bottom of a deck
 export class DeckPosition {
 	constructor(decks, isTop) {
 		this.decks = decks;

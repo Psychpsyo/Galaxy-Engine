@@ -112,6 +112,7 @@ const keywordTokenTypes = {
 	equipableItem: "cardType",
 
 	APPLY: "function",
+	ARE: "function",
 	CANCELATTACK: "function",
 	COUNT: "function",
 	DAMAGE: "function",
@@ -161,6 +162,7 @@ const keywordTokenTypes = {
 	targeted: "actionAccessor",
 	viewed: "actionAccessor",
 
+	damageDealt: "actionAccessor",
 	lifeGained: "actionAccessor",
 	lifeLost: "actionAccessor",
 	manaGained: "actionAccessor",

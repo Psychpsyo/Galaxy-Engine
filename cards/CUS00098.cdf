@@ -8,4 +8,4 @@ o: trigger
 mandatory: no
 condition: thisCard.zone = field
 after: COUNT(destroyed(dueTo: fight, by: types = Dragon & owner = you)) > 0
-opponent.DAMAGE(100);
+DAMAGE(opponent, 100);

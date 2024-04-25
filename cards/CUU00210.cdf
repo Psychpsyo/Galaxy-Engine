@@ -12,4 +12,4 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand]));
 exec:
-opponent.DAMAGE(100);
+DAMAGE(opponent, 100);
