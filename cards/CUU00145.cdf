@@ -12,7 +12,7 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand]));
 exec:
-APPLY(SELECT(1, [from opponent.field]), {defense -= 100}, endOfTurn);
+APPLY(SELECT(1, [from opponent.field]), {defense -= 100}, currentTurn.end);
 
 o: trigger
 mandatory: no

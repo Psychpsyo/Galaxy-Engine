@@ -8,4 +8,4 @@ o: fast
 turnLimit: 2
 condition: thisCard.zone = field
 EXILE(SELECT(1, [from you.discard where types = [Sword, Katana]]));
-APPLY(SELECT(1, [from you.field where types = [Warrior, Samurai] & cardType = unit]), {attack += 200}, endOfTurn);
+APPLY(SELECT(1, [from you.field where types = [Warrior, Samurai] & cardType = unit]), {attack += 200}, currentTurn.end);

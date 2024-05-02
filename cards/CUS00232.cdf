@@ -9,7 +9,7 @@ cost:
 $unit = SELECT(1, [from you.field where level <= 7 & types = Dragon & cardType = unit]);
 exec:
 EXILE(SELECT(2, [from you.discard where level <= 3 & types = Dragon & cardType = unit], DIFFERENT(name)));
-APPLY([from $unit where cardType = unit], {abilities += [CUS00232:1:1, CUS00232:1:2]}, endOfTurn);
+APPLY([from $unit where cardType = unit], {abilities += [CUS00232:1:1, CUS00232:1:2]}, currentTurn.end);
 
 |o: static
 applyTo: thisCard

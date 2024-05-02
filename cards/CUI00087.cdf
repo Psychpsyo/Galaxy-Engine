@@ -9,4 +9,4 @@ cost:
 $unit = SELECT(1, [from field where cardType = unit]);
 exec:
 PUTCOUNTERS($unit, Weakness, 1);
-APPLY($unit, {defense -= 200}, endOfTurn);
+APPLY($unit, {defense -= 200}, currentTurn.end);

@@ -13,7 +13,7 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand where types = Water]));
 exec:
-APPLY(SELECT(1, [from field where types = Water & cardType = unit]), {level += 2}, endOfTurn);
+APPLY(SELECT(1, [from field where types = Water & cardType = unit]), {level += 2}, currentTurn.end);
 
 o: trigger
 mandatory: no

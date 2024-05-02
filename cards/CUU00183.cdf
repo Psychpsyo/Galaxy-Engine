@@ -13,4 +13,4 @@ cost:
 LOSELIFE(200);
 exec:
 $unit = SELECT(1, [from exile where cardType = unit]);
-APPLY(thisCard, {attack += $unit.attack}, endOfTurn);
+APPLY(thisCard, {attack += $unit.attack}, currentTurn.end);

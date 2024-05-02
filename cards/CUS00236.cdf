@@ -5,7 +5,7 @@ level: 0
 types: Earth
 
 o: cast
-APPLY(SELECT(1, [from you.field where types = Earth & cardType = unit]), {defense += 100}, endOfTurn)
+APPLY(SELECT(1, [from you.field where types = Earth & cardType = unit]), {defense += 100}, currentTurn.end)
 
 o: static
 applyTo: [from you.field where types = Earth & cardType = unit & defense >= 500]

@@ -16,4 +16,4 @@ o: optional
 zoneDurationLimit: 1
 condition: thisCard.zone = field
 $exiled = EXILE(SELECT(any, [from you.discard where cardType = unit], DIFFERENT(name)));
-APPLY(thisCard, {attack += COUNT($exiled) * 100}, endOfTurn);
+APPLY(thisCard, {attack += COUNT($exiled) * 100}, currentTurn.end);

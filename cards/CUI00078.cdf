@@ -8,4 +8,4 @@ o: deploy
 cost:
 $unit = SELECT(1, [from field]);
 exec:
-APPLY($unit, {attack, defense += 100}, endOfOpponentNextTurn);
+APPLY($unit, {attack, defense += 100}, opponent.nextTurn.end);

@@ -9,4 +9,4 @@ cost:
 DISCARD(SELECT(1, [from you.hand]));
 $unit = SELECT(1, [from field where cardType = unit]);
 exec:
-APPLY($unit, {attack = 0}, endOfTurn);
+APPLY($unit, {attack = 0}, currentTurn.end);

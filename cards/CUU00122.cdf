@@ -10,4 +10,4 @@ o: optional
 turnLimit: 1
 condition: thisCard.zone = field
 $type = SELECTTYPE(allTypes);
-APPLY(thisCard, {types += $type}, endOfOpponentNextTurn);
+APPLY(thisCard, {types += $type}, opponent.nextTurn.end);

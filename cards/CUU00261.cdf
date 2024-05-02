@@ -13,4 +13,4 @@ cost:
 DISCARD(1, [from you.hand]);
 exec:
 DESTROY(SELECT(1, [from field where level <= 6]));
-APPLY(thisCard, {canAttack = no}, endOfTurn);
+APPLY(thisCard, {canAttack = no}, currentTurn.end);

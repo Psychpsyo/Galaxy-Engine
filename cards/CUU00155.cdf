@@ -12,4 +12,4 @@ condition: thisCard.zone = field
 cost:
 LOSELIFE(100);
 exec:
-APPLY(SELECT(1, [from field where cardType = [spell, item]]), {cancelAbilities}, endOfOpponentNextTurn);
+APPLY(SELECT(1, [from field where cardType = [spell, item]]), {cancelAbilities}, opponent.nextTurn.end);

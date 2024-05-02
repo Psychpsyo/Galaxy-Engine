@@ -5,4 +5,4 @@ level: 0
 types:
 
 o: cast
-APPLY(SELECT(1, [from unitZone where cardType = unit]), {level += 3}, endOfTurn);
+APPLY(SELECT(1, [from unitZone where cardType = unit]), {level += 3}, currentTurn.end);

@@ -6,4 +6,4 @@ types: Ice, Wind
 
 o: cast
 after: COUNT([from destroyed where types = Ice & owner = you]) > 0
-APPLY(SELECT(1, [from opponent.field]), {attack = 0}, endOfTurn);
+APPLY(SELECT(1, [from opponent.field]), {attack = 0}, currentTurn.end);

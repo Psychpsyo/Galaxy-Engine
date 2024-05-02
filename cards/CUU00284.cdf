@@ -13,4 +13,4 @@ cost:
 DISCARD(SELECT(1, [from you.hand]));
 $unit = SELECT(1, [from opponent.field where cardType = unit]);
 exec:
-APPLY([from $unit where cardType = unit], {canAttack, canCounterattack = no}, endOfNextTurn);
+APPLY([from $unit where cardType = unit], {canAttack, canCounterattack = no}, nextTurn.end);

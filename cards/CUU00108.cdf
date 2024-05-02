@@ -19,4 +19,4 @@ o: optional
 turnLimit: 1
 condition: thisCard.zone = field
 $exiled = EXILE(SELECT([1, 2, 3], [from you.discard where types = Gravity]));
-APPLY(thisCard, {attack += COUNT($exiled) * 100}, endOfTurn);
+APPLY(thisCard, {attack += COUNT($exiled) * 100}, currentTurn.end);

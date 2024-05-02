@@ -5,4 +5,4 @@ level: 0
 types: Electric
 
 o: cast
-APPLY(SELECT(1, [from field where cardType = [enchantSpell, continuousSpell, equipableItem, continuousItem]]), {cancelAbilities}, endOfTurn);
+APPLY(SELECT(1, [from field where cardType = [enchantSpell, continuousSpell, equipableItem, continuousItem]]), {cancelAbilities}, currentTurn.end);

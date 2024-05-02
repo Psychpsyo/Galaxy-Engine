@@ -12,4 +12,4 @@ condition: thisCard.zone = field
 cost:
 LOSELIFE(200);
 exec:
-APPLY(thisCard, {attackRights = 2}, endOfTurn);
+APPLY(thisCard, {attackRights = 2}, currentTurn.end);

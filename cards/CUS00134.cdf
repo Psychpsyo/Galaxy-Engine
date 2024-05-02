@@ -10,4 +10,4 @@ cost:
 LOSELIFE(100);
 exec:
 CANCELATTACK();
-APPLY(attackers, {attack = 0}, endOfTurn);
+APPLY(attackers, {attack = 0}, currentTurn.end);

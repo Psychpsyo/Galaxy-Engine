@@ -12,4 +12,4 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand where types = Ice]));
 exec:
-APPLY(SELECT(1, [from attackers]), {attack = 0}, endOfTurn);
+APPLY(SELECT(1, [from attackers]), {attack = 0}, currentTurn.end);

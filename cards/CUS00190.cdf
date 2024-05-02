@@ -9,4 +9,4 @@ condition: you.partner.types = Illusion & you.partner.cardType = unit
 cost:
 DISCARD(SELECT(1, [from you.hand where types = Illusion]));
 exec:
-APPLY(SELECT(1, [from opponent.field where cardType = unit & level <= 3]), {cancelAbilities}, endOfTurn);
+APPLY(SELECT(1, [from opponent.field where cardType = unit & level <= 3]), {cancelAbilities}, currentTurn.end);

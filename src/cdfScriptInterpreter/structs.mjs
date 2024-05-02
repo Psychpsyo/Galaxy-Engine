@@ -25,27 +25,59 @@ export class ScriptValue {
 		return NaN;
 	}
 
-	// TODO: make comparison nodes use this and write functions for other operators
+	// TODO: write functions for other operators
 	equals(other, player) {
 		if (this.type !== other.type) {
 			return false;
 		}
+
 		let a = this.get(player);
 		let b = other.get(player);
 		if (a instanceof Array) {
 			for (const elemA of a) {
 				for (const elemB of b) {
-					if (elemA instanceof BaseCard && elemB instanceof BaseCard) {
-						if (elemA.globalId === elemB.globalId) return true;
-					} else {
-						if (elemA === elemB) return true;
-					}
+					if (equalityCompare(elemA, elemB)) return true;
 				}
 			}
 			return false;
 		}
 		return a === b;
 	}
+	notEquals(other, player) {
+		if (this.type !== other.type) {
+			return true;
+		}
+
+		let a = this.get(player);
+		let b = other.get(player);
+		if (a instanceof Array) {
+			for (const elemA of a) {
+				if (b.some(elemB => equalityCompare(elemA, elemB))) {
+					return false;
+				}
+			}
+			return true;
+		}
+		return a !== b;
+	}
+}
+// compares two scripting
+function equalityCompare(elemA, elemB) {
+	switch (true) {
+		case elemA instanceof BaseCard: {
+			if (elemA.globalId === elemB.globalId) return true;
+			break;
+		}
+		case elemA instanceof TurnValue: {
+			if (elemA.getIndex(player.game) === elemB.getIndex(player.game)) return true;
+			break;
+		}
+		default: {
+			if (elemA === elemB) return true;
+			break;
+		}
+	}
+	return false;
 }
 
 // This is an execution context for cdfScript
@@ -73,5 +105,62 @@ export class DeckPosition {
 	constructor(decks, isTop) {
 		this.decks = decks;
 		this.isTop = isTop;
+	}
+}
+
+export class UntilIndicator {
+	constructor(type, turn = null, phaseType = null) {
+		this.type = type; // "forever", "endOfTurn", "phase"
+		this.turn = turn;
+		this.phaseType = phaseType;
+	}
+
+	// gets the list that an 'undo' timing needs to be put into for actions that can be applied until a certain point
+	getTimingList(game) {
+		switch (this.type) {
+			case "forever": {
+				return null;
+			}
+			case "endOfTurn": {
+				const index = this.turn.getIndex(game);
+				const currentTurn = game.currentTurn();
+				if (index === currentTurn.index) {
+					return currentTurn.actionLists.end;
+				}
+				return game.upcomingTurnActions[(index - currentTurn.index) - 1].end;
+			}
+			case "phase": {
+				const index = this.turn.getIndex(game);
+				const currentTurn = game.currentTurn();
+				if (index === currentTurn.index) {
+					return currentTurn.actionLists[this.phaseType];
+				}
+				return game.upcomingTurnActions[(index - currentTurn.index) - 1][this.phaseType];
+			}
+		}
+	}
+}
+
+export class TurnValue {
+	constructor(player = null, next = false) {
+		this.player = player;
+		this.next = next;
+	}
+
+	getIndex(game) {
+		if (this.player) {
+			let currentPlayer = game.currentTurn().player;
+			if (currentPlayer === this.player) {
+				return game.currentTurn().index + (this.next? game.players.length : 0);
+			}
+			let currentIndex = game.currentTurn().index;
+			while (currentPlayer !== this.player) {
+				currentPlayer = currentPlayer.next();
+				currentIndex++;
+			}
+			return currentIndex;
+		} else {
+			return game.currentTurn().index + (this.next? 1 : 0);
+		}
 	}
 }

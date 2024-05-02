@@ -6,4 +6,4 @@ types:
 
 o: cast
 $exiled = EXILE(SELECT(1, [from discard where types = Demon & cardType = unit]));
-APPLY(SELECT(1, [from you.field where types = Mage & cardType = unit]), {abilities += $exiled.abilities}, endOfTurn);
+APPLY(SELECT(1, [from you.field where types = Mage & cardType = unit]), {abilities += $exiled.abilities}, currentTurn.end);

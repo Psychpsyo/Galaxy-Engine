@@ -6,4 +6,4 @@ types: Light, Landmine
 
 o: cast
 after: summoned.owner = opponent
-APPLY([from opponent.field], {attack = 0}, endOfTurn);
+APPLY([from opponent.field], {attack = 0}, currentTurn.end);

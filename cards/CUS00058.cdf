@@ -9,4 +9,4 @@ cost:
 $unit = SELECT(1, [from field where cardType = unit & level < you.partner.level]);
 exec:
 DISCARD(SELECT(1, [from you.hand]));
-APPLY([from $unit where cardType = unit], {cancelAbilities}, endOfTurn);
+APPLY([from $unit where cardType = unit], {cancelAbilities}, currentTurn.end);

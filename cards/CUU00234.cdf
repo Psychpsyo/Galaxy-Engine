@@ -12,4 +12,4 @@ condition: thisCard.zone = field
 cost:
 $discarded = DISCARD(SELECT(1, [from you.hand where cardType = unit]));
 exec:
-APPLY(thisCard, {attack += $discarded.level * 50}, endOfTurn);
+APPLY(thisCard, {attack += $discarded.level * 50}, currentTurn.end);

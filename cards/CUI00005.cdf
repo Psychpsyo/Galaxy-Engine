@@ -8,4 +8,4 @@ o: deploy
 cost:
 $unit = SELECT(1, [from field where cardType = unit]);
 exec:
-APPLY($unit, {attack += 300}, endOfTurn);
+APPLY($unit, {attack += 300}, currentTurn.end);

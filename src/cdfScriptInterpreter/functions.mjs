@@ -116,7 +116,7 @@ export function initFunctions() {
 	// Applies a modification to a card
 	APPLY: new ScriptFunction(
 		["card", "player", "fight", "modifier", "untilIndicator"],
-		[null, null, null, null, new ast.UntilIndicatorNode("forever")],
+		[null, null, null, null, new ast.ForeverNode()],
 		"action",
 		function*(astNode, ctx) {
 			let until = (yield* this.getParameter(astNode, "untilIndicator").eval(ctx)).get(ctx.player);
@@ -135,7 +135,7 @@ export function initFunctions() {
 					ctx.player,
 					target,
 					(yield* this.getParameter(astNode, "modifier").eval(ctx)).get(ctx.player).bake(target),
-					until
+					until[0].getTimingList(ctx.game)
 				));
 			}
 			return new ScriptValue("tempActions", applyActions);
@@ -389,10 +389,10 @@ export function initFunctions() {
 	// Exiles the passed-in cards
 	EXILE: new ScriptFunction(
 		["card", "untilIndicator"],
-		[null, new ast.UntilIndicatorNode("forever")],
+		[null, new ast.ForeverNode()],
 		"card",
 		function*(astNode, ctx) {
-			let until = (yield* this.getParameter(astNode, "untilIndicator").eval(ctx)).get(ctx.player);
+			const until = (yield* this.getParameter(astNode, "untilIndicator").eval(ctx)).get(ctx.player)[0].getTimingList(ctx.game);
 			return new ScriptValue("tempActions", (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current()).map(card => new actions.Exile(ctx.player, card.current(), until)));
 		},
 		hasCardTarget,

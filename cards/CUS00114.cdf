@@ -5,4 +5,4 @@ level: 1
 types:
 
 o: cast
-EXILE(SELECT(1, [from you.unitZone where cardType = unit & level <= 2]), endOfTurn);
+EXILE(SELECT(1, [from you.unitZone where cardType = unit & level <= 2]), currentTurn.end);

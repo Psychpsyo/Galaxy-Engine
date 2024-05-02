@@ -3,7 +3,7 @@ import {createPhaseStartedEvent} from "./events.mjs";
 import {enterBattlePhase} from "./inputRequests.mjs";
 
 export class Turn {
-	constructor(player, endOfTurnTimings) {
+	constructor(player, actionLists) {
 		this.game = player.game;
 		this.player = player;
 		this.phases = [];
@@ -13,7 +13,8 @@ export class Turn {
 		this.hasStandardSummoned = false;
 		this.hasRetired = false;
 
-		this.endOfTurnTimings = endOfTurnTimings;
+		// lists of lists of actions to happen at end of turn and start of phases
+		this.actionLists = actionLists;
 	}
 
 	async* run() {

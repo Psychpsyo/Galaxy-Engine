@@ -108,12 +108,13 @@ export class CastAbility extends Ability {
 
 	// does not call super.canActivate() to not perform a redundant and inaccurate cost check during spell casting
 	canActivate(card, player, evaluatingPlayer = player) {
-		return (this.isConditionMet(player, evaluatingPlayer)) && (this.after === null || this.triggerMetOnStacks.includes(player.game.currentStack().index - 1));
+		return this.isConditionMet(player, evaluatingPlayer) && (this.after === null || (player.game.currentStack() && this.triggerMetOnStacks.includes(player.game.currentStack().index - 1)));
 	}
 
 	checkTrigger(player) {
 		if (this.triggerPreconditionMet && (this.after === null || this.after.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player))) {
-			this.triggerMetOnStacks.push(player.game.currentStack().index);
+			// no stack means we haven't started executing them yet
+			this.triggerMetOnStacks.push(player.game.currentStack()?.index ?? 0);
 		}
 	}
 	checkTriggerPrecondition(player) {
@@ -242,7 +243,7 @@ export class TriggerAbility extends Ability {
 	}
 
 	async canActivate(card, player, evaluatingPlayer = player) {
-		if (!this.triggerMetOnStacks.includes(player.game.currentStack().index - 1)) return false;
+		if (!this.triggerMetOnStacks.includes(player.game.currentStack()?.index ?? 0 - 1)) return false;
 
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
 		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
@@ -264,7 +265,8 @@ export class TriggerAbility extends Ability {
 	checkTrigger(player) {
 		if (this.after === null) return;
 		if (this.triggerPreconditionMet && this.after.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player)) {
-			this.triggerMetOnStacks.push(player.game.currentStack().index);
+			// no stack means we haven't started executing them yet
+			this.triggerMetOnStacks.push(player.game.currentStack()?.index ?? 0);
 		}
 	}
 	checkTriggerPrecondition(player) {
@@ -276,8 +278,8 @@ export class TriggerAbility extends Ability {
 		if (!this.during.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player)) {
 			this.triggerMetOnStacks = [];
 			this.usedDuring = false;
-		} else if (!this.usedDuring) {
-			this.triggerMetOnStacks.push(player.game.currentStack().index - 1);
+		} else if (!this.usedDuring && player.game.currentStack()) {
+			this.triggerMetOnStacks.push(player.game.currentStack().index ?? - 1);
 		}
 	}
 

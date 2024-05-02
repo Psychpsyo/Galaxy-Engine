@@ -13,7 +13,7 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand]));
 exec:
-APPLY(thisCard, {attack += attackTarget.level * 50}, endOfTurn);
+APPLY(thisCard, {attack += attackTarget.level * 50}, currentTurn.end);
 
 o: optional
 turnLimit: 1

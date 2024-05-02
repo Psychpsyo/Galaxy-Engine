@@ -16,4 +16,4 @@ DAMAGE(opponent, $moved.level * 50);
 o: trigger
 mandatory: no
 after: exiled = thisCard
-APPLY(SELECT(1, [from you.field where cardType = unit]), {attack += 200}, endOfTurn);
+APPLY(SELECT(1, [from you.field where cardType = unit]), {attack += 200}, currentTurn.end);

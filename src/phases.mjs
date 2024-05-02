@@ -2,6 +2,7 @@
 import {Stack} from "./stacks.mjs";
 import {createStackCreatedEvent} from "./events.mjs";
 import {Timing} from "./timings.mjs";
+import {TimingRunner, arrayTimingGenerator} from "./timingGenerators.mjs";
 import * as actions from "./actions.mjs";
 import * as requests from "./inputRequests.mjs";
 import * as abilities from "./abilities.mjs";
@@ -49,9 +50,21 @@ export class StackPhase extends Phase {
 	constructor(turn, types) {
 		super(turn, types);
 		this.stacks = [];
+		this.ranStartTimings = false;
 	}
 
 	async* run() {
+		// we need to check this because the end phase repeats itself (it calls run() in a loop)
+		if (!this.ranStartTimings) {
+			const startTimingRunner = new TimingRunner(
+				() => arrayTimingGenerator(this.turn.actionLists[this.types[0]]),
+				this.turn.game
+			);
+			await (yield* startTimingRunner.run());
+			// TODO: Were we actually supposed to run timings that got queued during this?
+			this.ranStartTimings = true;
+		}
+
 		let currentStackIndex = 0;
 		do {
 			currentStackIndex = 0;
@@ -135,7 +148,7 @@ export class StackPhase extends Phase {
 	}
 
 	currentStack() {
-		return this.stacks.at(-1);
+		return this.stacks.at(-1) ?? null;
 	}
 }
 
@@ -242,8 +255,8 @@ export class DrawPhase extends StackPhase {
 
 export class MainPhase extends StackPhase {
 	constructor(turn) {
-		let types = ["mainPhase"];
-		types.push(turn.phases.length > 3? "mainPhase2" : "mainPhase1");
+		const types = ["mainPhase"];
+		types.unshift(turn.phases.length > 3? "mainPhase2" : "mainPhase1");
 		super(turn, types);
 	}
 
@@ -341,21 +354,22 @@ export class BattlePhase extends StackPhase {
 export class EndPhase extends StackPhase {
 	constructor(turn) {
 		super(turn, ["endPhase"]);
+		this.notInStack = false; // set when running end-of-turn timings so that currentStack() does not return anything
 	}
 
 	async* run() {
 		do {
+			this.notInStack = false;
 			yield* super.run();
+			this.notInStack = true;
 
-			let timings = this.turn.endOfTurnTimings;
-			this.turn.endOfTurnTimings = []; // might be filled with new timings by what happens
-			for (let i = 0; i < timings.length; i++) {
-				await (yield* timings[i].run());
-				while (timings[i].followupTiming) {
-					timings.splice(i + 1, 0, timings[i].followupTiming);
-					i++;
-				}
-			}
+			const timingRunner = new TimingRunner(
+				() => arrayTimingGenerator(this.turn.actionLists.end),
+				this.turn.game
+			);
+			await (yield* timingRunner.run());
+			this.turn.actionLists.end = []; // needs to clear this so they don't re-run
+			// TODO: Were we actually supposed to run timings that got queued during this?
 		} while (await this.triggerAbilitiesMet());
 	}
 
@@ -374,6 +388,11 @@ export class EndPhase extends StackPhase {
 
 	async getBlockOptions(stack) {
 		return getHighestPriorityOptions(await super.getBlockOptions(stack));
+	}
+
+	currentStack() {
+		if (this.notInStack) return null;
+		return super.currentStack();
 	}
 }
 

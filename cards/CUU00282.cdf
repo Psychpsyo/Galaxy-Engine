@@ -10,4 +10,4 @@ o: optional
 turnLimit: 3
 condition: thisCard.zone = field
 EXILE(SELECT(1, [from discard where types = Book]));
-APPLY(thisCard, {attack, defense += 100, level += 1}, endOfOpponentNextTurn);
+APPLY(thisCard, {attack, defense += 100, level += 1}, opponent.nextTurn.end);

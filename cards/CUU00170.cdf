@@ -9,4 +9,4 @@ defense: 0
 o: trigger
 mandatory: yes
 after: COUNT([from destroyed where self != thisCard & owner = you]) > 0
-APPLY(thisCard, {attack += 100}, endOfTurn);
+APPLY(thisCard, {attack += 100}, currentTurn.end);

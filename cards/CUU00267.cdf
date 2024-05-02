@@ -16,4 +16,4 @@ o: optional
 turnLimit: 1
 condition: thisCard.zone = field
 DISCARD(thisCard);
-APPLY(SELECT(1, [from opponent.field]), {defense -= 200}, endOfTurn);
+APPLY(SELECT(1, [from opponent.field]), {defense -= 200}, currentTurn.end);

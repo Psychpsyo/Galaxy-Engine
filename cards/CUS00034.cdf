@@ -6,4 +6,4 @@ types: Electric, Light
 
 o: cast
 condition: COUNT([from you.field where types = Electric]) > 0
-APPLY([from field where types != Electric], {defense -= 200, attack = 0}, endOfTurn);
+APPLY([from field where types != Electric], {defense -= 200, attack = 0}, currentTurn.end);

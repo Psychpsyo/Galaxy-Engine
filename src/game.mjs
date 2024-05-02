@@ -71,6 +71,18 @@ export const novelTypes = [
 ];
 export const novelCounters = [];
 
+// used to keep track of things that will need to happen at certain points in upcoming turns
+class TurnActions {
+	constructor() {
+		this.end = [];
+		this.drawPhase = [];
+		this.mainPhase1 = [];
+		this.battlePhase = [];
+		this.mainPhase2 = [];
+		this.endPhase = [];
+	}
+}
+
 export class Game {
 	constructor() {
 		this.players = [];
@@ -78,7 +90,10 @@ export class Game {
 		this.players.push(new Player(this));
 
 		this.turns = [];
-		this.endOfUpcomingTurnTimings = [[], []];
+		this.upcomingTurnActions = [
+			new TurnActions(),
+			new TurnActions()
+		];
 		this.currentAttackDeclaration = null;
 		this.nextTimingIndex = 1;
 
@@ -166,8 +181,8 @@ export class Game {
 
 		// RULES: ...and continue the game as follows.
 		while (true) {
-			this.turns.push(new Turn(currentPlayer, this.endOfUpcomingTurnTimings.shift()));
-			this.endOfUpcomingTurnTimings.push([]);
+			this.turns.push(new Turn(currentPlayer, this.upcomingTurnActions.shift()));
+			this.upcomingTurnActions.push(new TurnActions());
 			yield [createTurnStartedEvent()];
 
 			const turnGenerator = this.currentTurn().run();

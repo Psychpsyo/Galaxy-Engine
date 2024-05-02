@@ -45,25 +45,6 @@ function* queryZoneSlot(player, zone) {
 	let zoneSlotResponse = yield [zoneSlotRequest];
 	return requests.chooseZoneSlot.validate(zoneSlotResponse.value, zoneSlotRequest);
 }
-// gets the list that an 'undo' timing needs to be put into for actions that can be applied until a certain point
-function getUntilTimingList(ctxPlayer, until) {
-	switch (until) {
-		case "endOfTurn": {
-			return ctxPlayer.game.currentTurn().endOfTurnTimings;
-		}
-		case "endOfNextTurn": {
-			return ctxPlayer.game.endOfUpcomingTurnTimings[0];
-		}
-		case "endOfYourNextTurn": {
-			let currentlyYourTurn = ctxPlayer.game.currentTurn().player === ctxPlayer;
-			return ctxPlayer.game.endOfUpcomingTurnTimings[currentlyYourTurn? 1 : 0];
-		}
-		case "endOfOpponentNextTurn": {
-			let currentlyOpponentTurn = ctxPlayer.game.currentTurn().player !== ctxPlayer;
-			return ctxPlayer.game.endOfUpcomingTurnTimings[currentlyOpponentTurn? 1 : 0];
-		}
-	}
-}
 // gets the current version of a game object, no matter if it is a card or player
 function getObjectCurrent(object) {
 	if (object instanceof BaseCard) {
@@ -667,7 +648,7 @@ export class Exile extends Action {
 	constructor(player, card, until) {
 		super(player);
 		this.card = card;
-		this.until = until;
+		this.until = until; // the array that the 'undo' action goes into (to exile until some time)
 	}
 
 	async* run() {
@@ -676,9 +657,8 @@ export class Exile extends Action {
 		let event = events.createCardExiledEvent(this.card, this.card.owner.exileZone);
 		this.card.owner.exileZone.add(this.card.current(), this.card.owner.exileZone.cards.length);
 		this.card.globalId = card.globalId;
-		if (this.until !== "forever") {
-			let returnTiming = new Timing(this.player.game, [new Move(this.player, this.card, this.card.zone, null)]);
-			getUntilTimingList(this.player, this.until).push(returnTiming);
+		if (this.until) {
+			this.until.push([new Move(this.player, this.card.current(), this.card.zone, null)]);
 		}
 		return event;
 	}
@@ -709,7 +689,7 @@ export class ApplyStatChange extends Action {
 		super(player);
 		this.toObject = toObject;
 		this.modifier = modifier;
-		this.until = until;
+		this.until = until; // the array that the un-apply action goes into (or null, if it is permanent)
 	}
 
 	async* run() {
@@ -726,9 +706,8 @@ export class ApplyStatChange extends Action {
 			this.toObject = this.toObject.snapshot();
 		}
 		getObjectCurrent(this.toObject).values.modifierStack.push(this.modifier);
-		if (this.until !== "forever") {
-			let removalTiming = new Timing(this.player.game, [new RemoveStatChange(this.player, getObjectCurrent(this.toObject), this.modifier)]);
-			getUntilTimingList(this.player, this.until).push(removalTiming);
+		if (this.until) {
+			this.until.push([new RemoveStatChange(this.player, getObjectCurrent(this.toObject), this.modifier)]);
 		}
 	}
 

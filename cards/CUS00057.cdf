@@ -8,4 +8,4 @@ o: cast
 cost:
 $unit = SELECT(1, [from field where cardType = unit]);
 exec:
-APPLY($unit, {defense -= 200}, endOfTurn);
+APPLY($unit, {defense -= 200}, currentTurn.end);

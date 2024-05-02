@@ -8,4 +8,4 @@ o: deploy
 cost:
 $type = SELECTTYPE([Earth, Fire, Water, Wind, Ice, Electric, Light, Dark]);
 exec:
-APPLY(SELECT(1, [from field where cardType = unit]), {types += $type}, endOfTurn);
+APPLY(SELECT(1, [from field where cardType = unit]), {types += $type}, currentTurn.end);

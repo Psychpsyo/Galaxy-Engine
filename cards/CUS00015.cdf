@@ -6,4 +6,4 @@ types:
 
 o: cast
 condition: COUNT(attackers) = 1 & attackers.level <= 1 & attackers.owner = you
-APPLY(attackers, {attack += attackTarget.level * 100}, endOfTurn);
+APPLY(attackers, {attack += attackTarget.level * 100}, currentTurn.end);

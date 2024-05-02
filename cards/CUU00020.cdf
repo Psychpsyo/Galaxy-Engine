@@ -12,4 +12,4 @@ condition: thisCard.zone = field
 cost:
 LOSELIFE(100);
 exec:
-APPLY(SELECT(1, [from field where types != Ice & cardType = unit]), {canAttack = no}, endOfOpponentNextTurn);
+APPLY(SELECT(1, [from field where types != Ice & cardType = unit]), {canAttack = no}, opponent.nextTurn.end);

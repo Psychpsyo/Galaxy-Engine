@@ -12,7 +12,7 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand where types = Electric]));
 exec:
-APPLY([from opponent.field where cardType = unit], {defense -= 200}, endOfTurn);
+APPLY([from opponent.field where cardType = unit], {defense -= 200}, currentTurn.end);
 
 o: optional
 turnLimit: 1

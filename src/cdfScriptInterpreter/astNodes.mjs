@@ -4,7 +4,7 @@ import * as actions from "../actions.mjs";
 import * as blocks from "../blocks.mjs";
 import {BaseCard} from "../card.mjs";
 import {Modifier} from "../valueModifiers.mjs";
-import {ScriptValue, ScriptContext, DeckPosition, SomeOrMore} from "./structs.mjs";
+import {ScriptValue, ScriptContext, DeckPosition, SomeOrMore, UntilIndicator, TurnValue} from "./structs.mjs";
 import {functions, initFunctions} from "./functions.mjs";
 import {cartesianProduct} from "../math.mjs";
 
@@ -711,14 +711,14 @@ export class MathNode extends AstNode {
 		this.rightSide = rightSide;
 	}
 	* eval(ctx) {
-		let left = (yield* this.leftSide.eval(ctx)).get(ctx.player);
-		let right = (yield* this.rightSide.eval(ctx)).get(ctx.player);
-		return new ScriptValue(this.returnType, this.doOperation(left, right));
+		const left = (yield* this.leftSide.eval(ctx));
+		const right = (yield* this.rightSide.eval(ctx));
+		return new ScriptValue(this.returnType, this.doOperation(left, right, ctx.player));
 	}
 	* evalFull(ctx) {
 		for (const left of this.leftSide.evalFull(ctx)) {
 			for (const right of this.rightSide.evalFull(ctx)) {
-				yield new ScriptValue(this.returnType, this.doOperation(left.get(ctx.player), right.get(ctx.player)));
+				yield new ScriptValue(this.returnType, this.doOperation(left, right, ctx.player));
 			}
 		}
 	}
@@ -726,7 +726,7 @@ export class MathNode extends AstNode {
 		return [this.leftSide, this.rightSide];
 	}
 
-	doOperation(left, right) {}
+	doOperation(left, right, player) {}
 }
 export class DashMathNode extends MathNode {
 	constructor(leftSide, rightSide) {
@@ -737,7 +737,9 @@ export class PlusNode extends DashMathNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		if (typeof left[0] == "number" && typeof right[0] == "number") {
 			return [left[0] + right[0]];
 		}
@@ -749,7 +751,9 @@ export class MinusNode extends DashMathNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		if (typeof left[0] == "number" && typeof right[0] == "number") {
 			return [left[0] - right[0]];
 		}
@@ -772,7 +776,9 @@ export class MultiplyNode extends DotMathNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		if (typeof left[0] != "number" || typeof right[0] != "number") {
 			return [NaN];
 		}
@@ -783,7 +789,9 @@ export class DivideNode extends DotMathNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		if (typeof left[0] != "number" || typeof right[0] != "number") {
 			return [NaN];
 		}
@@ -794,7 +802,9 @@ export class FloorDivideNode extends DotMathNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		if (typeof left[0] != "number" || typeof right[0] != "number") {
 			return [NaN];
 		}
@@ -810,33 +820,25 @@ export class EqualsNode extends ComparisonNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
-		for (const element of left) {
-			if (right.some(elem => equalityCompare(elem, element))) {
-				return true;
-			}
-		}
-		return false;
+	doOperation(left, right, player) {
+		return left.equals(right, player);
 	}
 }
 export class NotEqualsNode extends ComparisonNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
-		for (const element of left) {
-			if (right.some(elem => equalityCompare(elem, element))) {
-				return false;
-			}
-		}
-		return true;
+	doOperation(left, right, player) {
+		return left.notEquals(right, player);
 	}
 }
 export class GreaterThanNode extends ComparisonNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		for (const rightSide of right) {
 			for (const leftSide of left) {
 				if (leftSide > rightSide) {
@@ -851,7 +853,9 @@ export class GreaterEqualsNode extends ComparisonNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		for (const rightSide of right) {
 			for (const leftSide of left) {
 				if (leftSide >= rightSide) {
@@ -866,7 +870,9 @@ export class LessThanNode extends ComparisonNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		for (const rightSide of right) {
 			for (const leftSide of left) {
 				if (leftSide < rightSide) {
@@ -881,7 +887,9 @@ export class LessEqualsNode extends ComparisonNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		for (const rightSide of right) {
 			for (const leftSide of left) {
 				if (leftSide <= rightSide) {
@@ -901,7 +909,9 @@ export class AndNode extends LogicNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		return left && right;
 	}
 }
@@ -909,7 +919,9 @@ export class OrNode extends LogicNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
-	doOperation(left, right) {
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
 		return left || right;
 	}
 }
@@ -1076,15 +1088,21 @@ export class PhaseNode extends AstNode {
 	}
 }
 export class TurnNode extends AstNode {
-	constructor(playerNode) {
+	constructor(playerNode, next) {
 		super("turn");
 		this.playerNode = playerNode;
+		this.next = next;
 	}
 	* eval(ctx) {
-		if (ctx.player === (yield* this.playerNode.eval(ctx)).get(ctx.player)[0]) {
-			return new ScriptValue("turn", ["yourTurn"]);
+		const players = (yield* this.playerNode.eval(ctx)).get(ctx.player);
+		const turns = [];
+		for (const player of players) {
+			turns.push(new TurnValue(player, this.next));
 		}
-		return new ScriptValue("turn", ["opponentTurn"]);
+		if (players.length === 0) {
+			turns.push(new TurnValue(null, this.next));
+		}
+		return new ScriptValue("turn", turns);
 	}
 }
 export class CurrentBlockNode extends AstNode {
@@ -1107,14 +1125,6 @@ export class CurrentPhaseNode extends AstNode {
 			phaseTypes.push(prefix + phaseTypes[i][0].toUpperCase() + phaseTypes[i].slice(1));
 		}
 		return new ScriptValue("phase", phaseTypes);
-	}
-}
-export class CurrentTurnNode extends AstNode {
-	constructor() {
-		super("turn");
-	}
-	* eval(ctx) {
-		return new ScriptValue("turn", [ctx.player == ctx.game.currentTurn().player? "yourTurn" : "opponentTurn"]);
 	}
 }
 
@@ -1151,11 +1161,9 @@ export class ActionAccessorNode extends AstNode {
 	}
 	* eval(ctx) {
 		const values = [];
-		let actionList;
-		if (this.actionsNode instanceof CurrentTurnNode) {
-			actionList = game.currentTurn().getActions();
-		} else {
-			actionList = (yield* this.actionsNode.eval(ctx)).get(ctx.player);
+		let actionList = (yield* this.actionsNode.eval(ctx)).get(ctx.player);
+		if (this.actionsNode instanceof TurnNode) {
+			actionList = actionList.map(turn => game.turns[turn.getIndex(ctx.game)]?.getActions() ?? []).flat(1);
 		}
 		for (const action of actionList) {
 			if (action.isCancelled) continue;
@@ -1318,13 +1326,57 @@ export class ModifierNode extends AstNode {
 	}
 }
 
-export class UntilIndicatorNode extends AstNode {
-	constructor(until) {
+export class ForeverNode extends AstNode {
+	constructor() {
 		super("untilIndicator");
-		this.until = until;
 	}
 	* eval(ctx) {
-		return new ScriptValue("untilIndicator", this.until);
+		return new ScriptValue("untilIndicator", [new UntilIndicator("forever")]);
+	}
+}
+// returns the earliest of the provided turns
+function earliest(turns, game) {
+	let earliest;
+	let earliestIndex = Infinity;
+	for (const turn of turns) {
+		const turnIndex = turn.getIndex(game);
+		if (turnIndex < earliestIndex) {
+			earliest = turn;
+			earliestIndex = turnIndex;
+		}
+	}
+	return earliest;
+}
+export class UntilEndOfTurnNode extends AstNode {
+	constructor(turnNode) {
+		super("untilIndicator");
+		this.turnNode = turnNode;
+	}
+	* eval(ctx) {
+		return new ScriptValue(
+			"untilIndicator",
+			[new UntilIndicator(
+				"endOfTurn",
+				earliest((yield* this.turnNode.eval(ctx)).get(ctx.player), ctx.game)
+			)]
+		);
+	}
+}
+export class UntilPhaseNode extends AstNode{
+	constructor(turnNode, phaseType) {
+		super("untilIndicator");
+		this.turnNode = turnNode;
+		this.phaseType = phaseType;
+	}
+	* eval(ctx) {
+		return new ScriptValue(
+			"untilIndicator",
+			[new UntilIndicator(
+				"phase",
+				earliest((yield* this.turnNode.eval(ctx)).get(ctx.player), ctx.game),
+				this.phaseType
+			)]
+		);
 	}
 }
 

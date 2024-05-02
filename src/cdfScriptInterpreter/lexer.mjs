@@ -12,10 +12,13 @@ const keywordTokenTypes = {
 	attackTarget: "attackTarget",
 	attackers: "attackers",
 
+	currentBlock: "currentBlock",
 	currentPhase: "currentPhase",
 	currentTurn: "currentTurn",
-	currentBlock: "currentBlock",
 	turn: "turn",
+	nextTurn: "nextTurn",
+	end: "end",
+	forever: "forever",
 
 	any: "anyAmount",
 	allTypes: "allTypes",
@@ -181,13 +184,7 @@ const keywordTokenTypes = {
 	casting: "dueToReason",
 	retire: "dueToReason",
 	wasCast: "dueToReason",
-	wasDeployed: "dueToReason",
-
-	forever: "untilIndicator",
-	endOfTurn: "untilIndicator",
-	endOfNextTurn: "untilIndicator",
-	endOfYourNextTurn: "untilIndicator",
-	endOfOpponentNextTurn: "untilIndicator"
+	wasDeployed: "dueToReason"
 }
 
 export class ScriptLexerError extends Error {

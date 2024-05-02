@@ -9,7 +9,7 @@ defense: 100
 o: trigger
 mandatory: yes
 after: summoned(from: hand, dueTo: effect) = thisCard
-APPLY(thisCard, {attack += 100}, endOfTurn);
+APPLY(thisCard, {attack += 100}, currentTurn.end);
 
 o: trigger
 mandatory: no

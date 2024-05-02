@@ -27,7 +27,7 @@ class Block {
 		}
 		let costTimingSuccess = await (yield* this.costTimingRunner.run());
 		if (!costTimingSuccess) {
-			await (yield* this.undoCost());
+			yield* this.undoCost();
 		}
 		return costTimingSuccess;
 	}
@@ -36,14 +36,14 @@ class Block {
 		if (this.getIsCancelled()) {
 			return;
 		}
-		yield* this.timingRunner.run();
+		await (yield* this.timingRunner.run());
 	}
 
-	async* undoCost() {
+	* undoCost() {
 		yield* this.costTimingRunner.undo();
 	}
 
-	async* undoExecution() {
+	* undoExecution() {
 		yield* this.timingRunner.undo();
 	}
 

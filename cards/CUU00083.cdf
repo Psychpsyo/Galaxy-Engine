@@ -18,4 +18,4 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand]));
 exec:
-APPLY(thisCard, {attack += 100}, endOfTurn);
+APPLY(thisCard, {attack += 100}, currentTurn.end);

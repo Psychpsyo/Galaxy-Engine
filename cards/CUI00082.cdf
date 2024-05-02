@@ -5,4 +5,4 @@ level: 1
 types: Illusion, Light
 
 o: deploy
-APPLY(SELECT(1, [from field where cardType = unit]), {attack >< defense}, endOfTurn);
+APPLY(SELECT(1, [from field where cardType = unit]), {attack >< defense}, currentTurn.end);

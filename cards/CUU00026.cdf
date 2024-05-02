@@ -12,5 +12,5 @@ condition: thisCard.zone = field
 cost:
 $unit = SELECT(1, [from field where types = Earth & cardType = unit]);
 exec:
-APPLY([from $unit where cardType = unit], {attack += COUNT([from you.field where self != thisCard & types = Earth]) * 100}, endOfOpponentNextTurn);
-APPLY(thisCard, {canAttack = no}, endOfTurn);
+APPLY([from $unit where cardType = unit], {attack += COUNT([from you.field where self != thisCard & types = Earth]) * 100}, opponent.nextTurn.end);
+APPLY(thisCard, {canAttack = no}, currentTurn.end);

@@ -6,4 +6,4 @@ types: Light
 
 o: cast
 $unit = SELECT(1, [from field, discard where owner = opponent & cardType = unit]);
-APPLY(SELECT(1, [from you.field where cardType = unit]), {types += $unit.types, abilities += $unit.abilities}, endOfTurn);
+APPLY(SELECT(1, [from you.field where cardType = unit]), {types += $unit.types, abilities += $unit.abilities}, currentTurn.end);

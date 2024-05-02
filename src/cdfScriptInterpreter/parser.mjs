@@ -466,28 +466,53 @@ function parseValue() {
 			return new ast.CurrentPhaseNode();
 		}
 		case "currentTurn": {
-			let node = new ast.CurrentTurnNode();
+			const turn = new ast.TurnNode(new ast.ValueNode([], "player"), false);
 			pos++;
-			if (tokens[pos] && tokens[pos].type == "dotOperator") {
+			if (tokens[pos] && tokens[pos].type === "dotOperator") {
 				pos++;
-				if (tokens[pos].type == "actionAccessor") {
-					return parseActionAccessor(node);
-				} else {
-					throw new ScriptParserError("'" + tokens[pos].value + "' does not start a valid turn property.", tokens[pos]);
-				}
+				return parseTurnDotAccess(turn);
 			}
-			return node;
+			return turn;
+		}
+		case "nextTurn": {
+			const turn = new ast.TurnNode(new ast.ValueNode([], "player"), true);
+			pos++;
+			if (tokens[pos] && tokens[pos].type === "dotOperator") {
+				pos++;
+				return parseTurnDotAccess(turn);
+			}
+			return turn;
 		}
 		case "leftBrace": {
 			return parseModifier();
 		}
-		case "untilIndicator": {
-			let node = new ast.UntilIndicatorNode(tokens[pos].value);
+		case "forever": {
+			let node = new ast.ForeverNode();
 			pos++;
 			return node;
 		}
 		default: {
 			throw new ScriptParserError("'" + tokens[pos].value + "' does not start a valid value.", tokens[pos]);
+		}
+	}
+}
+
+function parseTurnDotAccess(turnNode) {
+	switch (tokens[pos].type) {
+		case "actionAccessor": {
+			return parseActionAccessor(turnNode);
+		}
+		case "end": {
+			pos++;
+			return new ast.UntilEndOfTurnNode(turnNode);
+		}
+		case "phaseType": {
+			const node = new ast.UntilPhaseNode(turnNode, tokens[pos].value);
+			pos++;
+			return node;
+		}
+		default: {
+			throw new ScriptParserError("'" + tokens[pos].value + "' does not start a valid turn property.", tokens[pos]);
 		}
 	}
 }
@@ -519,8 +544,22 @@ function parsePlayerDotAccess(playerNode) {
 			return parseZoneToken(playerNode);
 		}
 		case "turn": {
+			const turn = new ast.TurnNode(playerNode, false);
 			pos++;
-			return new ast.TurnNode(playerNode);
+			if (tokens[pos] && tokens[pos].type === "dotOperator") {
+				pos++;
+				return parseTurnDotAccess(turn);
+			}
+			return turn;
+		}
+		case "nextTurn": {
+			const turn = new ast.TurnNode(playerNode, true);
+			pos++;
+			if (tokens[pos] && tokens[pos].type === "dotOperator") {
+				pos++;
+				return parseTurnDotAccess(turn);
+			}
+			return turn;
 		}
 		case "phaseType": {
 			let node = new ast.PhaseNode(playerNode, tokens[pos].value);

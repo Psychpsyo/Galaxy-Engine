@@ -10,7 +10,7 @@ o: fast
 turnLimit: 1
 condition: thisCard.zone = field
 $discarded = DISCARD(SELECT(any, [from you.hand where types = Earth]));
-APPLY(thisCard, {defense += COUNT($discarded) * 100}, endOfNextTurn);
+APPLY(thisCard, {defense += COUNT($discarded) * 100}, nextTurn.end);
 
 o: optional
 turnLimit: 1

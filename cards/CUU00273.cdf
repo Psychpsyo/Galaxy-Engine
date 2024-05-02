@@ -13,4 +13,4 @@ cost:
 DISCARD(SELECT(1, [from you.hand]));
 exec:
 $discards = DISCARD?(DECKTOP?(COUNT([from you.field where types = [Beast, Bird]])));
-APPLY(thisCard, {attack += COUNT([from $discards.discarded where cardType = unit]) * 100}, endOfTurn);
+APPLY(thisCard, {attack += COUNT([from $discards.discarded where cardType = unit]) * 100}, currentTurn.end);

@@ -17,4 +17,4 @@ mandatory: no
 condition: thisCard.zone = field
 during: currentPhase = you.drawPhase
 DAMAGE(opponent, 50);
-APPLY(thisCard, {canAttack = no}, endOfTurn);
+APPLY(thisCard, {canAttack = no}, currentTurn.end);

@@ -12,7 +12,7 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand where types = Fire]));
 exec:
-APPLY(thisCard, {attackRights = 2}, endOfTurn);
+APPLY(thisCard, {attackRights = 2}, currentTurn.end);
 
 o: trigger
 mandatory: no

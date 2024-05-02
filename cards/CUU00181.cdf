@@ -12,4 +12,4 @@ condition: thisCard.zone = discard
 cost:
 EXILE(thisCard);
 exec:
-APPLY(SELECT(1, [from opponent.field where cardType = unit]), {defense -= 100}, endOfTurn);
+APPLY(SELECT(1, [from opponent.field where cardType = unit]), {defense -= 100}, currentTurn.end);

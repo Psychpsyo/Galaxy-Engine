@@ -10,4 +10,4 @@ o: optional
 turnLimit: 1
 condition: thisCard.zone = field & currentPhase = you.mainPhase1
 DAMAGE(opponent, COUNT([from you.field where types = Fire & cardType = unit]) * 50);
-APPLY(you, {canEnterBattlePhase = no}, endOfTurn);
+APPLY(you, {canEnterBattlePhase = no}, currentTurn.end);
