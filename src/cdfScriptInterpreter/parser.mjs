@@ -334,7 +334,7 @@ function parseValue() {
 			pos++;
 			if (tokens[pos] && tokens[pos].type === "dotOperator") {
 				pos++;
-				return parseFightDotAccess(player);
+				return parseFightDotAccess(node);
 			}
 			return node;
 		}
@@ -446,7 +446,7 @@ function parseValue() {
 			return cards;
 		}
 		case "cardProperty": {
-			return parseCardProperty(new ast.ImplicitValuesNode("card"));
+			return parseCardDotAccess(new ast.ImplicitValuesNode("card"));
 		}
 		case "playerProperty": {
 			return parsePlayerDotAccess(new ast.ImplicitValuesNode("player"));
@@ -567,22 +567,12 @@ function parsePlayerDotAccess(playerNode) {
 			return node;
 		}
 	}
-	throw new ScriptParserError("'" + tokens[pos].value + "' does not begin a valid player value.", tokens[pos]);
+	throw new ScriptParserError("'" + tokens[pos].value + "' does not begin a valid player property.", tokens[pos]);
 }
-function parseCardDotAccess(card) {
+function parseCardDotAccess(cardsNode) {
 	if (tokens[pos].type != "cardProperty") {
 		throw new ScriptParserError("'" + tokens[pos].value + "' does not begin a valid card property.", tokens[pos]);
 	}
-	return parseCardProperty(card);
-}
-function parseFightDotAccess(card) {
-	if (tokens[pos].type != "fightProperty") {
-		throw new ScriptParserError("'" + tokens[pos].value + "' does not begin a valid fight property.", tokens[pos]);
-	}
-	return parseFightProperty(card);
-}
-
-function parseCardProperty(cardsNode) {
 	let property = tokens[pos].value;
 	let node = new ast.CardPropertyNode(cardsNode, tokens[pos].value);
 	pos++;
@@ -605,25 +595,32 @@ function parseCardProperty(cardsNode) {
 	}
 	return node;
 }
-function parseFightProperty(fightsNode) {
-	let property = tokens[pos].value;
-	let node = new ast.FightPropertyNode(fightsNode, tokens[pos].value);
-	pos++;
-	if (tokens[pos] && tokens[pos].type === "dotOperator") {
-		pos++;
-		switch (property) {
-			case "dealDamageTo": {
-				return parsePlayerDotAccess(node);
+function parseFightDotAccess(fightsNode) {
+	switch (tokens[pos].type) {
+		case "fightProperty": {
+			let property = tokens[pos].value;
+			let node = new ast.FightPropertyNode(fightsNode, tokens[pos].value);
+			pos++;
+			if (tokens[pos] && tokens[pos].type === "dotOperator") {
+				pos++;
+				switch (property) {
+					case "dealDamageTo": {
+						return parsePlayerDotAccess(node);
+					}
+					case "participants": {
+						return parseCardDotAccess(node);
+					}
+					default: {
+						throw new ScriptParserError("Cannot access any properties of '" + property + "'.", tokens[pos-1]);
+					}
+				}
 			}
-			case "participants": {
-				return parseCardDotAccess(node);
-			}
-			default: {
-				throw new ScriptParserError("Cannot access any properties of '" + property + "'.", tokens[pos-1]);
-			}
+			return node;
+		}
+		default: {
+			throw new ScriptParserError("'" + tokens[pos].value + "' does not begin a valid fight property.", tokens[pos]);
 		}
 	}
-	return node;
 }
 
 function parseActionAccessor(actionsNode) {

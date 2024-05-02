@@ -1362,7 +1362,7 @@ export class UntilEndOfTurnNode extends AstNode {
 		);
 	}
 }
-export class UntilPhaseNode extends AstNode{
+export class UntilPhaseNode extends AstNode {
 	constructor(turnNode, phaseType) {
 		super("untilIndicator");
 		this.turnNode = turnNode;
