@@ -225,12 +225,13 @@ export class FunctionNode extends AstNode {
 		}
 		// otherwise this is a both.FUNCTION() and must create split values, while executing for the turn player first
 		players.unshift(players.splice(players.indexOf(ctx.game.currentTurn().player), 1)[0]);
-		let values = [];
-		// TODO: cartesianProduct() should to be able to take generators (and be a generator itself) to avoid Array.from()ing here.
-		for (const player of players) {
-			values.push(Array.from(this.function.runFull?.(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer))));
-		}
-		for (const list of cartesianProduct(values)) {
+
+		// iterates over the cartesian product of the function's runFull generators.
+		for (const list of cartesianProduct(
+			players.map(
+				player => this.function.runFull?.(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer))
+			)
+		)) {
 			const valueMap = new Map();
 			for (let i = 0; i < list.length; i++) {
 				valueMap.set(

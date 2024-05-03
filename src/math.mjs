@@ -27,20 +27,38 @@ export function nChooseK(n, k) {
 }
 
 // generates every possible combination [A1, A2, A3 ... Ax] so that An is from
-// the n-th array that was passed in and x is the amount of input arrays.
-export function cartesianProduct(arrays) {
-	if (arrays.length == 0) {
-		return [];
+// the n-th generator that was passed in and x is the amount of input generators.
+export function* cartesianProduct(generators) {
+	if (generators.length == 0) {
+		yield [];
+		return;
 	}
-	let products = arrays[0].map(elem => [elem]);
-	for (let i = 1; i < arrays.length; i++) {
-		let newProducts = [];
-		for (const elemA of products) {
-			for (const elemB of arrays[i]) {
-				newProducts.push([...elemA, elemB]);
+
+	const counters = new Array(generators.length);
+	counters.fill(0);
+	const seenValues = generators.map(generator => [generator.next(), generator.next()]);
+	const product = seenValues.map(values => values[0].value);
+
+	loop: while (true) {
+		yield [...product];
+		counters[0]++;
+		if (seenValues[0].length === counters[0] + 1 && !seenValues[0].at(-1).done)
+			seenValues[0].push(generators[0].next());
+		product[0] = seenValues[0][counters[0]].value;
+
+		// do we need to increase the next counters?
+		let i = 0;
+		while (counters[i] === seenValues[i].length - 1 && seenValues[i].at(-1).done) {
+			counters[i] = 0;
+			product[i] = seenValues[i][0].value;
+			i++;
+			if (i === generators.length) {
+				break loop;
 			}
+			counters[i]++;
+			if (seenValues[i].length === counters[i] + 1 && !seenValues[i].at(-1).done)
+				seenValues[i].push(generators[i].next());
+			product[i] = seenValues[i][counters[i]].value;
 		}
-		products = newProducts;
 	}
-	return products;
 }
