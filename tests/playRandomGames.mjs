@@ -1,11 +1,22 @@
-import {promises as fs} from "fs";
+// Running this file will simulate some number of entirely random games where two bots
+// make choices entirely at random, using randomly thrown-together decks.
+// Use this to stress-test the rules engine and discover niche bugs that cause crashes.
+// Note:
+// This does nothing to validate the correctness of the rules engine or the cards.
+// It can only be used to discover situations that cause errors to be thrown.
+
+import {writeFileSync, promises as fs} from "fs";
 import {Game} from "../src/game.mjs";
 import {RandomAI} from "../src/aiSystems/randomAI.mjs";
 
 const randomAI = new RandomAI();
+
 const allCards = [];
 const allUnits = [];
+
+const gamePromises = [];
 let finishedGames = 0;
+
 for (const file of await fs.readdir("cards")) {
 	const cdf = await fs.readFile("./cards/" + file, "utf8");
 	allCards.push(cdf);
@@ -15,7 +26,7 @@ for (const file of await fs.readdir("cards")) {
 	}
 }
 
-// Makes a ranom deck.
+// Makes a random deck.
 // The first card is guaranteed to always be a unit.
 function makeRandomDeck() {
 	// one random unit
@@ -47,28 +58,32 @@ async function runGame() {
 	game.players[0].aiSystem = randomAI;
 	game.players[1].aiSystem = randomAI;
 
-	const generator = game.begin();
 	let eventCount = 0;
 	try {
-		for await (const _ of generator) {
+		for await (const _ of game.begin()) {
 			// the AIs might've gotten stuck somehow.
 			// probably not a failure case, just some weird combo or a bunch of abilities that they can keep activating
 			if (eventCount++ > 10_000) {
 				//break;
 			}
 		}
+		finishedGames++;
 	} catch (e) {
 		finishedGames++;
-		console.log(`Game ${finishedGames} finished with error.`);
-		await fs.writeFile(`./errorReplays/game${finishedGames}_${Math.floor(Math.random() * 100000000)}.replay`, JSON.stringify(game.replay), "utf8");
-		return;
+		// needs to be sync, otherwise all the other in-progress games bog down the event loop and the file doesn't actually get written until the very end.
+		writeFileSync(`./errorReplays/game${finishedGames}_${Math.floor(Math.random() * 100000000)}.replay`, JSON.stringify(game.replay));
 	}
-	console.log(`Game ${++finishedGames} finished normally.`);
-}
 
+	process.stdout.clearLine();
+	process.stdout.cursorTo(0);
+	process.stdout.write(`${finishedGames}/${gamePromises.length}`);
+}
 
 const gameCount = parseInt(process.argv[2] ?? 1);
-console.log(`Starting ${gameCount} game${gameCount === 1? "" : "s"}...`);
+console.log(`Playing ${gameCount} game${gameCount === 1? "" : "s"}...`);
 for (let i = 0; i < gameCount; i++) {
-	runGame();
+	gamePromises.push(runGame());
 }
+process.stdout.write(`${finishedGames}/${gamePromises.length}`);
+await Promise.all(gamePromises);
+console.log("\nDone!");
