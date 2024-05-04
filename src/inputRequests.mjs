@@ -115,13 +115,13 @@ export const chooseDeckSide = {
 	},
 	validate: function(response, request) {
 		if (response != "top" && response != "bottom") {
-			throw new Error("Chose an invalid deck side: " + response + " (must be either 'top' or 'bottom')");
+			throw new Error("Chose an invalid deck side: " + response + " (must be either \"top\" or \"bottom\")");
 		}
 		return new DeckPosition([request.deckOwner.deckZone], response === "top");
 	},
 	generateValidResponses: function*(request) {
-		yield new DeckPosition([request.deckOwner.deckZone], true);
-		yield new DeckPosition([request.deckOwner.deckZone], false);
+		yield "top";
+		yield "bottom";
 	}
 }
 
@@ -347,7 +347,7 @@ export const doAttackDeclaration = {
 		}
 		response = response.map(cardIndex => request.eligibleUnits[cardIndex]);
 		if (response.length > 1) {
-			let partner = response.find(card => card.zone.type == "partner");
+			let partner = response.find(card => card.zone.type === "partner");
 			if (!partner) {
 				throw new Error("Tried to peform a combined attack without declaring the partner to attack.");
 			}
@@ -359,6 +359,26 @@ export const doAttackDeclaration = {
 		}
 
 		return response;
+	},
+	generateValidResponses: function*(request) {
+		for (let i = 0; i < request.eligibleUnits.length; i++) {
+			yield [i];
+		}
+		const partner = request.eligibleUnits.find(card => card.zone.type === "partner");
+		if (partner) {
+			const eligibleForCombinedAttack = [];
+			for (let i = 0; i < request.eligibleUnits.length; i++) {
+				if (partner.sharesTypeWith(request.eligibleUnits[i])) {
+					eligibleForCombinedAttack.push(i);
+				}
+			}
+			const partnerIndex = request.eligibleUnits.indexOf(partner);
+			for (let i = 0; i < eligibleForCombinedAttack.length; i++) {
+				for (const combination of nChooseK(eligibleForCombinedAttack.length, i)) {
+					yield [partnerIndex, ...combination.map(i => eligibleForCombinedAttack[i])];
+				}
+			}
+		}
 	}
 }
 

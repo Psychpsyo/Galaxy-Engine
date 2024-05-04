@@ -108,7 +108,7 @@ export class HandZone extends Zone {
 
 	add(card, index, clearValues = true) {
 		let insertedIndex = super.add(card, index, clearValues);
-		for (const player of game.players) {
+		for (const player of card.owner.game.players) {
 			if (player === this.player) {
 				card.showTo(player);
 			} else {

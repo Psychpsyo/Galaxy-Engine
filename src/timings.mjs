@@ -57,7 +57,7 @@ export class Timing {
 	* _handleModificationAbilities() {
 		// gather abilities
 		const activeCards = this.game.players.map(player => player.getAllCards()).flat();
-		const possibleTargets = activeCards.concat(game.players);
+		const possibleTargets = activeCards.concat(this.game.players);
 		const applicableAbilities = new Map();
 		const targets = new Map(); // cards that modification abilities will apply tozz
 		for (const player of this.game.players) {
@@ -133,7 +133,7 @@ export class Timing {
 		}
 
 		// go through all cards in turn player, non-turn player order
-		for (const player of [game.currentTurn().player, game.currentTurn().player.next()]) {
+		for (const player of [this.game.currentTurn().player, this.game.currentTurn().player.next()]) {
 			const remainingCards = targets.get(player);
 			while (remainingCards.length > 0) {
 				let target;
@@ -150,7 +150,7 @@ export class Timing {
 				remainingCards.splice(remainingCards.indexOf(target), 1);
 
 				// apply modifications to this card
-				for (const ability of yield* orderStaticAbilities(target, applicableAbilities.get(target))) {
+				for (const ability of yield* orderStaticAbilities(target, applicableAbilities.get(target), this.game)) {
 					const modifier = ability.getModifier();
 					let didApply = false;
 					for (let i = 0; i < this.actions.length; i++) {
@@ -284,7 +284,7 @@ export class Timing {
 		// TODO: These need to be checked for legality and substitution just like the original actions
 		let followupActions = this.actions;
 		do {
-			followupActions = this.getFollowupActions(game, followupActions);
+			followupActions = this.getFollowupActions(followupActions);
 			for (const action of followupActions) {
 				this.actions.push(action);
 			}
@@ -293,7 +293,7 @@ export class Timing {
 		// check trigger ability preconditions
 		if (!isPrediction) {
 			if (this.game.currentPhase() instanceof phases.StackPhase) {
-				for (const player of game.players) {
+				for (const player of this.game.players) {
 					for (const card of player.getAllCards()) {
 						for (const ability of card.values.current.abilities) {
 							if (ability instanceof abilities.TriggerAbility ||
@@ -339,7 +339,7 @@ export class Timing {
 
 			// check trigger ability conditions
 			if (this.game.currentPhase() instanceof phases.StackPhase) {
-				for (let player of game.players) {
+				for (let player of this.game.players) {
 					for (let card of player.getAllCards()) {
 						for (let ability of card.values.current.abilities) {
 							if (ability instanceof abilities.TriggerAbility ||
@@ -378,7 +378,7 @@ export class Timing {
 		this.game.nextTimingIndex--;
 	}
 
-	getFollowupActions(game, lastActions = []) {
+	getFollowupActions(lastActions = []) {
 		// cards need to be revealed if added from deck to hand
 		let unrevealedCards = [];
 		for (const action of lastActions) {
@@ -428,7 +428,7 @@ export class Timing {
 
 		// Equipments might need to be destroyed
 		const invalidEquipments = [];
-		for (const equipment of game.players.map(player => player.spellItemZone.cards).flat()) {
+		for (const equipment of this.game.players.map(player => player.spellItemZone.cards).flat()) {
 			if (equipment && (equipment.values.current.cardTypes.includes("equipableItem") || equipment.values.current.cardTypes.includes("enchantSpell")) &&
 				(equipment.equippedTo === null || !equipment.equipableTo.evalFull(new ScriptContext(equipment, equipment.currentOwner())).next().value.get(equipment.currentOwner()).includes(equipment.equippedTo))
 			) {
@@ -528,7 +528,7 @@ function* getStaticAbilityPhasingTiming(game) {
 	}
 
 	for (const [target, abilities] of applicableAbilities) {
-		for (const ability of yield* orderStaticAbilities(target, abilities)) {
+		for (const ability of yield* orderStaticAbilities(target, abilities, game)) {
 			modificationActions.push(new actions.ApplyStaticAbility(
 				ability.card.currentOwner(), // have these be owned by the player that owns the card with the ability.
 				target,
@@ -543,7 +543,7 @@ function* getStaticAbilityPhasingTiming(game) {
 	return new Timing(game, modificationActions);
 }
 
-function* orderStaticAbilities(target, abilities) {
+function* orderStaticAbilities(target, abilities, game) {
 	const orderedAbilities = [];
 
 	const fieldEnterBuckets = {};

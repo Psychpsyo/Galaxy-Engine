@@ -36,7 +36,7 @@ export class ScriptValue {
 		if (a instanceof Array) {
 			for (const elemA of a) {
 				for (const elemB of b) {
-					if (equalityCompare(elemA, elemB)) return true;
+					if (equalityCompare(elemA, elemB, player.game)) return true;
 				}
 			}
 			return false;
@@ -52,7 +52,7 @@ export class ScriptValue {
 		let b = other.get(player);
 		if (a instanceof Array) {
 			for (const elemA of a) {
-				if (b.some(elemB => equalityCompare(elemA, elemB))) {
+				if (b.some(elemB => equalityCompare(elemA, elemB, player.game))) {
 					return false;
 				}
 			}
@@ -62,14 +62,14 @@ export class ScriptValue {
 	}
 }
 // compares two scripting
-function equalityCompare(elemA, elemB) {
+function equalityCompare(elemA, elemB, game) {
 	switch (true) {
 		case elemA instanceof BaseCard: {
 			if (elemA.globalId === elemB.globalId) return true;
 			break;
 		}
 		case elemA instanceof TurnValue: {
-			if (elemA.getIndex(player.game) === elemB.getIndex(player.game)) return true;
+			if (elemA.getIndex(game) === elemB.getIndex(game)) return true;
 			break;
 		}
 		default: {

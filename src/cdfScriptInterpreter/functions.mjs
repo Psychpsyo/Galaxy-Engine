@@ -843,7 +843,7 @@ export function initFunctions() {
 		},
 		function*(astNode, ctx) {
 			const alreadyYielded = [];
-			for (const types of this.getParameter(astNode, "abilityId").evalFull(ctx)) {
+			for (const types of this.getParameter(astNode, "type").evalFull(ctx)) {
 				for (const type of types.get(ctx.player)) {
 					if (alreadyYielded.includes(type)) continue;
 					yield new ScriptValue("type", [type]);

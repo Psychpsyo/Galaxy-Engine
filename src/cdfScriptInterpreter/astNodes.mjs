@@ -1121,7 +1121,7 @@ export class CurrentPhaseNode extends AstNode {
 	}
 	* eval(ctx) {
 		let phaseTypes = [...ctx.game.currentPhase().types];
-		let prefix = ctx.player === game.currentTurn().player? "your" : "opponent";
+		let prefix = ctx.player === ctx.game.currentTurn().player? "your" : "opponent";
 		for (let i = phaseTypes.length -1; i >= 0; i--) {
 			phaseTypes.push(prefix + phaseTypes[i][0].toUpperCase() + phaseTypes[i].slice(1));
 		}
@@ -1164,7 +1164,7 @@ export class ActionAccessorNode extends AstNode {
 		const values = [];
 		let actionList = (yield* this.actionsNode.eval(ctx)).get(ctx.player);
 		if (this.actionsNode instanceof TurnNode) {
-			actionList = actionList.map(turn => game.turns[turn.getIndex(ctx.game)]?.getActions() ?? []).flat(1);
+			actionList = actionList.map(turn => ctx.game.turns[turn.getIndex(ctx.game)]?.getActions() ?? []).flat(1);
 		}
 		for (const action of actionList) {
 			if (action.isCancelled) continue;

@@ -7,7 +7,7 @@ export class Turn {
 		this.game = player.game;
 		this.player = player;
 		this.phases = [];
-		this.index = game.turns.length;
+		this.index = this.game.turns.length;
 
 		this.hasStandardDrawn = false;
 		this.hasStandardSummoned = false;

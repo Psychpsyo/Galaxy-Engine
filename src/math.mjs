@@ -39,7 +39,7 @@ export function* cartesianProduct(generators) {
 	const seenValues = generators.map(generator => [generator.next(), generator.next()]);
 	const product = seenValues.map(values => values[0].value);
 
-	loop: while (true) {
+	while (true) {
 		yield [...product];
 		counters[0]++;
 		if (seenValues[0].length === counters[0] + 1 && !seenValues[0].at(-1).done)
@@ -53,7 +53,7 @@ export function* cartesianProduct(generators) {
 			product[i] = seenValues[i][0].value;
 			i++;
 			if (i === generators.length) {
-				break loop;
+				return;
 			}
 			counters[i]++;
 			if (seenValues[i].length === counters[i] + 1 && !seenValues[i].at(-1).done)

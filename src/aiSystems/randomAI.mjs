@@ -9,7 +9,7 @@ import * as requests from "../inputRequests.mjs";
 export class RandomAI extends AI {
 	async selectMove(optionList, player) {
 		while (optionList.length > 0) {
-			const option = optionList.splice(Math.floor(Math.random(optionList.length)), 1)[0];
+			const option = optionList.splice(Math.floor(Math.random() * optionList.length), 1)[0];
 			const responses = [];
 			for (const response of requests[option.type].generateValidResponses(option)) {
 				responses.push(response);
@@ -17,7 +17,7 @@ export class RandomAI extends AI {
 			if (responses.length === 0) continue;
 			return {
 				type: option.type,
-				value: responses[Math.floor(Math.random(responses.length))]
+				value: responses[Math.floor(Math.random() * responses.length)]
 			};
 		}
 		// we didn't have a valid choice

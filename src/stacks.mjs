@@ -27,9 +27,9 @@ export class Stack {
 		}
 		while (true) {
 			const inputRequests = await this.phase.getBlockOptions(this);
-			const response = yield inputRequests;
+			const response = yield [...inputRequests]; // cloning the array in case the calling code modifies it
 
-			const responseValue = requests[response.type].validate(response.value, inputRequests.find(request => request.type == response.type));
+			const responseValue = requests[response.type].validate(response.value, inputRequests.find(request => request.type === response.type));
 
 			let nextBlock;
 			switch (response.type) {

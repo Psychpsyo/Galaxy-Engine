@@ -261,7 +261,7 @@ export class Game {
 				if (replayPlayer.deckList) {
 					player.setDeck(replayPlayer.deckList);
 				}
-				if (replayPlayer.partnerIndex) {
+				if (typeof replayPlayer.partnerIndex === "number" && replayPlayer.partnerIndex != -1) {
 					player.setPartner(replayPlayer.partnerIndex);
 				}
 			}
