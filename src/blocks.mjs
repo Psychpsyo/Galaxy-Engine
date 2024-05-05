@@ -300,7 +300,6 @@ export class DeployItem extends Block {
 	async* runCost() {
 		this.card = this.card.snapshot();
 		if (!(await (yield* super.runCost()))) {
-			this.card.zone.add(this.card.current(), this.card.index);
 			return false;
 		}
 
@@ -309,7 +308,6 @@ export class DeployItem extends Block {
 			(this.deployAbility && this.deployAbility.exec && !this.deployAbility.exec.hasAllTargets(new ScriptContext(this.card.current(), this.player, this.deployAbility)))
 		) {
 			yield* this.undoCost();
-			this.card.zone.add(this.card.current(), this.card.index);
 			return false;
 		}
 
@@ -369,8 +367,6 @@ export class CastSpell extends Block {
 	async* runCost() {
 		this.card = this.card.snapshot();
 		if (!(await (yield* super.runCost()))) {
-			this.card.restore();
-			this.card.zone.add(this.card.current(), this.card.index);
 			return false;
 		}
 
@@ -379,8 +375,6 @@ export class CastSpell extends Block {
 			(this.castAbility && this.castAbility.exec && !this.castAbility.exec.hasAllTargets(new ScriptContext(this.card.current(), this.player, this.castAbility)))
 		) {
 			yield* this.undoCost();
-			this.card.restore();
-			this.card.zone.add(this.card.current(), this.card.index);
 			return false;
 		}
 

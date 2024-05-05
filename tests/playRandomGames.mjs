@@ -64,7 +64,7 @@ async function runGame() {
 			// the AIs might've gotten stuck somehow.
 			// probably not a failure case, just some weird combo or a bunch of abilities that they can keep activating
 			if (eventCount++ > 10_000) {
-				//break;
+				break;
 			}
 		}
 		finishedGames++;

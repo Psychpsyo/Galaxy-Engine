@@ -327,8 +327,8 @@ export class SnapshotCard extends BaseCard {
 		return this;
 	}
 
-	// restored this snapshot to the card it is a snapshot of.
-	// Note: Do not use snapshot after restoring!
+	// restores this snapshot to the card it is a snapshot of.
+	// Note: Do not use this SnapshotCard after restoring!
 	restore() {
 		this._actualCard.isRemovedToken = this.isRemovedToken;
 
