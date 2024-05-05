@@ -21,7 +21,6 @@ export const chooseCards = {
 			request.validAmounts.length === 0 || request.validAmounts.some(amount => amount <= request.from.length)
 		)) {
 			if (!request.validAmounts.includes(response.length) && request.validAmounts.length > 0) {
-				console.log(response, request);
 				throw new Error("Chose invalid amount of cards.");
 			}
 		} else if (response.length != request.from.length) {

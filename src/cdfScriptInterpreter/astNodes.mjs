@@ -217,7 +217,7 @@ export class FunctionNode extends AstNode {
 				if (output.type === "tempActions") { // actions need to be executed
 					yield new ScriptValue(
 						this.function.returnType,
-						output.get(ctx.player).map(action => this.function.finalizeReturnValue(action)).filter(val => val !== undefined).flat()
+						output.get(ctx.player).filter(val => val !== undefined).flat()
 					);
 				}
 				yield output;
@@ -236,7 +236,7 @@ export class FunctionNode extends AstNode {
 			for (let i = 0; i < list.length; i++) {
 				valueMap.set(
 					players[i],
-					list[i].get(players[i]).map(action => this.function.finalizeReturnValue(action)).filter(val => val !== undefined).flat()
+					list[i].get(players[i]).filter(val => val !== undefined).flat()
 				);
 			}
 			yield new ScriptValue(this.function.returnType, valueMap);

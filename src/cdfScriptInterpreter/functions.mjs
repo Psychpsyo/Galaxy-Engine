@@ -131,6 +131,8 @@ export function initFunctions() {
 				objects = objects.get(ctx.player);
 			}
 			for (const target of objects) {
+				// targets that don't exist anymore can't be modified
+				if (!target) continue;
 				applyActions.push(new actions.ApplyStatChange(
 					ctx.player,
 					target,
@@ -269,8 +271,8 @@ export function initFunctions() {
 			return false;
 		},
 		function*(astNode, ctx) {
-			for (const amount of (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)) {
-				yield new ScriptValue("card", ctx.player.deckZone.cards.slice(Math.max(0, ctx.player.deckZone.cards.length - amount[0]), ctx.player.deckZone.cards.length));
+			for (const amount of this.getParameter(astNode, "number").evalFull(ctx)) {
+				yield new ScriptValue("card", ctx.player.deckZone.cards.slice(Math.max(0, ctx.player.deckZone.cards.length - amount.get(ctx.player)[0]), ctx.player.deckZone.cards.length));
 			}
 		}
 	),

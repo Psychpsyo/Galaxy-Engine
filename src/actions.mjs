@@ -5,7 +5,6 @@ import * as zones from "./zones.mjs";
 import {BaseCard} from "./card.mjs";
 import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
-import {Timing} from "./timings.mjs";
 
 // helper functions
 
@@ -491,8 +490,8 @@ export class Swap extends Action {
 	isImpossible() {
 		if (this.cardA.current() === null) return true;
 		if (this.cardB.current() === null) return true;
-		if ((this.cardA.isToken && !(this.cardB.zone instanceof FieldZone)) ||
-			(this.cardB.isToken && !(this.cardA.zone instanceof FieldZone)) ||
+		if ((this.cardA.isToken && !(this.cardB.zone instanceof zones.FieldZone)) ||
+			(this.cardB.isToken && !(this.cardA.zone instanceof zones.FieldZone)) ||
 			this.cardA.isRemovedToken ||
 			this.cardB.isRemovedToken
 		) {
@@ -693,41 +692,49 @@ export class ApplyStatChange extends Action {
 	}
 
 	async* run() {
+		const currentObject = getObjectCurrent(this.toObject);
 		// remove invalid modifications
 		ast.setImplicit([this.modifier.card], "card");
 		for (let i = this.modifier.modifications.length - 1; i >= 0; i--) {
-			if (!this.modifier.modifications[i].canApplyTo(this.toObject, this.modifier.ctx)) {
+			if (!this.modifier.modifications[i].canApplyTo(currentObject, this.modifier.ctx)) {
 				this.modifier.modifications.splice(i, 1);
 			}
 		}
 		ast.clearImplicit("card");
 
-		if (this.toObject instanceof BaseCard) {
-			this.toObject = this.toObject.snapshot();
+		if (currentObject instanceof BaseCard) {
+			this.toObject = currentObject.snapshot();
 		}
-		getObjectCurrent(this.toObject).values.modifierStack.push(this.modifier);
+		currentObject.values.modifierStack.push(this.modifier);
 		if (this.until) {
-			this.until.push([new RemoveStatChange(this.player, getObjectCurrent(this.toObject), this.modifier)]);
+			this.until.push([new RemoveStatChange(this.player, currentObject, this.modifier)]);
 		}
 	}
 
 	undo() {
-		this.toObject.current().values.modifierStack.pop();
+		getObjectCurrent(this.toObject).values.modifierStack.pop();
 	}
 
 	isImpossible() {
 		// players are always around and anything that wants to apply to them can
 		if (this.toObject instanceof Player) return false;
 
-		// cannot apply stat-changes to cards that are not on the field
-		if (!(this.toObject.zone instanceof zones.FieldZone)) {
+		const currentObject = getObjectCurrent(this.toObject);
+		// cannot apply stat changes things that don't exist anymore
+		if (!currentObject) {
 			return true;
 		}
+
+		// cannot apply stat changes to cards that are not on the field
+		if (currentObject instanceof BaseCard && !(currentObject.zone instanceof zones.FieldZone)) {
+			return true;
+		}
+
 		// check un-appliable stat-changes
 		let validModifications = 0;
 		ast.setImplicit([this.modifier.card], "card");
 		for (const modification of this.modifier.modifications) {
-			if (!modification.canApplyTo(this.toObject, this.modifier.ctx)) {
+			if (!modification.canApplyTo(currentObject, this.modifier.ctx)) {
 				continue;
 			}
 			validModifications++;
@@ -739,10 +746,17 @@ export class ApplyStatChange extends Action {
 		// players are always around and anything that wants to apply to them can
 		if (this.toObject instanceof Player) return true;
 
-		// cannot apply stat-changes to cards that are not on the field
-		if (!(this.toObject.zone instanceof zones.FieldZone)) {
+		const currentObject = getObjectCurrent(this.toObject);
+		// cannot apply stat changes things that don't exist anymore
+		if (!currentObject) {
 			return false;
 		}
+
+		// cannot apply stat changes to cards that are not on the field
+		if (currentObject instanceof BaseCard && !(currentObject.zone instanceof zones.FieldZone)) {
+			return false;
+		}
+
 		// check not fully-appliable stat-changes
 		ast.setImplicit([this.modifier.card], "card");
 		for (const modification of this.modifier.modifications) {
