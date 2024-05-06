@@ -279,7 +279,7 @@ export class TriggerAbility extends Ability {
 			this.triggerMetOnStacks = [];
 			this.usedDuring = false;
 		} else if (!this.usedDuring && player.game.currentStack()) {
-			this.triggerMetOnStacks.push(player.game.currentStack().index ?? - 1);
+			this.triggerMetOnStacks.push(player.game.currentStack().index - 1);
 		}
 	}
 
