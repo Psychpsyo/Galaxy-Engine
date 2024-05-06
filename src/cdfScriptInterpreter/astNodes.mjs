@@ -1168,30 +1168,30 @@ export class ActionAccessorNode extends AstNode {
 		}
 		for (const action of actionList) {
 			if (action.isCancelled) continue;
-			let hasProperties = true;
+			let propertiesMatch = true;
 			for (const property of Object.keys(this.actionProperties)) {
 				// if property doesn't exist, it doesn't match
 				if (!(property in action.properties)) {
-					hasProperties = false;
+					propertiesMatch = false;
 					break;
 				}
-				if (action.properties[property].type === this.actionProperties[property].type) {
+				if (action.properties[property].type === this.actionProperties[property].returnType) {
 					// the property is a direct value that can be compared, like destroyed(by: thisCard)
 					if (!action.properties[property].equals(yield* this.actionProperties[property].eval(ctx), ctx.player)) {
-						hasProperties = false;
+						propertiesMatch = false;
 						break;
 					}
-				} else if (this.actionProperties[property].type === "bool") {
+				} else if (this.actionProperties[property].returnType === "bool") {
 					// the property in question should be implicit and matches if the given expression is true, like destroyed(by: types = Fire)
 					setImplicit(action.properties[property].get(ctx.player), action.properties[property].type);
 					if (!(yield* this.actionProperties[property].eval(ctx)).get(ctx.player)) {
-						hasProperties = false;
+						propertiesMatch = false;
 						break;
 					}
 					clearImplicit(action.properties[property].type);
 				}
 			}
-			if (!hasProperties) continue;
+			if (!propertiesMatch) continue;
 
 			for (const value of this.getActionValues(action)) {
 				if (this.returnType === "card") {

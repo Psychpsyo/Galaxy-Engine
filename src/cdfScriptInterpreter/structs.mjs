@@ -65,19 +65,15 @@ export class ScriptValue {
 function equalityCompare(elemA, elemB, game) {
 	switch (true) {
 		case elemA instanceof BaseCard: {
-			if (elemA.globalId === elemB.globalId) return true;
-			break;
+			return elemA.globalId === elemB.globalId;
 		}
 		case elemA instanceof TurnValue: {
-			if (elemA.getIndex(game) === elemB.getIndex(game)) return true;
-			break;
+			return elemA.getIndex(game) === elemB.getIndex(game);
 		}
 		default: {
-			if (elemA === elemB) return true;
-			break;
+			return elemA === elemB;
 		}
 	}
-	return false;
 }
 
 // This is an execution context for cdfScript

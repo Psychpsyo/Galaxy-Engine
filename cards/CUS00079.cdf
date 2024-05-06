@@ -8,4 +8,4 @@ turnLimit: 1
 
 o: cast
 EXILE([from field where cardType = [spell, item]]);
-EXILE(DECKTOP(5)) & EXILE(opponent.DECKTOP(5));
+both.EXILE?(DECKTOP?(5));

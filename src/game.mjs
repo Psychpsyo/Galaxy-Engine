@@ -270,7 +270,7 @@ export class Game {
 
 	async randomInts(ranges) {
 		if (this.replayRngPosition < this.replay.rngLog.length) {
-			return this.replay.rngLog[this.replayRngPosition++];
+			return [...this.replay.rngLog[this.replayRngPosition++]];
 		}
 		let results = await this.rng.nextInts(ranges);
 		this.replay.rngLog.push([...results]);
