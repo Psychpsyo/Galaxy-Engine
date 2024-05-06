@@ -243,7 +243,7 @@ export class TriggerAbility extends Ability {
 	}
 
 	async canActivate(card, player, evaluatingPlayer = player) {
-		if (!this.triggerMetOnStacks.includes(player.game.currentStack()?.index ?? 0 - 1)) return false;
+		if (!this.triggerMetOnStacks.includes((player.game.currentStack()?.index ?? 0) - 1)) return false;
 
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
 		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
