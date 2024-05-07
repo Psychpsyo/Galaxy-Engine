@@ -40,9 +40,10 @@ export class Player {
 		if (cdfList.length > this.game.config.upperDeckLimit) {
 			throw new deckErrors.DeckSizeError("Deck has too many cards", true);
 		}
-		let cardList = [];
-		let cardAmounts = {}
-		let exampleCards = {}
+		const cardList = [];
+		const cardAmounts = {};
+		// one of each different card to check their max deck amounts
+		const exampleCards = {};
 		for (const cdf of cdfList) {
 			let card = new Card(this, cdf);
 			card.hiddenFor = [...this.game.players];
@@ -74,43 +75,25 @@ export class Player {
 
 	setPartner(partnerPosInDeck) {
 		this.game.replay.players[this.index].partnerIndex = partnerPosInDeck;
-		let partner = this.deckZone.cards[partnerPosInDeck];
+		const partner = this.deckZone.cards[partnerPosInDeck];
 		this.partnerZone.add(partner, 0);
 		partner.hiddenFor = [...this.game.players];
 	}
 
 	// returns all cards that aren't currently in deck. (cards that could have available abilities on them.)
 	getActiveCards() {
-		let cards = [this.partnerZone.cards[0]];
-		for (let card of this.unitZone.cards) {
-			if (card) {
-				cards.push(card);
-			}
-		}
-		for (let card of this.spellItemZone.cards) {
-			if (card) {
-				cards.push(card);
-			}
-		}
-		for (let card of this.handZone.cards) {
-			if (card) {
-				cards.push(card);
-			}
-		}
-		for (let card of this.discardPile.cards) {
-			cards.push(card);
-		}
-		for (let card of this.exileZone.cards) {
-			cards.push(card);
-		}
+		const cards = [this.partnerZone.cards[0]];
+		cards.push(...this.unitZone.cards.filter(card => card !== null));
+		cards.push(...this.spellItemZone.cards.filter(card => card !== null));
+		cards.push(...this.handZone.cards);
+		cards.push(...this.discardPile.cards);
+		cards.push(...this.exileZone.cards);
 		return cards;
 	}
 
 	getAllCards() {
-		let cards = this.getActiveCards();
-		for (let card of this.deckZone.cards) {
-			cards.push(card);
-		}
+		const cards = this.getActiveCards();
+		cards.push(...this.deckZone.cards);
 		return cards;
 	}
 

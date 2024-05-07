@@ -256,10 +256,8 @@ export function* retireTimingGenerator(player, units) {
 }
 
 export function* fightTimingGenerator(attackDeclaration, fight) {
-	const attackOrder = [fight.values.current.counterattackFirst, !fight.values.current.counterattackFirst];
-	for (const isCounterattack of attackOrder) {
-		if (!(yield* attackGenerator(attackDeclaration, fight, isCounterattack))) return false;
-	}
+	if (!(yield* attackGenerator(attackDeclaration, fight, fight.values.current.counterattackFirst))) return false;
+	if (!(yield* attackGenerator(attackDeclaration, fight, !fight.values.current.counterattackFirst))) return false;
 	return true;
 }
 function* attackGenerator(attackDeclaration, fight, isCounterattack) {

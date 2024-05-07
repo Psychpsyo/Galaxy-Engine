@@ -818,19 +818,24 @@ export class SetAttackTarget extends Action {
 	constructor(player, newTarget) {
 		super(player);
 		this.newTarget = newTarget;
-		this.oldTarget = null;
+		this._oldTarget = null;
 	}
 
 	async* run() {
+		this.newTarget = this.newTarget.snapshot();
 		if (this.timing.game.currentAttackDeclaration) {
-			this.oldTarget = this.timing.game.currentAttackDeclaration.target;
-			this.timing.game.currentAttackDeclaration.target = this.newTarget;
+			this._oldTarget = this.timing.game.currentAttackDeclaration.target;
+			this.timing.game.currentAttackDeclaration.target = this.newTarget.current();
+			this._oldTarget.isAttackTarget = false;
+			this.newTarget.current().isAttackTarget = true;
 		}
 	}
 
 	undo() {
 		if (this.timing.game.currentAttackDeclaration) {
-			this.timing.game.currentAttackDeclaration.target = this.oldTarget;
+			this.timing.game.currentAttackDeclaration.target = this._oldTarget;
+			this.newTarget.current().isAttackTarget = false;
+			this._oldTarget.isAttackTarget = true;
 		}
 	}
 

@@ -46,7 +46,7 @@ export class Zone {
 			if (card.isAttacking || card.isAttackTarget) {
 				this.player.game.currentAttackDeclaration?.removeCard(card);
 			}
-			card.attackCount = 0; // reset AFTER removing card from the attack since removing it increases the attackCount
+			card.attacksMadeThisTurn = 0; // reset AFTER removing card from the attack since removing it increases the attacksMadeThisTurn
 			card.canAttackAgain = false;
 
 			// reset abilities

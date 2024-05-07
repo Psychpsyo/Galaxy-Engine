@@ -489,7 +489,7 @@ export class CardPropertyNode extends AstNode {
 				return card.values.current.attackRights;
 			}
 			case "attacksMade": {
-				return card.attackCount;
+				return card.attacksMadeThisTurn;
 			}
 			case "canAttack": {
 				return card.values.current.canAttack;

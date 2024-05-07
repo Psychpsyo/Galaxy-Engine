@@ -32,11 +32,13 @@ class Block {
 		return costTimingSuccess;
 	}
 
+	// returns whether or not the block got cancelled and therefore didn't run.
 	async* run() {
 		if (this.getIsCancelled()) {
-			return;
+			return false;
 		}
 		await (yield* this.timingRunner.run());
+		return true;
 	}
 
 	* undoCost() {
@@ -158,11 +160,14 @@ export class AttackDeclaration extends Block {
 	}
 
 	async* run() {
-		yield* super.run();
+		if (!(await (yield* super.run()))) {
+			return false;
+		}
 
 		this.attackTarget = this.establishAction.attackTarget; // already a snapshot
 		this.player.game.currentAttackDeclaration = new game.AttackDeclaration(this.player, this.attackers, this.attackTarget.current());
 		this.attackers = this.attackers.map(attacker => attacker.snapshot());
+		return true;
 	}
 
 	async* undoExecution() {
@@ -197,8 +202,9 @@ export class Fight extends Block {
 	}
 
 	async* run() {
-		yield* super.run();
+		const gotCancelled = await (yield* super.run());
 		this.attackDeclaration.clear();
+		return gotCancelled;
 	}
 
 	async* undoExecution() {

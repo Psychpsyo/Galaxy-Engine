@@ -30,7 +30,7 @@ export class BaseCard {
 		this.counters = {};
 		this.equippedTo = null;
 		this.equipments = [];
-		this.attackCount = 0;
+		this.attacksMadeThisTurn = 0;
 		this.canAttackAgain = false;
 		this.isAttacking = false;
 		this.isAttackTarget = false;
@@ -198,7 +198,7 @@ export class BaseCard {
 		if (this.isRemovedToken) return false;
 		if (!this.values.current.cardTypes.includes("unit")) return false;
 		if (!this.values.current.canAttack) return false;
-		return this.attackCount < this.values.current.attackRights || this.canAttackAgain;
+		return this.attacksMadeThisTurn < this.values.current.attackRights || this.canAttackAgain;
 	}
 
 	static sort(a, b) {
@@ -272,7 +272,7 @@ export class Card extends BaseCard {
 	}
 
 	endOfTurnReset() {
-		this.attackCount = 0;
+		this.attacksMadeThisTurn = 0;
 		this.canAttackAgain = false;
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.OptionalAbility || ability instanceof abilities.FastAbility || ability instanceof abilities.TriggerAbility) {
@@ -308,7 +308,7 @@ export class SnapshotCard extends BaseCard {
 		for (const [counter, amount] of Object.entries(card.counters)) {
 			this.counters[counter] = amount;
 		}
-		this.attackCount = card.attackCount;
+		this.attacksMadeThisTurn = card.attacksMadeThisTurn;
 		this.canAttackAgain = card.canAttackAgain;
 		this.isAttacking = card.isAttacking;
 		this.isAttackTarget = card.isAttackTarget;
@@ -365,7 +365,7 @@ export class SnapshotCard extends BaseCard {
 		for (const [counter, amount] of Object.entries(this.counters)) {
 			this._actualCard.counters[counter] = amount;
 		}
-		this._actualCard.attackCount = this.attackCount;
+		this._actualCard.attacksMadeThisTurn = this.attacksMadeThisTurn;
 		this._actualCard.canAttackAgain = this.canAttackAgain;
 		this._actualCard.isAttackTarget = this.isAttackTarget;
 		this._actualCard.isAttacking = this.isAttacking;

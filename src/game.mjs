@@ -352,7 +352,7 @@ export class AttackDeclaration {
 		if (attackerIndex != -1) {
 			this.attackers.splice(attackerIndex, 1);
 			card.isAttacking = false;
-			card.attackCount++;
+			card.attacksMadeThisTurn++;
 			card.canAttackAgain = false;
 		}
 	}
@@ -361,7 +361,7 @@ export class AttackDeclaration {
 		this.creator.game.currentAttackDeclaration = null;
 		for (let attacker of this.attackers) {
 			attacker.isAttacking = false;
-			attacker.attackCount++;
+			attacker.attacksMadeThisTurn++;
 			attacker.canAttackAgain = false;
 		}
 		if (this.target) {
@@ -411,7 +411,7 @@ export class AttackDeclaration {
 		for (const removed of invalidAttackerRemoveUndoStack.pop()) {
 			this.attackers.push(removed.unit);
 			removed.unit.isAttacking = true;
-			removed.unit.attackCount--;
+			removed.unit.attacksMadeThisTurn--;
 			removed.unit.canAttackAgain = removed.canAttackAgain;
 		}
 	}
