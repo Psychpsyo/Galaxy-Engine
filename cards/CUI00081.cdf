@@ -13,7 +13,8 @@ SWAP(
 		[from you.deck where
 			name != you.partner.name &
 			types = you.partner.types &
-			level = you.partner.level
+			level = you.partner.level &
+			cardType = unit
 		]
 	)
 );
