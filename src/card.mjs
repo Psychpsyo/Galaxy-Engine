@@ -132,7 +132,7 @@ export class BaseCard {
 		}
 		let timingRunner = new timingGenerators.TimingRunner(() => this.getSummoningCost(player), player.game);
 		timingRunner.isCost = true;
-		let costOptionTree = await timingGenerators.generateOptionTree(timingRunner, () => !checkPlacement || player.unitZone.cards.includes(null));
+		let costOptionTree = await timingGenerators.generateOptionTree(player.game, timingRunner, () => !checkPlacement || player.unitZone.cards.includes(null));
 		return costOptionTree.valid;
 	}
 	async canCast(checkPlacement, player, evaluatingPlayer = player) {
@@ -160,7 +160,7 @@ export class BaseCard {
 
 		let timingRunner = new timingGenerators.TimingRunner(() => this.getCastingCost(player), player.game);
 		timingRunner.isCost = true;
-		let costOptionTree = await timingGenerators.generateOptionTree(timingRunner, endOfTreeCheck);
+		let costOptionTree = await timingGenerators.generateOptionTree(player.game, timingRunner, endOfTreeCheck);
 		return costOptionTree.valid;
 	}
 	// If checkPlacement is false, only teh deployment conditions that the rules care about will be evaluated, not if the card can actually sucessfully be placed on the field
@@ -189,7 +189,7 @@ export class BaseCard {
 
 		let timingRunner = new timingGenerators.TimingRunner(() => this.getDeploymentCost(player), player.game);
 		timingRunner.isCost = true;
-		let costOptionTree = await timingGenerators.generateOptionTree(timingRunner, endOfTreeCheck);
+		let costOptionTree = await timingGenerators.generateOptionTree(player.game, timingRunner, endOfTreeCheck);
 		return costOptionTree.valid;
 	}
 

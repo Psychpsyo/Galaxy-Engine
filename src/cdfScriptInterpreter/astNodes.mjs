@@ -1171,7 +1171,7 @@ export class ActionAccessorNode extends AstNode {
 			let propertiesMatch = true;
 			for (const property of Object.keys(this.actionProperties)) {
 				// if property doesn't exist, it doesn't match
-				if (!(property in action.properties)) {
+				if (typeof action.properties[property] === "undefined") {
 					propertiesMatch = false;
 					break;
 				}

@@ -69,7 +69,7 @@ export class TimingRunner {
 
 	// starts a new generator and plays it through with the given player choices, then returns it.
 	async fastForward(playerChoices) {
-		let generator = this.run();
+		const generator = this.run(this.isPrediction);
 		let events = await generator.next();
 		while (!events.done && (playerChoices.length > 0 || events.value[0].nature !== "request")) {
 			if (events.value[0].nature === "request") {
@@ -93,20 +93,38 @@ class OptionTreeNode {
 
 // Generates a tree of all player choices for a TimingRunner, tagged for validity, based on endOfTreeCheck
 // Branches in which the runner does not complete sucessfully are also tagged as invalid.
-export async function generateOptionTree(runner, endOfTreeCheck, generator = null, lastNode = null, lastChoice = null) {
+export async function generateOptionTree(game, runner, endOfTreeCheck, generator = null, lastNode = null, lastChoice = null) {
 	if (generator === null) {
 		generator = runner.run(true);
 	}
 	const node = new OptionTreeNode(lastNode, lastChoice);
-	let events = await generator.next(lastChoice);
+	let events;
 	// go to next user input request
-	while (!events.done && events.value[0].nature !== "request") {
-		events = await generator.next();
-	}
+	do {
+		// Check if the game has ended before advancing to the next events so that we can know that the game was ended
+		// by the last set of events and therefore the existance of this following set needs to invalidate the node.
+		let gameEnded = false;
+		for (const player of game.players) {
+			if (player.victoryConditions.length > 0) {
+				gameEnded = true;
+			}
+		}
+		events = await generator.next(lastChoice);
+		lastChoice = undefined;
+		// If we aren't done with events yet but the game ended, this node doesn't
+		// represent a valid path and there is no point in calculating its children.
+		if (gameEnded && !events.done) {
+			node.valid = false;
+			const undoGenerator = runner.undo();
+			while(!undoGenerator.next().done) {}
+			return node;
+		}
+	} while (!events.done && events.value[0].nature !== "request");
+
 	// if we are at a user input request, generate child nodes
 	if (!events.done) {
 		for (const response of requests[events.value[0].type].generateValidResponses(events.value[0])) {
-			let child = await generateOptionTree(runner, endOfTreeCheck, generator, node, {type: events.value[0].type, value: response});
+			const child = await generateOptionTree(game, runner, endOfTreeCheck, generator, node, {type: events.value[0].type, value: response});
 			node.childNodes.push(child);
 			if (child.valid) {
 				node.valid = true;
@@ -124,7 +142,8 @@ export async function generateOptionTree(runner, endOfTreeCheck, generator = nul
 		// this tree branch is done.
 		node.valid = events.value && endOfTreeCheck();
 	}
-	let undoGenerator = runner.undo();
+
+	const undoGenerator = runner.undo();
 	while(!undoGenerator.next().done) {}
 	return node;
 }

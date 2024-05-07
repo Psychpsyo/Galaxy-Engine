@@ -72,7 +72,7 @@ export class Ability extends BaseAbility {
 		}
 		let timingRunner = new timingGenerators.TimingRunner(() => timingGenerators.abilityCostTimingGenerator(this, card, player), player.game);
 		timingRunner.isCost = true;
-		let costOptionTree = await timingGenerators.generateOptionTree(timingRunner, () => this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)));
+		let costOptionTree = await timingGenerators.generateOptionTree(player.game, timingRunner, () => this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)));
 		return costOptionTree.valid;
 	}
 
