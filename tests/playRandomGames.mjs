@@ -17,7 +17,10 @@ const allUnits = [];
 const gamePromises = [];
 let finishedGames = 0;
 
+const forbiddenCards = process.argv.slice(3).map(id => id.startsWith("CU")? id : "CU" + id);
 for (const file of await fs.readdir("cards")) {
+	if (forbiddenCards.includes(file.substring(0, file.length - 4))) continue;
+
 	const cdf = await fs.readFile("./cards/" + file, "utf8");
 	allCards.push(cdf);
 	// quick and dirty check for if it's a unit
