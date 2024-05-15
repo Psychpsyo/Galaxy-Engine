@@ -213,7 +213,7 @@ export class Fight extends Block {
 	}
 
 	getIsCancelled() {
-		return super.getIsCancelled() || this.attackDeclaration.isCancelled;
+		return super.getIsCancelled() || !this.attackDeclaration.isValid();
 	}
 }
 

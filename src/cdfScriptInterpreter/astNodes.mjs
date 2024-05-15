@@ -331,7 +331,7 @@ export class AttackTargetNode extends AstNode {
 		super("card");
 	}
 	* eval(ctx) {
-		if (ctx.game.currentAttackDeclaration?.target) {
+		if (ctx.game.currentAttackDeclaration?.isValid() && ctx.game.currentAttackDeclaration?.target) {
 			return new ScriptValue("card", [ctx.game.currentAttackDeclaration.target]);
 		}
 		return new ScriptValue("card", []);
@@ -342,8 +342,8 @@ export class AttackersNode extends AstNode {
 		super("card");
 	}
 	* eval(ctx) {
-		if (ctx.game.currentAttackDeclaration) {
-			return new ScriptValue("card", ctx.game.currentAttackDeclaration.attackers);
+		if (ctx.game.currentAttackDeclaration?.isValid()) {
+			return new ScriptValue("card", [...ctx.game.currentAttackDeclaration.attackers]);
 		}
 		return new ScriptValue("card", []);
 	}

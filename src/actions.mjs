@@ -826,7 +826,9 @@ export class SetAttackTarget extends Action {
 		if (this.timing.game.currentAttackDeclaration) {
 			this._oldTarget = this.timing.game.currentAttackDeclaration.target;
 			this.timing.game.currentAttackDeclaration.target = this.newTarget.current();
-			this._oldTarget.isAttackTarget = false;
+			if (this._oldTarget) {
+				this._oldTarget.isAttackTarget = false;
+			}
 			this.newTarget.current().isAttackTarget = true;
 		}
 	}
@@ -835,7 +837,9 @@ export class SetAttackTarget extends Action {
 		if (this.timing.game.currentAttackDeclaration) {
 			this.timing.game.currentAttackDeclaration.target = this._oldTarget;
 			this.newTarget.current().isAttackTarget = false;
-			this._oldTarget.isAttackTarget = true;
+			if (this._oldTarget) {
+				this._oldTarget.isAttackTarget = true;
+			}
 		}
 	}
 

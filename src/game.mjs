@@ -347,6 +347,14 @@ export class AttackDeclaration {
 		target.isAttackTarget = true;
 	}
 
+	// An attack is only valid if it has at least one attacker, an attack target and is not cancelled.
+	isValid() {
+		if (this.isCancelled) return false;
+		if (this.target === null) return false;
+		if (this.attackers.length === 0) return false;
+		return true;
+	}
+
 	removeAttacker(card) {
 		let attackerIndex = this.attackers.indexOf(card);
 		if (attackerIndex != -1) {
