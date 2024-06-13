@@ -3,6 +3,7 @@ import {Stack} from "./stacks.mjs";
 import {createStackCreatedEvent} from "./events.mjs";
 import {Timing} from "./timings.mjs";
 import {TimingRunner, arrayTimingGenerator} from "./timingGenerators.mjs";
+import {ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import * as actions from "./actions.mjs";
 import * as requests from "./inputRequests.mjs";
 import * as abilities from "./abilities.mjs";
@@ -218,7 +219,11 @@ export class ManaSupplyPhase extends Phase {
 			if (player.handZone.cards.length > 8) {
 				let choiceRequest = requests.chooseCards.create(player, player.handZone.cards, [player.handZone.cards.length - 8], "handTooFull");
 				let chosenCards = requests.chooseCards.validate((yield [choiceRequest]).value, choiceRequest);
-				this.timings.push(new Timing(this.turn.game, chosenCards.map(card => new actions.Discard(player, card))));
+				this.timings.push(new Timing(this.turn.game, chosenCards.map(card => new actions.Discard(
+					player,
+					card,
+					new ScriptValue("dueToReason", ["turnDiscard"])
+				))));
 				await (yield* this.runTiming());
 			}
 		}

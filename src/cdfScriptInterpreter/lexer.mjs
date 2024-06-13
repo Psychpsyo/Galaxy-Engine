@@ -184,7 +184,8 @@ const keywordTokenTypes = {
 	casting: "dueToReason",
 	retire: "dueToReason",
 	wasCast: "dueToReason",
-	wasDeployed: "dueToReason"
+	wasDeployed: "dueToReason",
+	turnDiscard: "dueToReason"
 }
 
 export class ScriptLexerError extends Error {
