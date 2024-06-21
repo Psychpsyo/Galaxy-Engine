@@ -60,6 +60,7 @@ export function parseScript(tokenList, newEffectId, type, originalCodeString) {
 		case "gameLimit":
 		case "zoneDurationLimit":
 		case "globalTurnLimit":
+		case "cardTurnLimit":
 		case "turnLimit": {
 			return parseExpression();
 		}
