@@ -17,4 +17,4 @@ during: currentPhase = endPhase
 condition: GETCOUNTERS(thisCard, Chaos) >= 6
 REMOVECOUNTERS(thisCard, Chaos, GETCOUNTERS(thisCard, Chaos));
 $cards = both.MOVE([from own.hand], deck);
-both.DRAW(COUNT($cards.moved));
+both.DRAW(COUNT($cards));
