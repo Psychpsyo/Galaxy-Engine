@@ -309,6 +309,15 @@ export function createCardRevealedEvent(player, card) {
 	}
 }
 
+export function createCardsOrderedEvent(player, orderedCards) {
+	return {
+		"nature": "event",
+		"type": "cardsOrdered",
+		"player": player,
+		"orderedCards": orderedCards
+	}
+}
+
 export function createCardsSelectedEvent(player, chosenCards) {
 	return {
 		"nature": "event",

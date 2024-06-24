@@ -3,8 +3,9 @@ import * as game from "./game.mjs";
 import * as actions from "./actions.mjs";
 import * as abilities from "./abilities.mjs";
 import * as timingGenerators from "./timingGenerators.mjs";
-import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
+import {ScriptContext, ScriptValue, TargetObjects} from "./cdfScriptInterpreter/structs.mjs";
 import {ObjectValues, FightValues} from "./objectValues.mjs";
+import {Timing} from "./timings.mjs";
 
 // Base class for all blocks
 class Block {
@@ -219,15 +220,17 @@ export class Fight extends Block {
 
 export class AbilityActivation extends Block {
 	constructor(stack, player, ability) {
-		// by the time this block executes, the snapshot might not be able to resolve to a card anymore (good)
+		// by the time this block executes, the snapshot might not be able to resolve to a card anymore
+		// This is good because any references to "this card" should be invalid by then.
 		const card = ability.card.snapshot();
+		const scriptTargets = new TargetObjects();
 		super("abilityActivationBlock", stack, player,
 			new timingGenerators.TimingRunner(() =>
-				timingGenerators.abilityTimingGenerator(ability, card, player),
+				timingGenerators.abilityTimingGenerator(ability, card, player, scriptTargets),
 				player.game
 			),
 			new timingGenerators.TimingRunner(() =>
-				timingGenerators.abilityCostTimingGenerator(ability, card, player),
+				timingGenerators.abilityCostTimingGenerator(ability, card, player, scriptTargets),
 				player.game
 			)
 		);
@@ -253,23 +256,17 @@ export class AbilityActivation extends Block {
 }
 
 export class DeployItem extends Block {
-	constructor(stack, player, card) {
-		let placeAction = new actions.Place(player, card, player.spellItemZone);
-		let costTimingGenerators = [
-			card.getDeploymentCost(player),
-			timingGenerators.arrayTimingGenerator([[placeAction]])
-		];
+	constructor(stack, player, card, costOptionTree) {
+		const scriptTargets = new TargetObjects();
 		let execTimingGenerators = [
-			timingGenerators.arrayTimingGenerator([[new actions.Deploy(player, placeAction, new ScriptValue("dueToReason", "deployment"))]])
+			timingGenerators.arrayTimingGenerator([
+				// snapshot card here to not track it when it moves to another zone during its effect
+				[new actions.Deploy(player, card.snapshot(), player.spellItemZone, new ScriptValue("dueToReason", "deployment"))]
+			])
 		];
 
-		// equipable items
+		// for equipable items
 		let equipGeneratorHandled = false;
-		let selectEquipableAction;
-		if (card.values.current.cardTypes.includes("equipableItem")) {
-			selectEquipableAction = new actions.SelectEquipableUnit(player, card);
-			costTimingGenerators.unshift(timingGenerators.arrayTimingGenerator([[selectEquipableAction]]));
-		}
 
 		// handle deploy ability
 		let deployAbility = null;
@@ -278,29 +275,33 @@ export class DeployItem extends Block {
 				deployAbility = ability;
 				if (card.values.current.cardTypes.includes("equipableItem")) {
 					execTimingGenerators.unshift(timingGenerators.equipTimingGenerator(
-						selectEquipableAction,
 						player,
-						timingGenerators.abilityTimingGenerator(ability, card, player)
+						timingGenerators.abilityTimingGenerator(ability, card, player, scriptTargets)
 					));
 					equipGeneratorHandled = true;
 				} else {
-					execTimingGenerators.unshift(timingGenerators.abilityTimingGenerator(ability, card, player));
+					execTimingGenerators.unshift(timingGenerators.abilityTimingGenerator(ability, card, player, scriptTargets));
 				}
 				// cards only ever have one of these
 				break;
 			}
 		}
 		if (!equipGeneratorHandled && card.values.current.cardTypes.includes("equipableItem")) {
-			execTimingGenerators.unshift(timingGenerators.equipTimingGenerator(selectEquipableAction, player));
+			execTimingGenerators.unshift(timingGenerators.equipTimingGenerator(player));
 		}
 		execTimingGenerators.push(timingGenerators.spellItemDiscardGenerator(player, card));
 
 		super("deployBlock", stack, player,
 			new timingGenerators.TimingRunner(() => timingGenerators.combinedTimingGenerator(execTimingGenerators), player.game),
-			new timingGenerators.TimingRunner(() => timingGenerators.combinedTimingGenerator(costTimingGenerators), player.game)
+			new timingGenerators.TimingRunner(() => card.getDeploymentCost(player, scriptTargets), player.game)
 		);
+		costOptionTree.setRunner(this.costTimingRunner);
+		this.costTimingRunner.optionTree = costOptionTree;
 		this.card = card;
 		this.deployAbility = deployAbility;
+		this.equipTarget = null; // holds the selected unit for this equipable item
+
+		this.placeTiming = new Timing(player.game, [new actions.Place(player, card, player.spellItemZone)]);
 	}
 
 	async* runCost() {
@@ -309,9 +310,11 @@ export class DeployItem extends Block {
 			return false;
 		}
 
+		yield* this.placeTiming.run();
+
 		// Needs to be checked after paying the cost in case paying the cost made some targets invalid.
 		if (!this.card.current() ||
-			(this.deployAbility && this.deployAbility.exec && !this.deployAbility.exec.hasAllTargets(new ScriptContext(this.card.current(), this.player, this.deployAbility)))
+			(this.deployAbility && this.deployAbility.exec && !this.deployAbility.exec.hasAllTargets(new ScriptContext(this.card.current(), this.player, this.deployAbility, this.player)))
 		) {
 			yield* this.undoCost();
 			return false;
@@ -319,55 +322,58 @@ export class DeployItem extends Block {
 
 		return true;
 	}
+
+	* undoCost() {
+		yield* this.placeTiming.undo();
+		yield* super.undoCost();
+	}
 }
 
 export class CastSpell extends Block {
-	constructor(stack, player, card) {
-		let placeAction = new actions.Place(player, card, player.spellItemZone);
-		let costTimingGenerators = [
-			card.getCastingCost(player),
-			timingGenerators.arrayTimingGenerator([[placeAction]])
-		];
-		let execTimingGenerators = [
-			timingGenerators.arrayTimingGenerator([[new actions.Cast(player, placeAction, new ScriptValue("dueToReason", "casting"))]])
+	constructor(stack, player, card, costOptionTree) {
+		const scriptTargets = new TargetObjects();
+		const execTimingGenerators = [
+			timingGenerators.arrayTimingGenerator([
+				// snapshot card here to not track it when it moves to another zone during its effect
+				[new actions.Cast(player, card.snapshot(), player.spellItemZone, new ScriptValue("dueToReason", "casting"))]
+			])
 		];
 
-		// enchant spells
-		let enchantGeneratorHandled = false;
-		let selectEquipableAction;
-		if (card.values.current.cardTypes.includes("enchantSpell")) {
-			selectEquipableAction = new actions.SelectEquipableUnit(player, card);
-			costTimingGenerators.unshift(timingGenerators.arrayTimingGenerator([[selectEquipableAction]]));
-		}
+		// handle cast ability
 		let castAbility = null;
+		let enchantGeneratorHandled = false;
 		for (let ability of card.values.current.abilities) {
 			if (ability instanceof abilities.CastAbility) {
 				castAbility = ability;
 				if (card.values.current.cardTypes.includes("equipableItem")) {
 					execTimingGenerators.unshift(timingGenerators.equipTimingGenerator(
-						selectEquipableAction,
 						player,
-						timingGenerators.abilityTimingGenerator(ability, card, player)
+						timingGenerators.abilityTimingGenerator(ability, card, player, scriptTargets)
 					));
 					enchantGeneratorHandled = true;
 				} else {
-					execTimingGenerators.unshift(timingGenerators.abilityTimingGenerator(ability, card, player));
+					execTimingGenerators.unshift(timingGenerators.abilityTimingGenerator(ability, card, player, scriptTargets));
 				}
 				// cards only ever have one of these
 				break;
 			}
 		}
 		if (!enchantGeneratorHandled && card.values.current.cardTypes.includes("enchantSpell")) {
-			execTimingGenerators.unshift(timingGenerators.equipTimingGenerator(selectEquipableAction, player));
+			execTimingGenerators.unshift(timingGenerators.equipTimingGenerator(player));
 		}
 		execTimingGenerators.push(timingGenerators.spellItemDiscardGenerator(player, card));
 
 		super("castBlock", stack, player,
 			new timingGenerators.TimingRunner(() => timingGenerators.combinedTimingGenerator(execTimingGenerators), player.game),
-			new timingGenerators.TimingRunner(() => timingGenerators.combinedTimingGenerator(costTimingGenerators), player.game)
+			new timingGenerators.TimingRunner(() => card.getCastingCost(player, scriptTargets), player.game)
 		);
+		this.costTimingRunner.optionTree = costOptionTree;
+		costOptionTree.setRunner(this.costTimingRunner);
 		this.card = card;
 		this.castAbility = castAbility;
+		this.equipTarget = null; // holds the selected unit for this enchant spell
+
+		this.placeTiming = new Timing(player.game, [new actions.Place(player, card, player.spellItemZone)]);
 	}
 
 	async* runCost() {
@@ -376,14 +382,21 @@ export class CastSpell extends Block {
 			return false;
 		}
 
+		yield* this.placeTiming.run();
+
 		// Needs to be checked after paying the cost in case paying the cost made some targets invalid.
 		if (!this.card.current() ||
-			(this.castAbility && this.castAbility.exec && !this.castAbility.exec.hasAllTargets(new ScriptContext(this.card.current(), this.player, this.castAbility)))
+			(this.castAbility && this.castAbility.exec && !this.castAbility.exec.hasAllTargets(new ScriptContext(this.card.current(), this.player, this.castAbility, this.player)))
 		) {
 			yield* this.undoCost();
 			return false;
 		}
 
 		return true;
+	}
+
+	* undoCost() {
+		yield* this.placeTiming.undo();
+		yield* super.undoCost();
 	}
 }

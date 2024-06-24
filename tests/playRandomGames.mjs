@@ -73,6 +73,7 @@ async function runGame() {
 		finishedGames++;
 	} catch (e) {
 		finishedGames++;
+		game.replay.extra.crashReason = e.stack
 		// needs to be sync, otherwise all the other in-progress games bog down the event loop and the file doesn't actually get written until the very end.
 		writeFileSync(`./errorReplays/game${finishedGames}_${Math.floor(Math.random() * 100000000)}.replay`, JSON.stringify(game.replay));
 	}

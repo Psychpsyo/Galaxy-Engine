@@ -113,7 +113,8 @@ export class Game {
 			config: this.config,
 			players: [{deckList: [], partnerIndex: -1}, {deckList: [], partnerIndex: -1}],
 			inputLog: [],
-			rngLog: []
+			rngLog: [],
+			extra: {} // This can hold arbitrary extra data to be stored with the replay file.
 		}
 		this.replayPosition = 0;
 		this.replayRngPosition = 0;
@@ -148,12 +149,9 @@ export class Game {
 		// RULES: Randomly decide the first player and the second player.
 		// not rules: starting player may be manually chosen.
 		if (this.config.startingPlayerChooses) {
-			const selectionRequest = new requests.choosePlayer.create(currentPlayer, "chooseStartingPlayer");
+			const selectionRequest = new requests.ChoosePlayer(currentPlayer, "chooseStartingPlayer");
 			const response = yield [selectionRequest];
-			if (response.type != "choosePlayer") {
-				throw new Error("Incorrect response type supplied during player selection. (expected \"choosePlayer\", got \"" + response.type + "\" instead)");
-			}
-			currentPlayer = requests.choosePlayer.validate(response.value, selectionRequest);
+			currentPlayer = await selectionRequest.extractResponseValue(response);
 		}
 		yield [createStartingPlayerSelectedEvent(currentPlayer)];
 
@@ -193,7 +191,7 @@ export class Game {
 				if (actionList.length === 0) {
 					return;
 				}
-				if (actionList[0].nature === "event") {
+				if (!(actionList[0] instanceof requests.InputRequest)) {
 					playerInput = yield actionList;
 				} else if (this.replay.inputLog.length > this.replayPosition) { // we're currently stepping through an unfinished replay
 					playerInput = this.replay.inputLog[this.replayPosition++];

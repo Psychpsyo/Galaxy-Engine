@@ -156,16 +156,17 @@ export class FunctionNode extends AstNode {
 	* eval(ctx) {
 		let players = (yield* this.player.eval(ctx)).get(ctx.player);
 		if (players.length == 1) {
-			const value = yield* this.function.run(this, new ScriptContext(ctx.card, players[0], ctx.ability));
+			const value = yield* this.function.run(this, new ScriptContext(ctx.card, players[0], ctx.ability, ctx.targets));
 			if (!this.function.returnType) return;
 
 			if (value.type === "tempActions") { // actions need to be executed
 				const actions = value.get(ctx.player);
-				const timing = yield [...actions]; // necessary for actions to not be modified
+				const timing = yield [...actions]; // [... ] is necessary for actions to not be modified
 				let values = [];
 				for (const action of timing.actions) {
 					if (actions.includes(action) && !action.isCancelled) {
-						const actualValues = this.function.finalizeReturnValue(action);
+						const actualValues = this.function.finalizeReturnValue(action, ctx);
+						// TODO: propagate explicitTarget
 						if (actualValues !== undefined) values = values.concat(actualValues);
 					}
 				}
@@ -179,7 +180,7 @@ export class FunctionNode extends AstNode {
 		let valueMap = new Map();
 		let type;
 		for (const player of players) {
-			const value = yield* this.function.run(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer));
+			const value = yield* this.function.run(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer, ctx.targets));
 			if (this.function.returnType) {
 				type = value.type;
 				valueMap.set(player, value.get(player));
@@ -198,7 +199,7 @@ export class FunctionNode extends AstNode {
 
 			for (const action of timing.actions) {
 				if (actions.includes(action) && !action.isCancelled) {
-					const actualValues = this.function.finalizeReturnValue(action);
+					const actualValues = this.function.finalizeReturnValue(action, ctx);
 					if (actualValues !== undefined) valueMap.set(action.player, (valueMap.get(action.player) ?? []).concat(actualValues));
 				}
 			}
@@ -211,8 +212,8 @@ export class FunctionNode extends AstNode {
 		const players = this.player.evalFull(ctx).next().value.get(ctx.player);
 		if (players.length === 1) {
 			const results =
-				this.function.runFull?.(this, new ScriptContext(ctx.card, players[0], ctx.ability, ctx.evaluatingPlayer)) ??
-				super.evalFull(new ScriptContext(ctx.card, players[0], ctx.ability, ctx.evaluatingPlayer));
+				this.function.runFull?.(this, new ScriptContext(ctx.card, players[0], ctx.ability, ctx.evaluatingPlayer, ctx.targets)) ??
+				super.evalFull(new ScriptContext(ctx.card, players[0], ctx.ability, ctx.evaluatingPlayer, ctx.targets));
 			for (const output of results) {
 				if (output.type === "tempActions") { // actions need to be executed
 					yield new ScriptValue(
@@ -229,7 +230,7 @@ export class FunctionNode extends AstNode {
 		// iterates over the cartesian product of the function's runFull generators.
 		for (const list of cartesianProduct(
 			players.map(
-				player => this.function.runFull?.(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer))
+				player => this.function.runFull?.(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer, ctx.targets))
 			)
 		)) {
 			const valueMap = new Map();
@@ -245,7 +246,7 @@ export class FunctionNode extends AstNode {
 	hasAllTargets(ctx) {
 		let players = this.player.evalFull(ctx).next().value.get(ctx.player);
 		for (const player of players) {
-			let context = new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer);
+			let context = new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer, ctx.targets);
 			// checks if all child nodes have their targets
 			if (!super.hasAllTargets(context)) return false;
 			// then checks function-specific requirements
@@ -1052,11 +1053,11 @@ export class DeckPositionNode extends AstNode {
 		this.top = position === "deckTop";
 	}
 	* eval(ctx) {
-		return new ScriptValue("zone", new DeckPosition((yield* this.playerNode.eval(ctx)).get(ctx.player).map(player => player.deckZone), this.top));
+		return new ScriptValue("zone", (yield* this.playerNode.eval(ctx)).get(ctx.player).map(player => new DeckPosition(player.deckZone, this.top)));
 	}
 	* evalFull(ctx) {
 		for (const player of this.playerNode.evalFull(ctx)) {
-			yield new ScriptValue("zone", new DeckPosition(player.get(ctx.player).map(player => player.deckZone), this.top));
+			yield new ScriptValue("zone", player.get(ctx.player).map(player => new DeckPosition(player.deckZone, this.top)));
 		}
 	}
 	getChildNodes() {

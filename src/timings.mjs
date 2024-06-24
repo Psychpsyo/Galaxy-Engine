@@ -1,6 +1,6 @@
 
 import {createActionCancelledEvent, createValueChangedEvent, createActionModificationAbilityAppliedEvent} from "./events.mjs";
-import {chooseAbilityOrder, chooseCards, applyActionModificationAbility} from "./inputRequests.mjs";
+import {ChooseAbilityOrder, ChooseCards, ApplyActionModificationAbility} from "./inputRequests.mjs";
 import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {BaseCard} from "./card.mjs";
@@ -42,11 +42,11 @@ export class Timing {
 	}
 
 	// returns a list of actionCancelled events and sets impossible actions to cancelled
-	_cancelImpossibleActions() {
+	async _cancelImpossibleActions() {
 		let events = [];
 		for (const action of this.actions) {
 			if (action.isCancelled) continue;
-			if (action.isImpossible()) {
+			if (await action.isImpossible()) {
 				events = events.concat(this._cancelAction(action));
 			}
 		}
@@ -54,7 +54,7 @@ export class Timing {
 	}
 
 	// applies static abilities like that on 'Substitution Doll' or 'Norma, of the Sandstorm'
-	* _handleModificationAbilities() {
+	async *_handleModificationAbilities() {
 		// gather abilities
 		const activeCards = this.game.players.map(player => player.getAllCards()).flat();
 		const possibleTargets = activeCards.concat(this.game.players);
@@ -125,8 +125,10 @@ export class Timing {
 						applicableAbilities.set(target, abilities);
 						// also keep track of which targets will need to be affected
 						const oldTargets = targets.get(target.currentOwner());
-						oldTargets.push(target);
-						targets.set(target.currentOwner(), oldTargets);
+						if (!oldTargets.includes(target)) {
+							oldTargets.push(target);
+							targets.set(target.currentOwner(), oldTargets);
+						}
 					}
 				}
 			}
@@ -138,19 +140,16 @@ export class Timing {
 			while (remainingCards.length > 0) {
 				let target;
 				if (remainingCards.length > 1) {
-					const request = chooseCards.create(player, remainingCards, [1], "nextCardToApplyStaticAbilityTo");
+					const request = new ChooseCards(player, remainingCards, [1], "nextCardToApplyStaticAbilityTo");
 					const response = yield [request];
-					if (response.type != "chooseCards") {
-						throw new Error("Wrong response type supplied during action modification application (expected 'chooseCards', got '" + response.type + "')");
-					}
-					target = chooseCards.validate(response.value, request)[0];
+					target = await request.extractResponseValue(response)[0];
 				} else {
 					target = remainingCards[0];
 				}
 				remainingCards.splice(remainingCards.indexOf(target), 1);
 
 				// apply modifications to this card
-				for (const ability of yield* orderStaticAbilities(target, applicableAbilities.get(target), this.game)) {
+				for (const ability of await (yield* orderStaticAbilities(target, applicableAbilities.get(target), this.game))) {
 					const modifier = ability.getModifier();
 					let didApply = false;
 					for (let i = 0; i < this.actions.length; i++) {
@@ -183,7 +182,7 @@ export class Timing {
 							for (const replacement of replacements) {
 								replacement.timing = this;
 
-								if (!replacement.isFullyPossible()) {
+								if (!(await replacement.isFullyPossible())) {
 									foundInvalidReplacement = true;
 									break;
 								}
@@ -193,9 +192,9 @@ export class Timing {
 
 						// ask player if they want to apply optional modification
 						if (!ability.mandatory) {
-							const response = yield [applyActionModificationAbility.create(ability.card.currentOwner(), ability, target)];
-							response.value = applyActionModificationAbility.validate(response.value);
-							if (!response.value) continue;
+							const request = new ApplyActionModificationAbility(ability.card.currentOwner(), ability, target);
+							const response = yield [request];
+							if (!await request.extractResponseValue(response)) continue;
 						}
 
 						// apply the modification
@@ -231,9 +230,9 @@ export class Timing {
 		}
 	}
 
-	isFullyPossible(costIndex) {
+	async isFullyPossible(costIndex) {
 		for (const action of this.actions) {
-			if (action.costIndex === costIndex && (!action.isFullyPossible() || action.isCancelled)) {
+			if (action.costIndex === costIndex && (action.isCancelled || !(await action.isFullyPossible()))) {
 				return false;
 			}
 		}
@@ -251,7 +250,7 @@ export class Timing {
 		}
 
 		// cancel impossible actions
-		const cancelEvents = this._cancelImpossibleActions();
+		const cancelEvents = await this._cancelImpossibleActions();
 		if (cancelEvents.length > 0) {
 			yield cancelEvents;
 		}
@@ -266,7 +265,7 @@ export class Timing {
 				return;
 			}
 			for (let i = 0; i < this.costCompletions.length; i++) {
-				this.costCompletions[i] = this.costCompletions[i] && this.isFullyPossible(i);
+				this.costCompletions[i] = this.costCompletions[i] && await this.isFullyPossible(i);
 			}
 			for (const action of this.actions) {
 				if (!this.costCompletions[action.costIndex]) {
@@ -457,7 +456,7 @@ export class Timing {
 // This is run after every regular timing and right after blocks start and end.
 // It takes care of updating static abilities.
 export async function* runInterjectedTimings(game, isPrediction) {
-	const timing = yield* getStaticAbilityPhasingTiming(game);
+	const timing = await (yield* getStaticAbilityPhasingTiming(game));
 	if (timing) {
 		await (yield* timing.run(isPrediction));
 	}
@@ -465,7 +464,7 @@ export async function* runInterjectedTimings(game, isPrediction) {
 }
 
 // iterates over all static abilities and activates/deactivates those that need it.
-function* getStaticAbilityPhasingTiming(game) {
+async function* getStaticAbilityPhasingTiming(game) {
 	const modificationActions = []; // the list of Apply/UnapplyStaticAbility actions that this will return as a timing.
 	const activeCards = game.players.map(player => player.getActiveCards()).flat();
 	const possibleTargets = activeCards.concat(game.players);
@@ -528,7 +527,7 @@ function* getStaticAbilityPhasingTiming(game) {
 	}
 
 	for (const [target, abilities] of applicableAbilities) {
-		for (const ability of yield* orderStaticAbilities(target, abilities, game)) {
+		for (const ability of await (yield* orderStaticAbilities(target, abilities, game))) {
 			modificationActions.push(new actions.ApplyStaticAbility(
 				ability.card.currentOwner(), // have these be owned by the player that owns the card with the ability.
 				target,
@@ -543,7 +542,7 @@ function* getStaticAbilityPhasingTiming(game) {
 	return new Timing(game, modificationActions);
 }
 
-function* orderStaticAbilities(target, abilities, game) {
+async function* orderStaticAbilities(target, abilities, game) {
 	const orderedAbilities = [];
 
 	const fieldEnterBuckets = {};
@@ -610,12 +609,9 @@ function* orderStaticAbilities(target, abilities, game) {
 			let ordering = [0];
 			// is sorting necessary for this bucket?
 			if (bucket.abilities.length !== 1) {
-				const request = chooseAbilityOrder.create(bucket.player, target, bucket.abilities);
+				const request = new ChooseAbilityOrder(bucket.player, target, bucket.abilities);
 				const response = yield [request];
-				if (response.type != "chooseAbilityOrder") {
-					throw new Error("Wrong response type supplied during ability ordering (expected 'chooseAbilityOrder', got '" + response.type + "')");
-				}
-				ordering = chooseAbilityOrder.validate(response.value, request);
+				ordering = await request.extractResponseValue(response);
 			}
 			// we got the order for the abilities
 			for (const index of ordering) {

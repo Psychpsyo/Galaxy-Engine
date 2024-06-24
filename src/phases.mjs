@@ -94,22 +94,25 @@ export class StackPhase extends Phase {
 
 	async getBlockOptions(stack) {
 		return [
-			requests.pass.create(stack.getNextPlayer()),
-			requests.castSpell.create(stack.getNextPlayer(), await this.getCastableSpells(stack)),
-			requests.activateTriggerAbility.create(stack.getNextPlayer(), await this.getActivatableTriggerAbilities(stack)),
-			requests.activateFastAbility.create(stack.getNextPlayer(), await this.getActivatableFastAbilities(stack))
+			new requests.Pass(stack.getNextPlayer()),
+			new requests.CastSpell(stack.getNextPlayer(), ...(await this.getCastableSpells(stack))),
+			new requests.ActivateTriggerAbility(stack.getNextPlayer(), await this.getActivatableTriggerAbilities(stack)),
+			new requests.ActivateFastAbility(stack.getNextPlayer(), await this.getActivatableFastAbilities(stack))
 		];
 	}
 
 	async getCastableSpells(stack) {
-		let player = stack.getNextPlayer();
-		let castable = [];
+		const player = stack.getNextPlayer();
+		const castable = [];
+		const costOptionTrees = [];
 		for (const card of player.handZone.cards) {
-			if (await card.canCast(true, player)) {
+			const costOptionTree = await card.getCastabilityCostOptionTree(true, player);
+			if (await costOptionTree?.isValid()) {
 				castable.push(card);
+				costOptionTrees.push(costOptionTree);
 			}
 		}
-		return castable;
+		return [castable, costOptionTrees];
 	}
 
 	async getActivatableFastAbilities(stack) {
@@ -217,8 +220,8 @@ export class ManaSupplyPhase extends Phase {
 		// (turn player chooses first)
 		for (let player of [this.turn.player, this.turn.player.next()]) {
 			if (player.handZone.cards.length > 8) {
-				let choiceRequest = requests.chooseCards.create(player, player.handZone.cards, [player.handZone.cards.length - 8], "handTooFull");
-				let chosenCards = requests.chooseCards.validate((yield [choiceRequest]).value, choiceRequest);
+				const choiceRequest = new requests.ChooseCards(player, player.handZone.cards, [player.handZone.cards.length - 8], "handTooFull");
+				const chosenCards = await choiceRequest.extractResponseValue((yield [choiceRequest]));
 				this.timings.push(new Timing(this.turn.game, chosenCards.map(card => new actions.Discard(
 					player,
 					card,
@@ -252,7 +255,7 @@ export class DrawPhase extends StackPhase {
 	async getBlockOptions(stack) {
 		let blockOptions = await super.getBlockOptions(stack);
 		if (this.turn.index != 0 && !this.turn.hasStandardDrawn && stack.index == 1 && stack.blocks.length == 0) {
-			blockOptions.push(requests.doStandardDraw.create(this.turn.player));
+			blockOptions.push(new requests.DoStandardDraw(this.turn.player));
 		}
 		return getHighestPriorityOptions(blockOptions);
 	}
@@ -270,9 +273,9 @@ export class MainPhase extends StackPhase {
 		if (stack.canDoNormalActions()) {
 			// turn actions
 			if (!this.turn.hasStandardSummoned) {
-				options.push(requests.doStandardSummon.create(this.turn.player, await this.getSummonableUnits()));
+				options.push(new requests.DoStandardSummon(this.turn.player, await this.getSummonableUnits()));
 			}
-			options.push(requests.deployItem.create(this.turn.player, await this.getDeployableItems()));
+			options.push(new requests.DeployItem(this.turn.player, ...(await this.getDeployableItems())));
 			if (!this.turn.hasRetired) {
 				const eligibleUnits = [];
 				for (const card of this.turn.player.unitZone.cards.concat(this.turn.player.partnerZone.cards)) {
@@ -290,11 +293,11 @@ export class MainPhase extends StackPhase {
 						eligibleUnits.push(card);
 					}
 				}
-				options.push(requests.doRetire.create(this.turn.player, eligibleUnits));
+				options.push(new requests.DoRetire(this.turn.player, eligibleUnits));
 			}
 
 			// optional abilities
-			options.push(requests.activateOptionalAbility.create(this.turn.player, await this.getActivatableOptionalAbilities()));
+			options.push(new requests.ActivateOptionalAbility(this.turn.player, await this.getActivatableOptionalAbilities()));
 		}
 		return getHighestPriorityOptions(options);
 	}
@@ -322,13 +325,16 @@ export class MainPhase extends StackPhase {
 	}
 
 	async getDeployableItems() {
-		let deployable = [];
+		const deployable = [];
+		const costOptionTrees = [];
 		for (const card of this.turn.player.handZone.cards) {
-			if (await card.canDeploy(true, this.turn.player)) {
+			const costOptionTree = await card.getDeployabilityCostOptionTree(true, this.turn.player)
+			if (await costOptionTree?.isValid()) {
 				deployable.push(card);
+				costOptionTrees.push(costOptionTree);
 			}
 		}
-		return deployable;
+		return [deployable, costOptionTrees];
 	}
 }
 
@@ -342,14 +348,14 @@ export class BattlePhase extends StackPhase {
 		if (stack.canDoNormalActions()) {
 			// check for fight
 			if (this.turn.game.currentAttackDeclaration) {
-				return [requests.doFight.create(this.turn.player)];
+				return [new requests.DoFight(this.turn.player)];
 			}
 
 			// find eligible attackers
 			let eligibleAttackers = this.turn.player.partnerZone.cards.concat(this.turn.player.unitZone.cards.filter(card => card !== null));
 			eligibleAttackers = eligibleAttackers.filter(card => card.canAttack());
 			if (eligibleAttackers.length > 0) {
-				options.push(requests.doAttackDeclaration.create(this.turn.player, eligibleAttackers));
+				options.push(new requests.DoAttackDeclaration(this.turn.player, eligibleAttackers));
 			}
 		}
 		return getHighestPriorityOptions(options);

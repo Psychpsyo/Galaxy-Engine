@@ -79,12 +79,23 @@ function equalityCompare(elemA, elemB, game) {
 // This is an execution context for cdfScript
 // Ability may be null but card and player are guaranteed to always exist
 export class ScriptContext {
-	constructor(card, player, ability = null, evaluatingPlayer = null) {
+	constructor(card, player, ability = null, evaluatingPlayer = null, targets = new TargetObjects()) {
 		this.game = player.game; // just for convenience
 		this.card = card; // The card that the portion of script currently resides on
 		this.player = player; // The player executing the script
 		this.evaluatingPlayer = evaluatingPlayer; // The player evaluating the script (cards may be hidden from the script like this)
 		this.ability = ability; // The ability that the script belongs to
+		this.targets = targets;
+	}
+}
+
+// used to keep track of targeted objects of different types to prevent selecting the same target twice in an ability
+// this is separate from ScriptContext so that multiple contexts can share the same targets. (one ability can have multiple contexts during processing)
+export class TargetObjects {
+	constructor() {
+		this.card = [];
+		this.player = [];
+		this.abilityId = [];
 	}
 }
 
@@ -98,8 +109,8 @@ export class SomeOrMore {
 
 // A zone value that represents either the top or bottom of a deck
 export class DeckPosition {
-	constructor(decks, isTop) {
-		this.decks = decks;
+	constructor(deck, isTop) {
+		this.deck = deck;
 		this.isTop = isTop;
 	}
 }

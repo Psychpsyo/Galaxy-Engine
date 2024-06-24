@@ -50,7 +50,7 @@ export class BaseAbility {
 	zoneMoveReset(game) {}
 }
 
-// This is the super class of all activatable activities that can have a cost and some processing
+// This is the super class of all activatable activities that can have a cost and an exec
 export class Ability extends BaseAbility {
 	constructor(ability, game) {
 		super(ability, game);
@@ -70,10 +70,10 @@ export class Ability extends BaseAbility {
 		if (this.cost === null) {
 			return this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer));
 		}
-		let timingRunner = new timingGenerators.TimingRunner(() => timingGenerators.abilityCostTimingGenerator(this, card, player), player.game);
+		const timingRunner = new timingGenerators.TimingRunner(() => timingGenerators.abilityCostTimingGenerator(this, card, player), player.game);
 		timingRunner.isCost = true;
-		let costOptionTree = await timingGenerators.generateOptionTree(player.game, timingRunner, () => this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)));
-		return costOptionTree.valid;
+		const costOptionTree = new timingGenerators.OptionTreeNode(player.game, timingRunner, () => this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)));
+		return costOptionTree.isValid();
 	}
 
 	* runCost(card, player) {
