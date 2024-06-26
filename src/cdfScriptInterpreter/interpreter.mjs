@@ -7,6 +7,7 @@ let registeredAbilities = {};
 let alreadyParsed = {
 	applyTarget: {},
 	cardCondition: {},
+	cardTurnLimit: {},
 	condition: {},
 	cost: {},
 	during: {},

@@ -2,9 +2,19 @@
 
 export function createDeckShuffledEvent(player) {
 	return {
-		"nature": "event",
-		"type": "deckShuffled",
-		"player": player
+		nature: "event",
+		type: "deckShuffled",
+		player: player
+	}
+}
+
+export function createDiceRolledEvent(player, sidedness, result) {
+	return {
+		nature: "event",
+		type: "diceRolled",
+		player: player,
+		sidedness: sidedness,
+		result: result
 	}
 }
 

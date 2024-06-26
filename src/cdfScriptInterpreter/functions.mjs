@@ -57,17 +57,27 @@ function getZoneForCard(zoneList, card, ctx) {
 	return rightType[0] ?? zoneList[0];
 }
 
+// returns only the given actions that are still in the timing and not cancelled
+function getSuccessfulActions(timing, actionList) {
+	const retVal = [];
+	for (const action of timing.actions) {
+		if (!action.cancelled && actionList.includes(action)) {
+			retVal.push(action);
+		}
+	}
+	return retVal;
+}
+
 class ScriptFunction {
 	// finalizeRetVal is used to 'post-process' the returned actions after they have been merged for players and executed.
 	// It is only called for functions that return tempAction
-	constructor(parameterTypes = [], defaultValues = [], returnType, func, hasAllTargets, funcFull, finalizeReturnValue = value => value) {
+	constructor(parameterTypes = [], defaultValues = [], returnType, func, hasAllTargets, funcFull) {
 		this.parameterTypes = parameterTypes;
 		this.defaultValues = defaultValues;
 		this.returnType = returnType;
 		this.run = func.bind(this);
 		this.hasAllTargets = hasAllTargets.bind(this);
 		this.runFull = funcFull?.bind(this);
-		this.finalizeReturnValue = finalizeReturnValue.bind(this);
 	}
 
 	// gets the right astNode of the given type
@@ -116,7 +126,7 @@ export function initFunctions() {
 	APPLY: new ScriptFunction(
 		["card", "player", "fight", "modifier", "untilIndicator"],
 		[null, null, null, null, new ast.ForeverNode()],
-		"action",
+		null,
 		function*(astNode, ctx) {
 			let until = (yield* this.getParameter(astNode, "untilIndicator").eval(ctx)).get(ctx.player);
 			let applyActions = [];
@@ -139,7 +149,6 @@ export function initFunctions() {
 					until[0].getTimingList(ctx.game)
 				));
 			}
-			return new ScriptValue("tempActions", applyActions);
 		},
 		function(astNode, ctx) { // for checking if any cards are available for the first card parameter
 			let target = this.getParameter(astNode, "card") ??
@@ -201,9 +210,9 @@ export function initFunctions() {
 	CANCELATTACK: new ScriptFunction(
 		[],
 		[],
-		"action",
+		null,
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.CancelAttack(ctx.player)]);
+			yield [new actions.CancelAttack(ctx.player)];
 		},
 		alwaysHasTarget,
 		undefined // TODO: Write evalFull
@@ -228,12 +237,12 @@ export function initFunctions() {
 		[new ast.PlayerNode("own"), null],
 		"number",
 		function*(astNode, ctx) {
-			const actionList = [];
+			const damageActions = [];
 			for (const player of (yield* this.getParameter(astNode, "player").eval(ctx)).get(ctx.player)) {
 				ast.setImplicit([player], "player");
 				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
 				ast.clearImplicit("player");
-				actionList.push(new actions.DealDamage(
+				damageActions.push(new actions.DealDamage(
 					ctx.player,
 					player,
 					amount,
@@ -241,13 +250,12 @@ export function initFunctions() {
 					new ScriptValue("card", [ctx.card.snapshot()])
 				));
 			}
-			return new ScriptValue("tempActions", actionList);
+
+			const timing = yield [...damageActions];
+			return new ScriptValue("number", getSuccessfulActions(timing, damageActions).map(action => action.amount));
 		},
 		alwaysHasTarget,
-		undefined, // TODO: Write evalFull
-		function(action, ctx) {
-			return [action.amount];
-		}
+		undefined // TODO: Write evalFull
 	),
 
 	// Returns the top X cards of the executing player's deck
@@ -289,16 +297,20 @@ export function initFunctions() {
 				new ScriptValue("dueToReason", ["effect"]),
 				new ScriptValue("card", [ctx.card.snapshot()])
 			));
-			return new ScriptValue("tempActions", discards.concat(discards.map(discard => new actions.Destroy(discard))));
+
+			const actionList = discards.concat(discards.map(discard => new actions.Destroy(discard)));
+			const timing = yield [...actionList];
+			const returnCards = [];
+			for (const action of getSuccessfulActions(timing, actionList)) {
+				if (action instanceof actions.Destroy) {
+					returnCards.push(action.discard.card);
+				}
+			}
+			return new ScriptValue("card", returnCards);
 		},
 		hasCardTarget,
 		function*(astNode, ctx) {
 			yield* this.getParameter(astNode, "card").evalFull(ctx);
-		},
-		function(action, ctx) {
-			if (action instanceof actions.Destroy) {
-				return [action.discard.card];
-			}
 		}
 	),
 
@@ -331,19 +343,19 @@ export function initFunctions() {
 		[null],
 		"card",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current()).map(card => new actions.Discard(
+			const cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current());
+			const discardActions = cards.map(card => new actions.Discard(
 				ctx.player,
 				card.current(),
 				new ScriptValue("dueToReason", ["effect"]),
 				new ScriptValue("card", [ctx.card.snapshot()])
-			)));
+			));
+			const timing = yield [...discardActions];
+			return new ScriptValue("card", getSuccessfulActions(timing, discardActions).map(action => action.card));
 		},
 		hasCardTarget,
 		function*(astNode, ctx) {
 			yield* this.getParameter(astNode, "card").evalFull(ctx);
-		},
-		function(action, ctx) {
-			return [action.card];
 		}
 	),
 
@@ -378,13 +390,12 @@ export function initFunctions() {
 			if (astNode.asManyAsPossible) {
 				amount = Math.min(amount, ctx.player.deckZone.cards.length);
 			}
-			return new ScriptValue("tempActions", [new actions.Draw(ctx.player, amount)]);
+			const drawAction = new actions.Draw(ctx.player, amount);
+			const timing = yield [drawAction];
+			return new ScriptValue("card", getSuccessfulActions(timing, [drawAction])[0]?.drawnCards ?? []);
 		},
 		alwaysHasTarget,
-		undefined, // TODO: Write evalFull
-		function(action, ctx) {
-			return action.drawnCards;
-		}
+		undefined // TODO: Write evalFull
 	),
 
 	// Exiles the passed-in cards
@@ -393,15 +404,21 @@ export function initFunctions() {
 		[null, new ast.ForeverNode()],
 		"card",
 		function*(astNode, ctx) {
+			const cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current());
 			const until = (yield* this.getParameter(astNode, "untilIndicator").eval(ctx)).get(ctx.player)[0].getTimingList(ctx.game);
-			return new ScriptValue("tempActions", (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current()).map(card => new actions.Exile(ctx.player, card.current(), until)));
+			const exileActions = cards.map(card => new actions.Exile(
+				ctx.player,
+				card.current(),
+				until,
+				new ScriptValue("dueToReason", ["effect"]),
+				new ScriptValue("card", [ctx.card.snapshot()])
+			));
+			const timing = yield [...exileActions];
+			return new ScriptValue("card", getSuccessfulActions(timing, exileActions).map(action => action.card));
 		},
 		hasCardTarget,
 		function*(astNode, ctx) {
 			yield* this.getParameter(astNode, "card").evalFull(ctx);
-		},
-		function(action, ctx) {
-			return [action.card];
 		}
 	),
 
@@ -411,13 +428,12 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.GainLife(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
+			const gainLifeAction = new actions.GainLife(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0]);
+			const timing = yield [gainLifeAction];
+			return new ScriptValue("number", [getSuccessfulActions(timing, [gainLifeAction])[0]?.amount ?? 0]);
 		},
 		alwaysHasTarget,
-		undefined, // TODO: Write evalFull
-		function(action, ctx) {
-			return [action.amount];
-		}
+		undefined // TODO: Write evalFull
 	),
 
 	// The executing player gains X mana
@@ -426,13 +442,12 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.GainMana(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
+			const gainManaAction = new actions.GainMana(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0]);
+			const timing = yield [gainManaAction];
+			return new ScriptValue("number", [getSuccessfulActions(timing, [gainManaAction])[0]?.amount ?? 0]);
 		},
 		alwaysHasTarget,
-		undefined, // TODO: Write evalFull
-		function(action, ctx) {
-			return [action.amount];
-		}
+		undefined // TODO: Write evalFull
 	),
 
 	// Returns how many counters of the given type are on the given cards
@@ -461,10 +476,10 @@ export function initFunctions() {
 	GIVEATTACK: new ScriptFunction(
 		["card"],
 		[null],
-		"action",
+		null,
 		function*(astNode, ctx) {
-			let target = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0];
-			return new ScriptValue("tempActions", target.current()? [new actions.GiveAttack(ctx.player, target.current())] : []);
+			const target = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0];
+			yield [new actions.GiveAttack(ctx.player, target.current())];
 		},
 		hasCardTarget,
 		undefined // TODO: Write evalFull
@@ -476,13 +491,12 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.LoseLife(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
+			const loseLifeAction = new actions.LoseLife(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0]);
+			const timing = yield [loseLifeAction];
+			return new ScriptValue("number", [getSuccessfulActions(timing, [loseLifeAction])[0]?.amount ?? 0]);
 		},
 		alwaysHasTarget,
-		undefined, // TODO: Write evalFull
-		function(action, ctx) {
-			return [-action.amount];
-		}
+		undefined // TODO: Write evalFull
 	),
 
 	// The executing player loses X mana
@@ -491,13 +505,12 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.LoseMana(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0])]);
+			const loseManaAction = new actions.LoseMana(ctx.player, (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0]);
+			const timing = yield [loseManaAction];
+			return new ScriptValue("number", [getSuccessfulActions(timing, [loseManaAction])[0]?.amount ?? 0]);
 		},
 		alwaysHasTarget,
-		undefined, // TODO: Write evalFull
-		function(action, ctx) {
-			return [-action.amount];
-		}
+		undefined // TODO: Write evalFull
 	),
 
 	// Move cards from where they are to certain zone(s)
@@ -528,7 +541,7 @@ export function initFunctions() {
 				const freeSlots = zone.getFreeSpaceCount();
 				if (freeSlots < cards.length) {
 					if (freeSlots.length === 0) {
-						return new ScriptValue("tempActions", []);
+						return new ScriptValue("card", []);
 					}
 					const selectionRequest = new requests.ChooseCards(ctx.player, cards, [freeSlots], "cardEffectMove:" + ctx.ability.id);
 					const response = yield [selectionRequest];
@@ -541,14 +554,12 @@ export function initFunctions() {
 				}
 			}
 
-			return new ScriptValue("tempActions", moveActions);
+			const timing = yield [...moveActions];
+			return new ScriptValue("card", getSuccessfulActions(timing, moveActions).map(action => action.card));
 		},
 		hasCardTarget,
 		function*(astNode, ctx) {
 			yield* this.getParameter(astNode, "card").evalFull(ctx);
-		},
-		function(action, ctx) {
-			return [action.card];
 		}
 	),
 
@@ -565,7 +576,8 @@ export function initFunctions() {
 				ctx.ability.id
 			);
 
-			return new ScriptValue("tempActions", [orderAction]);
+			yield [orderAction];
+			return new ScriptValue("card", [...orderAction.ordered]);
 		},
 		alwaysHasTarget, // technically you can't order nothing but that should never matter in practice
 		function*(astNode, ctx) {
@@ -575,9 +587,6 @@ export function initFunctions() {
 					yield new ScriptValue("card", order.map(i => cards[i]));
 				}
 			}
-		},
-		function(action, ctx) {
-			return [...action.ordered];
 		}
 	),
 
@@ -585,7 +594,7 @@ export function initFunctions() {
 	PUTCOUNTERS: new ScriptFunction(
 		["card", "counter", "amount"],
 		[null, null, null],
-		"action",
+		null,
 		function*(astNode, ctx) {
 			const cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
 			const actionList = [];
@@ -594,7 +603,7 @@ export function initFunctions() {
 				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
 				actionList.push(new actions.ChangeCounters(ctx.player, card, type, amount));
 			}
-			return new ScriptValue("tempActions", actionList);
+			yield actionList;
 		},
 		hasCardTarget,
 		undefined // TODO: Write evalFull
@@ -604,7 +613,7 @@ export function initFunctions() {
 	REMOVECOUNTERS: new ScriptFunction(
 		["card", "counter", "amount"],
 		[null, null, null],
-		"action",
+		null,
 		function*(astNode, ctx) {
 			let cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
 			const actionList = [];
@@ -613,7 +622,7 @@ export function initFunctions() {
 				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
 				actionList.push(new actions.ChangeCounters(ctx.player, card, type, -amount));
 			}
-			return new ScriptValue("tempActions", actionList);
+			yield actionList;
 		},
 		hasCardTarget,
 		undefined // TODO: Write evalFull
@@ -625,14 +634,38 @@ export function initFunctions() {
 		[null],
 		"card",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).map(card => new actions.Reveal(ctx.player, card)));
+			const revealActions = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).map(card => new actions.Reveal(ctx.player, card));
+			const timing = yield [...revealActions];
+			return new ScriptValue("card", getSuccessfulActions(timing, revealActions).map(action => action.card));
 		},
 		hasCardTarget,
 		function*(astNode, ctx) {
 			yield* this.getParameter(astNode, "card").evalFull(ctx);
+		}
+	),
+
+	// rolls an n-sided dice
+	ROLLDICE: new ScriptFunction(
+		["number"],
+		[6],
+		"number",
+		function*(astNode, ctx) {
+			const sidedness = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
+			const action = new actions.RollDice(ctx.player, sidedness);
+			yield [action];
+			return new ScriptValue("number", action.result);
 		},
-		function(action, ctx) {
-			return [action.card];
+		alwaysHasTarget,
+		function*(astNode, ctx) {
+			let largestSoFar = 0;
+			for (const sidedness of this.getParameter(astNode, "number")) {
+				for (let i = 1; i <= sidedness.get(ctx.player); i++) {
+					if (i > largestSoFar) {
+						yield i;
+						largestSoFar = i;
+					}
+				}
+			}
 		}
 	),
 
@@ -679,7 +712,7 @@ export function initFunctions() {
 			                      1 : choiceAmounts instanceof SomeOrMore?
 								  choiceAmounts.lowest : Math.min(...choiceAmounts);
 			if (eligibleCards.length < chooseAtLeast) {
-				return new ScriptValue("tempActions", []);
+				return new ScriptValue("card", []);
 			}
 
 			// clamp 'any' (or 'X+') to the amount of cards we have available
@@ -707,7 +740,10 @@ export function initFunctions() {
 				ctx.targets.card
 			);
 
-			return new ScriptValue("tempActions", [selectAction]);
+			yield [selectAction];
+			const cardList = [...selectAction.selected];
+			cardList.explicitTarget = true;
+			return new ScriptValue("card", cardList);
 		},
 		function(astNode, ctx) {
 			// Use the full eval to see if there is any valid choices for the player.
@@ -748,11 +784,6 @@ export function initFunctions() {
 					}
 				}
 			}
-		},
-		function(action, ctx) {
-			const cardList = [...action.selected];
-			cardList.explicitTarget = true;
-			return cardList;
 		}
 	),
 
@@ -776,7 +807,10 @@ export function initFunctions() {
 				ctx.targets.abilityId
 			);
 
-			return new ScriptValue("tempActions", [selectAction]);
+			yield [selectAction];
+			const abilities = [...selectAction.selected];
+			abilities.explicitTarget = true;
+			return new ScriptValue("abilityId", abilities);
 		},
 		function(astNode, ctx) {
 			// Use the full eval to see if there is any valid choices for the player.
@@ -793,11 +827,6 @@ export function initFunctions() {
 					alreadyYielded.push(ability);
 				}
 			}
-		},
-		function(action, ctx) {
-			const abilities = [action.selected];
-			abilities.explicitTarget = true;
-			return abilities;
 		}
 	),
 
@@ -813,7 +842,8 @@ export function initFunctions() {
 				ctx.ability.id
 			);
 
-			return new ScriptValue("tempActions", [selectAction]);
+			yield [selectAction];
+			return new ScriptValue("zone", [selectAction.selected]);
 		},
 		alwaysHasTarget,
 		function*(astNode, ctx) {
@@ -822,9 +852,6 @@ export function initFunctions() {
 				yield new ScriptValue("zone", [new DeckPosition(zone, true)]);
 				yield new ScriptValue("zone", [new DeckPosition(zone, false)]);
 			}
-		},
-		function(action, ctx) {
-			return [action.selected];
 		}
 	),
 
@@ -840,7 +867,11 @@ export function initFunctions() {
 				ctx.ability.id,
 				ctx.targets.player
 			);
-			return new ScriptValue("tempActions", [selectAction]);
+
+			yield [selectAction];
+			const players = [selectAction.selected];
+			players.explicitTarget = true;
+			return new ScriptValue("player", players);
 		},
 		alwaysHasTarget,
 		function*(astNode, ctx) {
@@ -849,11 +880,6 @@ export function initFunctions() {
 				returnList.explicitTarget = true;
 				yield new ScriptValue("player", returnList);
 			}
-		},
-		function(action, ctx) {
-			const players = [action.selected];
-			players.explicitTarget = true;
-			return players;
 		}
 	),
 
@@ -869,7 +895,8 @@ export function initFunctions() {
 				ctx.ability.id
 			);
 
-			return new ScriptValue("tempActions", [selectAction]);
+			yield [selectAction];
+			return new ScriptValue("type", [selectAction.selected]);
 		},
 		function(astNode, ctx) {
 			// Use the full eval to see if there is any valid choices for the player.
@@ -884,9 +911,6 @@ export function initFunctions() {
 					alreadyYielded.push(type);
 				}
 			}
-		},
-		function(action, ctx) {
-			return [action.selected];
 		}
 	),
 
@@ -894,15 +918,18 @@ export function initFunctions() {
 	SETATTACKTARGET: new ScriptFunction(
 		["card"],
 		[null],
-		"card",
+		null,
 		function*(astNode, ctx) {
-			const newTarget = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0] ?? null;
-			return new ScriptValue("tempActions", [new actions.SetAttackTarget(ctx.player, newTarget)]);
+			yield [new actions.SetAttackTarget(
+				ctx.player,
+				(yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0] ?? null
+			)];
 		},
 		hasCardTarget,
-		undefined, // TODO: Write evalFull
-		function(action, ctx) {
-			return [action.newTarget];
+		function*(astNode, ctx) {
+			for (const cardVal of this.getParameter(astNode, "card").evalFull(ctx)) {
+				yield new ScriptValue("card", cardVal.get(ctx.player));
+			}
 		}
 	),
 
@@ -910,9 +937,9 @@ export function initFunctions() {
 	SHUFFLE: new ScriptFunction(
 		["card"],
 		[new ast.ValueNode([], "card")],
-		"action",
+		null,
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", [new actions.Shuffle(ctx.player)]);
+			yield [new actions.Shuffle(ctx.player)];
 		},
 		function(astNode, ctx) {
 			const excludeCards = this.getParameter(astNode, "card")?.evalFull(ctx);
@@ -965,8 +992,8 @@ export function initFunctions() {
 			const freeZoneSlots = zone.getFreeSpaceCount();
 			if (freeZoneSlots < cards.length) {
 				// Not being able to summon enough units must interrupt the block
-				if (freeZoneSlots === 0) return new ScriptValue("tempActions", []);
-				if (!astNode.asManyAsPossible) return new ScriptValue("tempActions", []);
+				if (freeZoneSlots === 0) return new ScriptValue("card", []);
+				if (!astNode.asManyAsPossible) return new ScriptValue("card", []);
 
 				const selectionRequest = new requests.ChooseCards(ctx.player, cards, [freeZoneSlots], "cardEffectSummon:" + ctx.ability.id);
 				const response = yield [selectionRequest];
@@ -1036,10 +1063,10 @@ export function initFunctions() {
 				}
 			}
 
-			const timing = yield costs;
+			const costTiming = yield costs;
 			const summons = [];
-			for (let i = 0; i < timing.costCompletions.length; i++) {
-				if (timing.costCompletions[i]) {
+			for (let i = 0; i < costTiming.costCompletions.length; i++) {
+				if (costTiming.costCompletions[i]) {
 					summons.push(new actions.Summon(
 						ctx.player,
 						placeActions[i],
@@ -1048,13 +1075,11 @@ export function initFunctions() {
 					));
 				}
 			}
-			return new ScriptValue("tempActions", summons);
+			const summonTiming = yield [...summons];
+			return new ScriptValue("card", getSuccessfulActions(summonTiming, summons).map(action => action.card));
 		},
 		hasCardTarget,
-		undefined, // TODO: Write evalFull
-		function(action, ctx) {
-			return [action.card];
-		}
+		undefined // TODO: Write evalFull
 	),
 
 	// summons some number of the specified tokens to the given zone
@@ -1088,7 +1113,7 @@ export function initFunctions() {
 			const freeSpaces = zone.getFreeSpaceCount()
 			if (amount > freeSpaces && !astNode.asManyAsPossible) {
 				// Not being able to summon enough tokens must interrupt the block
-				return new ScriptValue("tempActions", []);
+				return new ScriptValue("card", []);
 			}
 
 			// create those tokens
@@ -1126,10 +1151,10 @@ defense: ${defense}`;
 					}
 				}
 			}
-			const timing = yield costs;
+			const costTiming = yield costs;
 			const summons = [];
-			for (let i = 0; i < timing.costCompletions.length; i++) {
-				if (timing.costCompletions[i]) {
+			for (let i = 0; i < costTiming.costCompletions.length; i++) {
+				if (costTiming.costCompletions[i]) {
 					summons.push(new actions.Summon(
 						ctx.player,
 						placeActions[i],
@@ -1138,26 +1163,24 @@ defense: ${defense}`;
 					));
 				}
 			}
-			return new ScriptValue("tempActions", summons);
+			const summonTiming = yield [...summons];
+			return new ScriptValue("card", getSuccessfulActions(summonTiming, summons).map(action => action.card));
 		},
 		alwaysHasTarget,
-		undefined, // TODO: Write evalFull
-		function(action, ctx) {
-			return [action.card];
-		}
+		undefined // TODO: Write evalFull
 	),
 
 	// Swaps two cards with eachother
 	SWAP: new ScriptFunction(
 		["card", "card", "bool"],
 		[null, null, new ast.BoolNode("no")],
-		"action",
+		null,
 		function*(astNode, ctx) {
 			let cardA = (yield* this.getParameter(astNode, "card", 0).eval(ctx)).get(ctx.player)[0];
 			let cardB = (yield* this.getParameter(astNode, "card", 1).eval(ctx)).get(ctx.player)[0];
 			let transferEquipments = (yield* this.getParameter(astNode, "bool").eval(ctx)).get(ctx.player);
 
-			return new ScriptValue("tempActions", [new actions.Swap(ctx.player, cardA, cardB, transferEquipments)]);
+			yield [new actions.Swap(ctx.player, cardA, cardB, transferEquipments)];
 		},
 		function(astNode, ctx) {
 			let hasCardA = false;
@@ -1187,14 +1210,14 @@ defense: ${defense}`;
 		[null],
 		"card",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current()).map(card => new actions.View(ctx.player, card.current())));
+			const cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
+			const viewActions = cards.filter(card => card.current()).map(card => new actions.View(ctx.player, card.current()));
+			const timing = yield viewActions;
+			return new ScriptValue("card", getSuccessfulActions(timing, viewActions).map(action => action.card));
 		},
 		hasCardTarget,
 		function*(astNode, ctx) {
 			yield* this.getParameter(astNode, "card").evalFull(ctx);
-		},
-		function(action, ctx) {
-			return [action.card];
 		}
 	)
 }

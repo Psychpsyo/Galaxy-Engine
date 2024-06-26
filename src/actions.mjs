@@ -634,8 +634,16 @@ export class Destroy extends Action {
 }
 
 export class Exile extends Action {
-	constructor(player, card, until) {
-		super(player);
+	constructor(player, card, until, reason, source) {
+		let properties = {
+			dueTo: reason,
+			from: new ScriptValue("zone", [card.zone]),
+			to: new ScriptValue("zone", [card.owner.exileZone])
+		};
+		if (source) { // source only exists if exiled by card effect
+			properties.by = source;
+		}
+		super(player, properties);
 		this.card = card;
 		this.until = until; // the array that the 'undo' action goes into (to exile until some time)
 	}
@@ -946,6 +954,22 @@ export class Shuffle extends Action {
 
 	undo() {
 		this.player.deckZone.undoShuffle();
+	}
+}
+
+export class RollDice extends Action {
+	constructor(player, sidedness) {
+		this.sidedness = sidedness;
+		this.result = null;
+	}
+
+	async* run() {
+		this.result = await this.player.game.randomInt(this.sidedness) + 1;
+		return events.createDiceRolledEvent(this.player, this.sidedness, this.result);
+	}
+
+	undo() {
+		this.result = null;
 	}
 }
 

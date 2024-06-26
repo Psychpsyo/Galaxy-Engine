@@ -250,7 +250,7 @@ export class Card extends BaseCard {
 			),
 			data.deckLimit,
 			interpreter.buildAST("equipableTo", data.id, data.equipableTo, player.game),
-			interpreter.buildAST("turnLimit", data.id, data.turnLimit, player.game),
+			interpreter.buildAST("cardTurnLimit", data.id, data.turnLimit, player.game),
 			data.condition? interpreter.buildAST("cardCondition", data.id, data.condition, player.game) : null
 		);
 		this.globalId = ++player.game.lastGlobalCardId;
