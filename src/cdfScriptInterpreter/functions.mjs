@@ -623,7 +623,10 @@ export function initFunctions() {
 		[null],
 		"card",
 		function*(astNode, ctx) {
-			return new ScriptValue("tempActions", (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).map(card => new actions.Reveal(ctx.player, card)));
+			return new ScriptValue(
+				"tempActions",
+				(yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).map(card => new actions.Reveal(ctx.player, card))
+			);
 		},
 		hasCardTarget,
 		function*(astNode, ctx) {
@@ -631,6 +634,30 @@ export function initFunctions() {
 		},
 		function(action) {
 			return [action.card];
+		}
+	),
+
+	// rolls an n-sided dice
+	ROLLDICE: new ScriptFunction(
+		["number"],
+		[6],
+		"number",
+		function*(astNode, ctx) {
+			const sidedness = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
+			const action = yield [new actions.RollDice(ctx.player, sidedness)];
+			return action.result;
+		},
+		alwaysHasTarget,
+		function*(astNode, ctx) {
+			let largestSoFar = 0;
+			for (const sidedness of this.getParameter(astNode, "number")) {
+				for (let i = 1; i <= sidedness.get(ctx.player); i++) {
+					if (i > largestSoFar) {
+						yield i;
+						largestSoFar = i;
+					}
+				}
+			}
 		}
 	),
 

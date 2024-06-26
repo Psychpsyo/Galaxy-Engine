@@ -948,6 +948,22 @@ export class Shuffle extends Action {
 	}
 }
 
+export class RollDice extends Action {
+	constructor(player, sidedness) {
+		this.sidedness = sidedness;
+		this.result = null;
+	}
+
+	async* run() {
+		this.result = await this.player.game.randomInt(this.sidedness) + 1;
+		return events.createDiceRolledEvent(this.player, this.sidedness, this.result);
+	}
+
+	undo() {
+		this.result = null;
+	}
+}
+
 export class View extends Action {
 	constructor(player, card) {
 		super(player);

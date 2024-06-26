@@ -8,6 +8,7 @@ import {ScriptValue, ScriptContext, DeckPosition, SomeOrMore, UntilIndicator, Tu
 import {functions, initFunctions} from "./functions.mjs";
 import {cartesianProduct} from "../math.mjs";
 
+// these are the only types of which implicits currently get set and read.
 const implicit = {
 	card: [[]],
 	action: [[]],
@@ -22,11 +23,28 @@ function equalityCompare(a, b) {
 	}
 	return a === b;
 }
+
+// these intentionally error when implicit[type] is undefined
 export function setImplicit(objects, type) {
 	implicit[type].push(objects);
 }
 export function clearImplicit(type) {
 	implicit[type].pop();
+}
+
+// matches a value against an expression, either directly or by making it an implicit and checking for the bool return value
+function* directOrImplicitBoolCompare(ctx, expr, scriptValue) {
+	if (scriptValue.type === expr.returnType) {
+		// the value should be compared for equality with what the expression returns
+		return scriptValue.equals(yield* expr.eval(ctx), ctx.player);
+	} else if (expr.returnType === "bool") {
+		// the value should be implicit and matches if the given expression is true
+		setImplicit(scriptValue.get(ctx.player), scriptValue.type);
+		const retVal = (yield* expr.eval(ctx)).get(ctx.player);
+		clearImplicit(scriptValue.type);
+		return retVal;
+	}
+	throw new Error(`Tried to match a ${scriptValue.type} value against a ${expr.returnType} expression.`);
 }
 
 class AstNode {
@@ -650,7 +668,7 @@ export class VariableNode extends AstNode {
 	* eval(ctx) {
 		let variable = ctx.ability.scriptVariables[this.name];
 		if (variable === undefined) {
-			throw new Error("Tried to access unitialized variable '" + this.name + "'.");
+			throw new Error(`Tried to access unitialized variable '${this.name}'.`);
 		}
 		return new ScriptValue(variable.type, variable.get(ctx.player));
 	}
@@ -1175,20 +1193,10 @@ export class ActionAccessorNode extends AstNode {
 					propertiesMatch = false;
 					break;
 				}
-				if (action.properties[property].type === this.actionProperties[property].returnType) {
-					// the property is a direct value that can be compared, like destroyed(by: thisCard)
-					if (!action.properties[property].equals(yield* this.actionProperties[property].eval(ctx), ctx.player)) {
-						propertiesMatch = false;
-						break;
-					}
-				} else if (this.actionProperties[property].returnType === "bool") {
-					// the property in question should be implicit and matches if the given expression is true, like destroyed(by: types = Fire)
-					setImplicit(action.properties[property].get(ctx.player), action.properties[property].type);
-					if (!(yield* this.actionProperties[property].eval(ctx)).get(ctx.player)) {
-						propertiesMatch = false;
-						break;
-					}
-					clearImplicit(action.properties[property].type);
+				// check if property matches
+				if (!directOrImplicitBoolCompare(ctx, this.actionProperties[property], action.properties[property])) {
+					propertiesMatch = false;
+					break;
 				}
 			}
 			if (!propertiesMatch) continue;
