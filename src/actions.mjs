@@ -644,8 +644,16 @@ export class Destroy extends Action {
 }
 
 export class Exile extends Action {
-	constructor(player, card, until) {
-		super(player);
+	constructor(player, card, until, reason, source) {
+		let properties = {
+			dueTo: reason,
+			from: new ScriptValue("zone", [card.zone]),
+			to: new ScriptValue("zone", [card.owner.exileZone])
+		};
+		if (source) { // source only exists if exiled by card effect
+			properties.by = source;
+		}
+		super(player, properties);
 		this.card = card;
 		this.until = until; // the array that the 'undo' action goes into (to exile until some time)
 	}

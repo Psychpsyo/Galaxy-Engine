@@ -176,21 +176,7 @@ export class FunctionNode extends AstNode {
 		if (players.length == 1) {
 			const value = yield* this.function.run(this, new ScriptContext(ctx.card, players[0], ctx.ability));
 			if (!this.function.returnType) return;
-
-			if (value.type === "tempActions") { // actions need to be executed
-				const actions = value.get(ctx.player);
-				const timing = yield [...actions]; // necessary for actions to not be modified
-				let values = [];
-				for (const action of timing.actions) {
-					if (actions.includes(action) && !action.isCancelled) {
-						const actualValues = this.function.finalizeReturnValue(action);
-						if (actualValues !== undefined) values = values.concat(actualValues);
-					}
-				}
-				return new ScriptValue(this.function.returnType, values);
-			} else {
-				return value;
-			}
+			return value;
 		}
 		// otherwise this is a both.FUNCTION() and must create a split value, while executing for the turn player first
 		players.unshift(players.splice(players.indexOf(ctx.game.currentTurn().player), 1)[0]);
@@ -204,23 +190,6 @@ export class FunctionNode extends AstNode {
 			}
 		}
 
-		if (type === "tempActions") { // actions need to be executed
-			type = this.function.returnType;
-
-			let actions = [];
-			for (const iterPlayer of players) {
-				actions = actions.concat(valueMap.get(iterPlayer));
-			}
-			const timing = yield [...actions]; // necessary for actions to not be modified
-			valueMap = new Map();
-
-			for (const action of timing.actions) {
-				if (actions.includes(action) && !action.isCancelled) {
-					const actualValues = this.function.finalizeReturnValue(action);
-					if (actualValues !== undefined) valueMap.set(action.player, (valueMap.get(action.player) ?? []).concat(actualValues));
-				}
-			}
-		}
 		if (this.function.returnType) {
 			return new ScriptValue(type, valueMap);
 		}
