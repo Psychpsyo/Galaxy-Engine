@@ -66,7 +66,7 @@ export class ChooseCards extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		// If a valid amount could have been selected, it should have been selected.
@@ -136,7 +136,7 @@ export class ChoosePlayer extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response < 0 || response >= this.player.game.players.length) {
@@ -165,7 +165,7 @@ export class ChooseType extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (typeof response != "number") {
@@ -199,7 +199,7 @@ export class ChooseDeckSide extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response != "top" && response != "bottom") {
@@ -228,7 +228,7 @@ export class ChooseAbility extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response < 0 || response >= this.from.length) {
@@ -258,7 +258,7 @@ export class OrderCards extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response.length != this.cards.length) {
@@ -299,7 +299,7 @@ export class ApplyActionModificationAbility extends InputRequest {
 	// extractResponseValue() does not need to be overidden.
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (typeof response !== "boolean") {
@@ -322,7 +322,7 @@ export class EnterBattlePhase extends InputRequest {
 	// extractResponseValue() does not need to be overidden.
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (typeof response !== "boolean") {
@@ -361,7 +361,7 @@ export class DoStandardDraw extends InputRequest {
 
 	async validate(response) {
 		// Doesn't need any actual validation
-		return super.validate(response);
+		return await super.validate(response);
 	}
 
 	*generateResponses() {
@@ -382,7 +382,7 @@ export class DoStandardSummon extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response < 0 || response >= this.player.handZone.cards.length) {
@@ -417,7 +417,7 @@ export class DeployItem extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response < 0 || response >= this.player.handZone.cards.length) {
@@ -452,7 +452,7 @@ export class CastSpell extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response < 0 || response >= this.player.handZone.cards.length) {
@@ -486,7 +486,7 @@ export class DoAttackDeclaration extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		for (let i = 0; i < response.length; i++) {
@@ -573,7 +573,7 @@ export class DoRetire extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		for (const cardIndex of response) {
@@ -616,7 +616,7 @@ export class ActivateOptionalAbility extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response < 0 || response >= this.eligibleAbilities.length) {
@@ -646,7 +646,7 @@ export class ActivateFastAbility extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response < 0 || response >= this.eligibleAbilities.length) {
@@ -676,7 +676,7 @@ export class ActivateTriggerAbility extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response < 0 || response >= this.eligibleAbilities.length) {
@@ -707,7 +707,7 @@ export class ChooseZoneSlot extends InputRequest {
 	}
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response < 0 || response >= this.eligibleSlots.length) {
@@ -734,7 +734,7 @@ export class ChooseAbilityOrder extends InputRequest {
 	// extractResponseValue() does not need to be overidden.
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (response.length != this.abilities.length) {
@@ -775,7 +775,7 @@ export class SelectTokenAmount extends InputRequest {
 	// extractResponseValue() does not need to be overidden.
 
 	async validate(response) {
-		const superValid = super.validate(response);
+		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
 		if (!this.eligibleAmounts.includes(response)) {
