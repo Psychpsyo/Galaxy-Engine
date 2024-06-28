@@ -90,9 +90,9 @@ export class TimingRunner {
 		return new Timing(this.game, generatorOutput.value);
 	}
 
-	* undo() {
+	* undo(isPrediction = false) {
 		while (this.timings.length > 0) {
-			yield* this.timings.pop().undo();
+			yield* this.timings.pop().undo(isPrediction);
 		}
 	}
 }
@@ -125,7 +125,7 @@ export class OptionTreeNode {
 		if (this._isValid !== null) return this._isValid;
 
 		// rewinding this tree's runner to play up to this node in our own generator
-		for (const _ of this._runner.undo()) {}
+		for (const _ of this._runner.undo(true)) {}
 
 		// gather choices needed to get to this node
 		let currentNode = this;
@@ -184,7 +184,7 @@ export class OptionTreeNode {
 		}
 
 		// undo everything
-		for (const _ of this._runner.undo()) {}
+		for (const _ of this._runner.undo(true)) {}
 
 		// advance the game state to where it was at the start
 		if (this.parent) { // if this is the root, we are done and trying to advance would break stuff

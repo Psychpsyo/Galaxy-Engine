@@ -326,7 +326,7 @@ export class Timing {
 		// TODO: The following things do not have proper undo support yet.
 		// This *should* only matter when units turn into spells/items so for now it does not matter(?)
 		// (That's because in those cases, modifiers on the card are destroyed and wouldn't properly get restored)
-		const valueChangeEvents = recalculateObjectValues(this.game);
+		const valueChangeEvents = recalculateObjectValues(this.game, isPrediction);
 		if (valueChangeEvents.length > 0) {
 			yield valueChangeEvents;
 		}
@@ -354,7 +354,7 @@ export class Timing {
 		this.followupTiming = await (yield* runInterjectedTimings(this.game, isPrediction, this.actions));
 	}
 
-	* undo() {
+	* undo(isPrediction = false) {
 		// check if this timing actually ran
 		if (!this.successful) {
 			return;
@@ -366,7 +366,7 @@ export class Timing {
 				events.push(event);
 			}
 		}
-		const valueChangeEvents = recalculateObjectValues(this.game);
+		const valueChangeEvents = recalculateObjectValues(this.game, isPrediction);
 		if (valueChangeEvents.length > 0) {
 			yield valueChangeEvents;
 		}
@@ -625,47 +625,50 @@ async function* orderStaticAbilities(target, abilities, game) {
 
 // recalculates the values of every object currently in the game, according to their modifier stacks.
 // TODO: generalize this somehow. Should probably generate a list of modifiables and loop over those
-function recalculateObjectValues(game) {
+function recalculateObjectValues(game, isPrediction = false) {
 	let valueChangeEvents = [];
-	for (const player of game.players) {
-		// recalculate the player's own values
-		const oldPlayerValues = player.values.clone();
-		recalculateModifiedValuesFor(player);
-		for (const property of oldPlayerValues.base.compareTo(player.values.base)) {
-			valueChangeEvents.push(createValueChangedEvent(player, property, true));
-		}
-		for (const property of oldPlayerValues.current.compareTo(player.values.current)) {
-			valueChangeEvents.push(createValueChangedEvent(player, property, false));
-		}
+	for (const object of getAllModifiableObjects(game)) {
+		// for performance, ValueChangedEvents aren't generated during prediction since they won't be needed
+		const oldValues = isPrediction? null : object.values.clone();
+		const wasUnit = object instanceof BaseCard && object.values.current.cardTypes.includes("unit");
 
-		// recalculate the values for the player's cards
-		for (const card of player.getActiveCards()) {
-			const oldCard = card.snapshot();
-			const wasUnit = card.values.current.cardTypes.includes("unit");
-			recalculateModifiedValuesFor(card);
-			// once done, unit specific modifications may need to be removed.
-			if (wasUnit && !card.values.current.cardTypes.includes("unit")) {
-				card.canAttackAgain = false;
-				for (let i = card.values.modifierStack.length - 1; i >= 0; i--) {
-					if (card.values.modifierStack[i].removeUnitSpecificModifications()) {
-						card.values.modifierStack.splice(i, 1);
-					}
-				}
-			}
+		recalculateModifiedValuesFor(object);
 
-			for (const property of oldCard.values.base.compareTo(card.values.base)) {
-				valueChangeEvents.push(createValueChangedEvent(card, property, true));
-			}
-			for (const property of oldCard.values.current.compareTo(card.values.current)) {
-				if (valueChangeEvents.find(event => event.valueName === property && event.card === card) === undefined) {
-					valueChangeEvents.push(createValueChangedEvent(card, property, false));
+		// did a card stop being a unit?
+		if (wasUnit && !object.values.current.cardTypes.includes("unit")) {
+			object.canAttackAgain = false;
+			for (let i = object.values.modifierStack.length - 1; i >= 0; i--) {
+				if (object.values.modifierStack[i].removeUnitSpecificModifications()) {
+					object.values.modifierStack.splice(i, 1);
 				}
 			}
 		}
-	}
-	if (game.currentBlock() instanceof blocks.Fight) {
-		// TODO: Not duplicating the ValueChangedEvent code until this gets generalized
-		recalculateModifiedValuesFor(game.currentBlock().fight);
+
+		if (!isPrediction) {
+			for (const property of oldValues.base.compareTo(object.values.base)) {
+				valueChangeEvents.push(createValueChangedEvent(object, property, true));
+			}
+			for (const property of oldValues.current.compareTo(object.values.current)) {
+				if (valueChangeEvents.find(event => event.valueName === property && event.object === object) === undefined) {
+					valueChangeEvents.push(createValueChangedEvent(object, property, false));
+				}
+			}
+		}
 	}
 	return valueChangeEvents;
+}
+
+function getAllModifiableObjects(game) {
+	const retVal = [];
+
+	// players and their cards
+	for (const player of game.players) {
+		retVal.push(player, ...player.getActiveCards());
+	}
+
+	// existing fights are also objects
+	if (game.currentBlock() instanceof blocks.Fight) {
+		retVal.push(game.currentBlock().fight);
+	}
+	return retVal;
 }
