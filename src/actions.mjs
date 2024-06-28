@@ -780,7 +780,7 @@ export class RemoveStatChange extends Action {
 	}
 
 	async* run() {
-		const currentObject = getObjectCurrent(this.toObject);
+		const currentObject = getObjectCurrent(this.object);
 		if (this.object instanceof BaseCard) {
 			this.object = this.object.snapshot();
 		}
@@ -790,7 +790,7 @@ export class RemoveStatChange extends Action {
 	}
 
 	undo() {
-		const currentObject = getObjectCurrent(this.toObject);
+		const currentObject = getObjectCurrent(this.object);
 		currentObject.values.modifierStack.splice(this._index, 0, this.modifier);
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
@@ -1106,7 +1106,7 @@ export class UnapplyStaticAbility extends Action {
 	}
 
 	async* run() {
-		const currentObject = getObjectCurrent(this.toObject);
+		const currentObject = getObjectCurrent(this.object);
 		if (this.object instanceof BaseCard) {
 			this.object = this.object.snapshot();
 		}
@@ -1117,7 +1117,7 @@ export class UnapplyStaticAbility extends Action {
 	}
 
 	undo() {
-		const currentObject = getObjectCurrent(this.toObject);
+		const currentObject = getObjectCurrent(this.object);
 		currentObject.values.modifierStack.splice(this._modifierIndex, 0, this._removed);
 		currentObject.values.modifiedByStaticAbility = true;
 		this.player.game.registerPendingValueChangeFor(currentObject);

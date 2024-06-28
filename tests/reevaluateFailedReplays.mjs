@@ -19,10 +19,11 @@ async function evaluateReplay(filename) {
 		for await (const updates of game.begin()) {
 			if (updates[0] instanceof InputRequest) {
 				// replay managed to run to 'completion' and can be deleted as it no longer errors.
-				fs.unlink("./errorReplays/" + filename);
-				deletedReplayCount++;
+				break;
 			}
 		}
+		fs.unlink("./errorReplays/" + filename);
+		deletedReplayCount++;
 	} catch(e) {
 		// replay is still broken, do nothing
 	}
