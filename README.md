@@ -11,11 +11,13 @@ Yes, it is named after Galaxy Train, how could you tell?
 
 ## Development Setup
 
-Working on the engine is currently easiest by just cloning the repo for [Cross Universe Online](https://github.com/Psychpsyo/Cross-Universe-Online-Frontend) and using its local version for testing.
+Working on the engine is currently easiest by just cloning the repo for [Cross Universe Online Battle](https://github.com/Psychpsyo/Cross-Universe-Online-Frontend) and using its local version for testing.
 
 
 
 ## LICENSE
 
 Even though the code in this repo is licensed under the MIT License, the copyright for the Cross Universe card game itself belongs to [Cross Universe](https://crossuniverse.jp/).  
-That means the MIT license can't cover the game itself, meaning you should also follow Cross Universe's own license. (found at https://crossuniverse.jp/約束事/)
+That means the MIT license can't cover the game itself, meaning you should also follow Cross Universe's own license, found here:  
+English: https://crossuniverse.net/tos/  
+Japanese: https://crossuniverse.jp/約束事/
