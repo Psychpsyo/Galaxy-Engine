@@ -274,7 +274,7 @@ export class Timing {
 			}
 		}
 		// fully cancelled timings are not successful, they interrupt their block or indicate that paying all costs failed.
-		if (!this.actions.find(action => !action.isCancelled)) {
+		if (this.actions.every(action => action.isCancelled)) {
 			this.game.nextTimingIndex--;
 			return;
 		}
@@ -417,7 +417,7 @@ export class Timing {
 
 		const allActions = unrevealedCards.map(card => new actions.View(card.currentOwner().next(), card.current()));
 		for (const deck of unshuffledDecks) {
-			if (!allActions.find(action => action instanceof actions.Shuffle && action.player === deck.player)) {
+			if (!allActions.some(action => action instanceof actions.Shuffle && action.player === deck.player)) {
 				allActions.push(new actions.Shuffle(deck.player));
 			}
 		}
@@ -431,7 +431,7 @@ export class Timing {
 			if (equipment && (equipment.values.current.cardTypes.includes("equipableItem") || equipment.values.current.cardTypes.includes("enchantSpell")) &&
 				(equipment.equippedTo === null || !equipment.equipableTo.evalFull(new ScriptContext(equipment, equipment.currentOwner())).next().value.get(equipment.currentOwner()).includes(equipment.equippedTo))
 			) {
-				if (!this.actions.find(action => action instanceof actions.Discard && action.card === equipment)) {
+				if (!this.actions.some(action => action instanceof actions.Discard && action.card === equipment)) {
 					invalidEquipments.push(equipment);
 				}
 			}
@@ -515,7 +515,7 @@ async function* getStaticAbilityPhasingTiming(game) {
 			}
 			for (const target of possibleTargets) {
 				if (abilityTargets.get(ability).includes(target)) {
-					if (!target.values.modifierStack.find(modifier => modifier.ctx.ability === ability)) {
+					if (!target.values.modifierStack.some(modifier => modifier.ctx.ability === ability)) {
 						// abilities are just dumped in a list here to be sorted later.
 						const abilities = applicableAbilities.get(target) ?? [];
 						abilities.push(ability);
@@ -627,7 +627,7 @@ async function* orderStaticAbilities(target, abilities, game) {
 // TODO: generalize this somehow. Should probably generate a list of modifiables and loop over those
 function recalculateObjectValues(game, isPrediction = false) {
 	let valueChangeEvents = [];
-	for (const object of getAllModifiableObjects(game)) {
+	for (const object of game.pendingValueChangeObjects) {
 		// for performance, ValueChangedEvents aren't generated during prediction since they won't be needed
 		const oldValues = isPrediction? null : object.values.clone();
 		const wasUnit = object instanceof BaseCard && object.values.current.cardTypes.includes("unit");
@@ -649,26 +649,12 @@ function recalculateObjectValues(game, isPrediction = false) {
 				valueChangeEvents.push(createValueChangedEvent(object, property, true));
 			}
 			for (const property of oldValues.current.compareTo(object.values.current)) {
-				if (valueChangeEvents.find(event => event.valueName === property && event.object === object) === undefined) {
+				if (!valueChangeEvents.some(event => event.valueName === property && event.object === object)) {
 					valueChangeEvents.push(createValueChangedEvent(object, property, false));
 				}
 			}
 		}
 	}
+	game.pendingValueChangeObjects = game.pendingValueChangeObjects.filter(obj => obj.values.modifiedByStaticAbility);
 	return valueChangeEvents;
-}
-
-function getAllModifiableObjects(game) {
-	const retVal = [];
-
-	// players and their cards
-	for (const player of game.players) {
-		retVal.push(player, ...player.getActiveCards());
-	}
-
-	// existing fights are also objects
-	if (game.currentBlock() instanceof blocks.Fight) {
-		retVal.push(game.currentBlock().fight);
-	}
-	return retVal;
 }

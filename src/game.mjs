@@ -126,6 +126,9 @@ export class Game {
 		this.currentCards = new Map();
 		this.lastGlobalAbilityId = 0;
 		this.currentAbilities = new Map();
+
+		// a list of all objects whose values might have changed and need recalculating
+		this.pendingValueChangeObjects = [];
 	}
 
 	// Iterate over this function after setting the decks of both players and putting their partners into the partner zones.
@@ -234,6 +237,12 @@ export class Game {
 			while (true) {
 				yield [];
 			}
+		}
+	}
+
+	registerPendingValueChangeFor(object) {
+		if (!this.pendingValueChangeObjects.includes(object)) {
+			this.pendingValueChangeObjects.push(object);
 		}
 	}
 

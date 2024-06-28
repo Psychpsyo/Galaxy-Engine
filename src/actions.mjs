@@ -5,6 +5,7 @@ import * as zones from "./zones.mjs";
 import {BaseCard} from "./card.mjs";
 import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
+import {StaticAbility} from "./abilities.mjs";
 
 // helper functions
 
@@ -704,13 +705,16 @@ export class ApplyStatChange extends Action {
 			this.toObject = currentObject.snapshot();
 		}
 		currentObject.values.modifierStack.push(this.modifier);
+		this.player.game.registerPendingValueChangeFor(currentObject);
 		if (this.until) {
 			this.until.push([new RemoveStatChange(this.player, currentObject, this.modifier)]);
 		}
 	}
 
 	undo() {
-		getObjectCurrent(this.toObject).values.modifierStack.pop();
+		const currentObject = getObjectCurrent(this.toObject);
+		currentObject.values.modifierStack.pop();
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
 	async isImpossible() {
@@ -776,15 +780,19 @@ export class RemoveStatChange extends Action {
 	}
 
 	async* run() {
+		const currentObject = getObjectCurrent(this.toObject);
 		if (this.object instanceof BaseCard) {
 			this.object = this.object.snapshot();
 		}
-		this._index = getObjectCurrent(this.object).values.modifierStack.indexOf(this.modifier);
-		getObjectCurrent(this.object).values.modifierStack.splice(this._index, 1);
+		this._index = currentObject.values.modifierStack.indexOf(this.modifier);
+		currentObject.values.modifierStack.splice(this._index, 1);
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
 	undo() {
-		getObjectCurrent(this.object).values.modifierStack.splice(this._index, 0, this.modifier);
+		const currentObject = getObjectCurrent(this.toObject);
+		currentObject.values.modifierStack.splice(this._index, 0, this.modifier);
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 }
 
@@ -1065,17 +1073,25 @@ export class ApplyStaticAbility extends Action {
 		super(player);
 		this.toObject = toObject;
 		this.modifier = modifier;
+		this._hadStaticAbilityBefore = null;
 	}
 
 	async* run() {
+		const currentObject = getObjectCurrent(this.toObject);
 		if (this.toObject instanceof BaseCard) {
 			this.toObject = this.toObject.snapshot();
 		}
-		getObjectCurrent(this.toObject).values.modifierStack.push(this.modifier);
+		currentObject.values.modifierStack.push(this.modifier);
+		this._hadStaticAbilityBefore = currentObject.values.modifiedByStaticAbility;
+		currentObject.values.modifiedByStaticAbility = true;
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
 	undo() {
-		getObjectCurrent(this.toObject).values.modifierStack.pop();
+		const currentObject = getObjectCurrent(this.toObject);
+		currentObject.values.modifierStack.pop();
+		currentObject.values.modifiedByStaticAbility = this._hadStaticAbilityBefore;
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 }
 
@@ -1090,15 +1106,21 @@ export class UnapplyStaticAbility extends Action {
 	}
 
 	async* run() {
+		const currentObject = getObjectCurrent(this.toObject);
 		if (this.object instanceof BaseCard) {
 			this.object = this.object.snapshot();
 		}
-		this._modifierIndex = getObjectCurrent(this.object).values.modifierStack.findIndex(modifier => modifier.ctx.ability === this.ability);
-		this._removed = getObjectCurrent(this.object).values.modifierStack.splice(this._modifierIndex, 1)[0];
+		this._modifierIndex = currentObject.values.modifierStack.findIndex(modifier => modifier.ctx.ability === this.ability);
+		this._removed = currentObject.values.modifierStack.splice(this._modifierIndex, 1)[0];
+		currentObject.values.modifiedByStaticAbility = currentObject.values.modifierStack.some(modifier => modifier.ctx.ability instanceof StaticAbility);
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
 	undo() {
-		getObjectCurrent(this.object).values.modifierStack.splice(this._modifierIndex, 0, this._removed);
+		const currentObject = getObjectCurrent(this.toObject);
+		currentObject.values.modifierStack.splice(this._modifierIndex, 0, this._removed);
+		currentObject.values.modifiedByStaticAbility = true;
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 }
 
