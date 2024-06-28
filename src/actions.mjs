@@ -842,7 +842,7 @@ export class SetAttackTarget extends Action {
 	}
 
 	async isImpossible() {
-		if (this.newTarget === null) return false;
+		if (this.newTarget === null) return true;
 		return !(this.newTarget.values.current.cardTypes.includes("unit") && this.newTarget.zone instanceof zones.FieldZone);
 	}
 

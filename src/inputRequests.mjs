@@ -60,7 +60,7 @@ export class ChooseCards extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return response.value.map(cardIndex => this.from[cardIndex]);
 	}
@@ -130,7 +130,7 @@ export class ChoosePlayer extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return this.player.game.players[response.value];
 	}
@@ -159,7 +159,7 @@ export class ChooseType extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return this.from[response.value];
 	}
@@ -193,7 +193,7 @@ export class ChooseDeckSide extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return new DeckPosition(this.deckOwner.deckZone, response.value === "top");
 	}
@@ -222,7 +222,7 @@ export class ChooseAbility extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return this.from[response.value];
 	}
@@ -252,7 +252,7 @@ export class OrderCards extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return response.value.map(cardIndex => this.cards[cardIndex]);
 	}
@@ -376,7 +376,7 @@ export class DoStandardSummon extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return this.player.handZone.cards[response.value];
 	}
@@ -411,7 +411,7 @@ export class DeployItem extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return this.player.handZone.cards[response.value];
 	}
@@ -446,7 +446,7 @@ export class CastSpell extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return this.player.handZone.cards[response.value];
 	}
@@ -480,7 +480,7 @@ export class DoAttackDeclaration extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return response.value.map(cardIndex => this.eligibleUnits[cardIndex]);
 	}
@@ -489,9 +489,12 @@ export class DoAttackDeclaration extends InputRequest {
 		const superValid = super.validate(response);
 		if (superValid !== "") return superValid;
 
-		for (const cardIndex of response) {
-			if (cardIndex < 0 || cardIndex >= this.eligibleUnits.length) {
+		for (let i = 0; i < response.length; i++) {
+			if (response[i] < 0 || response[i] >= this.eligibleUnits.length) {
 				return "Chose an invalid attacker index for attack declaration: " + cardIndex;
+			}
+			if (response.indexOf(response[i]) !== i) {
+				return "Tried to make a unit participate twice in one attack.";
 			}
 		}
 		response = response.map(cardIndex => this.eligibleUnits[cardIndex]);
@@ -517,7 +520,10 @@ export class DoAttackDeclaration extends InputRequest {
 		if (partner) {
 			const eligibleForCombinedAttack = [];
 			for (let i = 0; i < this.eligibleUnits.length; i++) {
-				if (partner.sharesTypeWith(this.eligibleUnits[i])) {
+				if (
+					this.eligibleUnits[i] !== partner &&
+					partner.sharesTypeWith(this.eligibleUnits[i])
+				) {
 					eligibleForCombinedAttack.push(i);
 				}
 			}
@@ -561,7 +567,7 @@ export class DoRetire extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return response.value.map(cardIndex => this.eligibleUnits[cardIndex]);
 	}
@@ -604,7 +610,7 @@ export class ActivateOptionalAbility extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return this.eligibleAbilities[response.value];
 	}
@@ -634,7 +640,7 @@ export class ActivateFastAbility extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return this.eligibleAbilities[response.value];
 	}
@@ -664,7 +670,7 @@ export class ActivateTriggerAbility extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return this.eligibleAbilities[response.value];
 	}
@@ -695,7 +701,7 @@ export class ChooseZoneSlot extends InputRequest {
 	}
 
 	async extractResponseValue(response) {
-		super.extractResponseValue(response);
+		await super.extractResponseValue(response);
 
 		return this.eligibleSlots[response.value];
 	}

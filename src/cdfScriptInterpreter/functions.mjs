@@ -149,6 +149,7 @@ export function initFunctions() {
 					until[0].getTimingList(ctx.game)
 				));
 			}
+			yield applyActions;
 		},
 		function(astNode, ctx) { // for checking if any cards are available for the first card parameter
 			let target = this.getParameter(astNode, "card") ??
@@ -808,7 +809,7 @@ export function initFunctions() {
 			);
 
 			yield [selectAction];
-			const abilities = [...selectAction.selected];
+			const abilities = [selectAction.selected];
 			abilities.explicitTarget = true;
 			return new ScriptValue("abilityId", abilities);
 		},
