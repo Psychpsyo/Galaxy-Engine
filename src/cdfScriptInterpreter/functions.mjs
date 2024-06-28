@@ -1,6 +1,5 @@
 import * as actions from "../actions.mjs";
 import * as ast from "./astNodes.mjs";
-import * as events from "../events.mjs";
 import * as requests from "../inputRequests.mjs";
 import * as zones from "../zones.mjs";
 import {Card, BaseCard} from "../card.mjs";
@@ -150,6 +149,7 @@ export function initFunctions() {
 					until[0].getTimingList(ctx.game)
 				));
 			}
+			yield applyActions;
 		},
 		function(astNode, ctx) { // for checking if any cards are available for the first card parameter
 			let target = this.getParameter(astNode, "card") ??
@@ -526,10 +526,12 @@ export function initFunctions() {
 			for (const card of cards) {
 				ast.setImplicit([card], "card");
 				const zoneValue = (yield* this.getParameter(astNode, "zone").eval(ctx)).get(ctx.player);
-				const zone = getZoneForCard(zoneValue instanceof DeckPosition? zoneValue.decks : zoneValue, card, ctx);
+				const zone = getZoneForCard(zoneValue.map(z => z instanceof DeckPosition? z.deck : z), card, ctx);
+				// index of null means the player gets to choose
 				let index = (zone instanceof zones.FieldZone || zone instanceof zones.DeckZone)? null : -1;
-				if (zoneValue instanceof DeckPosition) {
-					index = zoneValue.isTop? -1 : 0;
+				const potentialDeckPosition = zoneValue.find(z => z instanceof DeckPosition && z.deck === zone);
+				if (potentialDeckPosition) {
+					index = potentialDeckPosition.isTop? -1 : 0;
 				}
 				moveActions.push(new actions.Move(ctx.player, card, zone, index));
 				zoneMoveCards.set(zone, (zoneMoveCards.get(zone) ?? []).concat(card));
@@ -542,12 +544,9 @@ export function initFunctions() {
 					if (freeSlots.length === 0) {
 						return new ScriptValue("card", []);
 					}
-					const selectionRequest = new requests.chooseCards.create(ctx.player, cards, [freeSlots], "cardEffectMove:" + ctx.ability.id);
+					const selectionRequest = new requests.ChooseCards(ctx.player, cards, [freeSlots], "cardEffectMove:" + ctx.ability.id);
 					const response = yield [selectionRequest];
-					if (response.type != "chooseCards") {
-						throw new Error("Incorrect response type supplied during card move selection. (expected \"chooseCards\", got \"" + response.type + "\" instead)");
-					}
-					const movedCards = requests.chooseCards.validate(response.value, selectionRequest);
+					const movedCards = selectionRequest.extractResponseValue(response);
 					for (let i = moveActions.length - 1; i >= 0; i--) {
 						if (moveActions[i].zone === zone && !movedCards.includes(moveActions[i].card)) {
 							moveActions.splice(i, 1);
@@ -571,13 +570,15 @@ export function initFunctions() {
 		[null],
 		"card",
 		function*(astNode, ctx) {
-			let toOrder = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
-			let orderRequest = new requests.orderCards.create(ctx.player, toOrder, "cardEffect:" + ctx.ability.id);
-			let response = yield [orderRequest];
-			if (response.type != "orderCards") {
-				throw new Error("Incorrect response type supplied during card ordering. (expected \"orderCards\", got \"" + response.type + "\" instead)");
-			}
-			return new ScriptValue("card", requests.orderCards.validate(response.value, orderRequest).map(card => card.current().snapshot()));
+			const toOrder = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
+			const orderAction = new actions.OrderCards(
+				ctx.player,
+				toOrder,
+				ctx.ability.id
+			);
+
+			yield [orderAction];
+			return new ScriptValue("card", [...orderAction.ordered]);
 		},
 		alwaysHasTarget, // technically you can't order nothing but that should never matter in practice
 		function*(astNode, ctx) {
@@ -699,8 +700,13 @@ export function initFunctions() {
 		"card",
 		function*(astNode, ctx) {
 			let choiceAmounts = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
-			const eligibleCards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
+			let eligibleCards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
 			const atRandom = (yield* this.getParameter(astNode, "bool", 1).eval(ctx)).get(ctx.player);
+
+			// if we are not explicitly choosing from prior targets, already targeted cards need to be invalid choices.
+			if (!eligibleCards.explicitTarget) {
+				eligibleCards = eligibleCards.filter(card => !ctx.targets.card.includes(card));
+			}
 
 			// If the player can't choose enough and the card doesn't say 'as many as possible', no cards are chosen.
 			const chooseAtLeast = astNode.asManyAsPossible?
@@ -731,12 +737,14 @@ export function initFunctions() {
 					ast.clearImplicit("card");
 					return result;
 				},
-				atRandom
+				atRandom,
+				ctx.targets.card
 			);
 
-			const action = selectAction;
 			yield [selectAction];
-			return new ScriptValue("card", action.selected);
+			const cardList = [...selectAction.selected];
+			cardList.explicitTarget = true;
+			return new ScriptValue("card", cardList);
 		},
 		function(astNode, ctx) {
 			// Use the full eval to see if there is any valid choices for the player.
@@ -769,6 +777,7 @@ export function initFunctions() {
 						for (const list of cardLists) {
 							ast.setImplicit(list, "card");
 							if(validator.evalFull(ctx).next().value.get(ctx.player)) {
+								list.explicitTarget = true;
 								yield new ScriptValue("card", list);
 							}
 							ast.clearImplicit("card");
@@ -785,14 +794,24 @@ export function initFunctions() {
 		[null],
 		"abilityId",
 		function*(astNode, ctx) {
-			const selectionRequest = new requests.chooseAbility.create(ctx.player, ctx.ability.id, (yield* this.getParameter(astNode, "abilityId").eval(ctx)).get(ctx.player));
-			const response = yield [selectionRequest];
-			if (response.type != "chooseAbility") {
-				throw new Error("Incorrect response type supplied during ability selection. (expected \"chooseAbility\", got \"" + response.type + "\" instead)");
+			let eligibleAbilities = (yield* this.getParameter(astNode, "abilityId").eval(ctx)).get(ctx.player);
+
+			// if we are not explicitly choosing from prior targets, already targeted abilities need to be invalid choices.
+			if (!eligibleAbilities.explicitTarget) {
+				eligibleAbilities = eligibleAbilities.filter(ability => !ctx.targets.abilityId.includes(ability));
 			}
-			const ability = requests.chooseType.validate(response.value, selectionRequest);
-			yield [events.createAbilitySelectedEvent(ctx.player, ability)];
-			return new ScriptValue("type", [ability]);
+
+			const selectAction = new actions.SelectAbility(
+				ctx.player,
+				eligibleAbilities,
+				ctx.ability.id,
+				ctx.targets.abilityId
+			);
+
+			yield [selectAction];
+			const abilities = [selectAction.selected];
+			abilities.explicitTarget = true;
+			return new ScriptValue("abilityId", abilities);
 		},
 		function(astNode, ctx) {
 			// Use the full eval to see if there is any valid choices for the player.
@@ -803,7 +822,9 @@ export function initFunctions() {
 			for (const abilities of this.getParameter(astNode, "abilityId").evalFull(ctx)) {
 				for (const ability of abilities.get(ctx.player)) {
 					if (alreadyYielded.includes(ability)) continue;
-					yield new ScriptValue("abilityId", [ability]);
+					const returnList = [ability];
+					returnList.explicitTarget = true;
+					yield new ScriptValue("abilityId", returnList);
 					alreadyYielded.push(ability);
 				}
 			}
@@ -816,21 +837,21 @@ export function initFunctions() {
 		[null],
 		"zone",
 		function*(astNode, ctx) {
-			const selectionRequest = new requests.chooseDeckSide.create(ctx.player, ctx.ability.id, (yield* this.getParameter(astNode, "player").eval(ctx)).get(ctx.player)[0]);
-			const response = yield [selectionRequest];
-			if (response.type != "chooseDeckSide") {
-				throw new Error("Incorrect response type supplied during type selection. (expected \"chooseDeckSide\", got \"" + response.type + "\" instead)");
-			}
-			const deckSide = requests.chooseDeckSide.validate(response.value, selectionRequest);
-			yield [events.createDeckSideSelectedEvent(ctx.player, deckSide.isTop? "top" : "bottom")];
-			return new ScriptValue("zone", deckSide);
+			const selectAction = new actions.SelectDeckSide(
+				ctx.player,
+				(yield* this.getParameter(astNode, "player").eval(ctx)).get(ctx.player)[0],
+				ctx.ability.id
+			);
+
+			yield [selectAction];
+			return new ScriptValue("zone", [selectAction.selected]);
 		},
 		alwaysHasTarget,
 		function*(astNode, ctx) {
 			for (const player of this.getParameter(astNode, "player").evalFull(ctx)) {
 				const zone = player.get(ctx.player)[0].deckZone;
-				yield new ScriptValue("zone", new DeckPosition(zone, true));
-				yield new ScriptValue("zone", new DeckPosition(zone, false));
+				yield new ScriptValue("zone", [new DeckPosition(zone, true)]);
+				yield new ScriptValue("zone", [new DeckPosition(zone, false)]);
 			}
 		}
 	),
@@ -841,19 +862,24 @@ export function initFunctions() {
 		[],
 		"player",
 		function*(astNode, ctx) {
-			const selectionRequest = new requests.choosePlayer.create(ctx.player, "cardEffect:" + ctx.ability.id);
-			const response = yield [selectionRequest];
-			if (response.type != "choosePlayer") {
-				throw new Error("Incorrect response type supplied during player selection. (expected \"choosePlayer\", got \"" + response.type + "\" instead)");
-			}
-			const chosenPlayer = requests.choosePlayer.validate(response.value, selectionRequest);
-			yield [events.createPlayerSelectedEvent(ctx.player, chosenPlayer)];
-			return new ScriptValue("player", [chosenPlayer]);
+			// TODO: properly excluding players that were targeted prior
+			const selectAction = new actions.SelectPlayer(
+				ctx.player,
+				ctx.ability.id,
+				ctx.targets.player
+			);
+
+			yield [selectAction];
+			const players = [selectAction.selected];
+			players.explicitTarget = true;
+			return new ScriptValue("player", players);
 		},
 		alwaysHasTarget,
 		function*(astNode, ctx) {
 			for (const player of ctx.game.players) {
-				yield new ScriptValue("player", [player]);
+				const returnList = [player];
+				returnList.explicitTarget = true;
+				yield new ScriptValue("player", returnList);
 			}
 		}
 	),
@@ -864,14 +890,14 @@ export function initFunctions() {
 		[null],
 		"type",
 		function*(astNode, ctx) {
-			const selectionRequest = new requests.chooseType.create(ctx.player, ctx.ability.id, (yield* this.getParameter(astNode, "type").eval(ctx)).get(ctx.player));
-			const response = yield [selectionRequest];
-			if (response.type != "chooseType") {
-				throw new Error("Incorrect response type supplied during type selection. (expected \"chooseType\", got \"" + response.type + "\" instead)");
-			}
-			const type = requests.chooseType.validate(response.value, selectionRequest);
-			yield [events.createTypeSelectedEvent(ctx.player, type)];
-			return new ScriptValue("type", [type]);
+			const selectAction = new actions.SelectType(
+				ctx.player,
+				(yield* this.getParameter(astNode, "type").eval(ctx)).get(ctx.player),
+				ctx.ability.id
+			);
+
+			yield [selectAction];
+			return new ScriptValue("type", [selectAction.selected]);
 		},
 		function(astNode, ctx) {
 			// Use the full eval to see if there is any valid choices for the player.
@@ -897,7 +923,7 @@ export function initFunctions() {
 		function*(astNode, ctx) {
 			yield [new actions.SetAttackTarget(
 				ctx.player,
-				(yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0]
+				(yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0] ?? null
 			)];
 		},
 		hasCardTarget,
@@ -970,12 +996,9 @@ export function initFunctions() {
 				if (freeZoneSlots === 0) return new ScriptValue("card", []);
 				if (!astNode.asManyAsPossible) return new ScriptValue("card", []);
 
-				const selectionRequest = new requests.chooseCards.create(ctx.player, cards, [freeZoneSlots], "cardEffectSummon:" + ctx.ability.id);
+				const selectionRequest = new requests.ChooseCards(ctx.player, cards, [freeZoneSlots], "cardEffectSummon:" + ctx.ability.id);
 				const response = yield [selectionRequest];
-				if (response.type != "chooseCards") {
-					throw new Error("Incorrect response type supplied during card summon selection. (expected \"chooseCards\", got \"" + response.type + "\" instead)");
-				}
-				cards = requests.chooseCards.validate(response.value, selectionRequest);
+				cards = selectionRequest.extractResponseValues(response);
 			}
 
 			const costs = [];
@@ -1027,8 +1050,9 @@ export function initFunctions() {
 							// ask player if they want to apply optional modification
 							if (!boolParam) {
 								// TODO: modify this to fit here
-								//const response = yield [applyActionModificationAbility.create(ability.card.currentOwner(), ability, target)];
-								//response.value = applyActionModificationAbility.validate(response.value);
+								//const request = new ApplyActionModificationAbility(ability.card.currentOwner(), ability, target);
+								//const response = yield [request];
+								//response.value = request.extractResponseValues(response);
 								//if (!response.value) continue;
 							}
 
@@ -1082,12 +1106,9 @@ export function initFunctions() {
 			} else if (amounts.length === 1) {
 				amount = amounts[0];
 			} else {
-				const selectionRequest = new requests.selectTokenAmount.create(ctx.player, amounts);
+				const selectionRequest = new requests.SelectTokenAmount(ctx.player, amounts);
 				const response = yield [selectionRequest];
-				if (response.type != "selectTokenAmount") {
-					throw new Error("Incorrect response type supplied during token amount selection. (expected \"selectTokenAmount\", got \"" + response.type + "\" instead)");
-				}
-				amount = requests.selectTokenAmount.validate(response.value, selectionRequest);
+				amount = selectionRequest.extractResponseValues(response);
 			}
 
 			const freeSpaces = zone.getFreeSpaceCount()

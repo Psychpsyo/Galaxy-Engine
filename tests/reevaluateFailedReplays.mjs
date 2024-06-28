@@ -4,6 +4,7 @@
 
 import {promises as fs} from "fs";
 import {Game} from "../src/game.mjs";
+import {InputRequest} from "../src/inputRequests.mjs";
 
 const promises = [];
 let finishedPromises = 0;
@@ -16,7 +17,7 @@ async function evaluateReplay(filename) {
 
 	try  {
 		for await (const updates of game.begin()) {
-			if (updates[0].nature === "request") {
+			if (updates[0] instanceof InputRequest) {
 				// replay managed to run to 'completion' and can be deleted as it no longer errors.
 				fs.unlink("./errorReplays/" + filename);
 				deletedReplayCount++;

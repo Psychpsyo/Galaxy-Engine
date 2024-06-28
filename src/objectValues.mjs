@@ -8,6 +8,7 @@ export class ObjectValues {
 
 		this.modifierStack = [];
 		this.unaffectedBy = [];
+		this.modifiedByStaticAbility = false; // whether or not there is any static ability modifying this object
 	}
 
 	clone() {
@@ -16,6 +17,7 @@ export class ObjectValues {
 		newValues.current = this.current.clone();
 		newValues.modifierStack = [...this.modifierStack];
 		newValues.unaffectedBy = [...this.unaffectedBy];
+		newValues.modifiedByStaticAbility = this.modifiedByStaticAbility;
 
 		// cloning abilities if this is for a card
 		if (this.initial instanceof CardValues) {

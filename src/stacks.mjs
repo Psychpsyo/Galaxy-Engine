@@ -29,7 +29,8 @@ export class Stack {
 			const inputRequests = await this.phase.getBlockOptions(this);
 			const response = yield [...inputRequests]; // cloning the array in case the calling code modifies it
 
-			const responseValue = requests[response.type].validate(response.value, inputRequests.find(request => request.type === response.type));
+			const request = inputRequests.find(request => request.type === response.type);
+			const responseValue = await request.extractResponseValue(response);
 
 			let nextBlock;
 			switch (response.type) {
@@ -47,15 +48,25 @@ export class Stack {
 					break;
 				}
 				case "doStandardSummon": {
-					nextBlock = new blocks.StandardSummon(this, this.getNextPlayer(), this.getNextPlayer().handZone.cards[responseValue]);
+					nextBlock = new blocks.StandardSummon(this, this.getNextPlayer(), responseValue);
 					break;
 				}
 				case "deployItem": {
-					nextBlock = new blocks.DeployItem(this, this.getNextPlayer(), this.getNextPlayer().handZone.cards[responseValue]);
+					nextBlock = new blocks.DeployItem(
+						this,
+						this.getNextPlayer(),
+						responseValue,
+						request._costOptionTrees[request.eligibleItems.indexOf(responseValue)]
+					);
 					break;
 				}
 				case "castSpell": {
-					nextBlock = new blocks.CastSpell(this, this.getNextPlayer(), this.getNextPlayer().handZone.cards[responseValue]);
+					nextBlock = new blocks.CastSpell(
+						this,
+						this.getNextPlayer(),
+						responseValue,
+						request._costOptionTrees[request.eligibleSpells.indexOf(responseValue)]
+					);
 					break;
 				}
 				case "doAttackDeclaration": {
@@ -79,10 +90,13 @@ export class Stack {
 			}
 			if (response.type != "pass") {
 				this.blocks.push(nextBlock);
+				this.executingBlock = nextBlock;
 				if (await (yield* nextBlock.runCost())) {
+					this.executingBlock = null;
 					this.passed = false;
 					yield [createBlockCreatedEvent(nextBlock)];
 				} else {
+					this.executingBlock = null;
 					this.blocks.pop();
 					yield [createBlockCreationAbortedEvent(nextBlock)];
 				}

@@ -1,6 +1,6 @@
 import {ManaSupplyPhase, DrawPhase, MainPhase, BattlePhase, EndPhase} from "./phases.mjs";
 import {createPhaseStartedEvent} from "./events.mjs";
-import {enterBattlePhase} from "./inputRequests.mjs";
+import {EnterBattlePhase} from "./inputRequests.mjs";
 
 export class Turn {
 	constructor(player, actionLists) {
@@ -25,9 +25,9 @@ export class Turn {
 		yield* this.runPhase(new MainPhase(this));
 
 		if (this.index > 0 && this.player.values.current.canEnterBattlePhase) {
-			let battlePhase = yield [enterBattlePhase.create(this.player)];
-			battlePhase.value = enterBattlePhase.validate(battlePhase.value);
-			if (battlePhase.value) {
+			const request = new EnterBattlePhase(this.player);
+			const response = yield [request];
+			if (await request.extractResponseValue(response)) {
 				yield* this.runPhase(new BattlePhase(this));
 
 				yield* this.runPhase(new MainPhase(this));

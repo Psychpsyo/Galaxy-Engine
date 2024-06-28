@@ -5,6 +5,7 @@ import * as zones from "./zones.mjs";
 import {BaseCard} from "./card.mjs";
 import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
+import {StaticAbility} from "./abilities.mjs";
 
 // helper functions
 
@@ -39,10 +40,10 @@ function getAvailableZoneSlots(zone) {
 	}
 	return slots;
 }
-function* queryZoneSlot(player, zone) {
-	let zoneSlotRequest = new requests.chooseZoneSlot.create(player, zone, getAvailableZoneSlots(zone));
+async function* queryZoneSlot(player, zone) {
+	let zoneSlotRequest = new requests.ChooseZoneSlot(player, zone, getAvailableZoneSlots(zone));
 	let zoneSlotResponse = yield [zoneSlotRequest];
-	return requests.chooseZoneSlot.validate(zoneSlotResponse.value, zoneSlotRequest);
+	return await zoneSlotRequest.extractResponseValue(zoneSlotResponse);
 }
 // gets the current version of a game object, no matter if it is a card or player
 function getObjectCurrent(object) {
@@ -69,13 +70,13 @@ export class Action {
 
 	undo() {}
 
-	isImpossible() {
+	async isImpossible() {
 		return false;
 	}
-	isPossible() {
-		return !this.isImpossible();
+	async isPossible() {
+		return !(await this.isImpossible());
 	}
-	isFullyPossible() {
+	async isFullyPossible() {
 		return this.isPossible();
 	}
 
@@ -124,10 +125,10 @@ export class LoseMana extends Action {
 		return events.createManaChangedEvent(this.player);
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		return this.player.mana === 0 && this.amount > 0;
 	}
-	isFullyPossible() {
+	async isFullyPossible() {
 		return this.player.mana - this.amount >= 0;
 	}
 }
@@ -156,7 +157,7 @@ export class LoseLife extends Action {
 		return events.createLifeChangedEvent(this.player);
 	}
 
-	isFullyPossible() {
+	async isFullyPossible() {
 		return this.player.life - this.amount >= 0;
 	}
 }
@@ -229,13 +230,12 @@ export class Place extends Action {
 	}
 
 	async* run() {
-		this.targetIndex = yield* queryZoneSlot(this.player, this.zone);
+		this.targetIndex = await (yield* queryZoneSlot(this.player, this.zone));
 		const card = this.card.current();
 		this.card = this.card.snapshot();
 		card.hiddenFor = [];
-		let cardPlacedEvent = events.createCardPlacedEvent(this.player, this.card, this.zone, this.targetIndex);
 		this.zone.place(card, this.targetIndex);
-		return cardPlacedEvent;
+		return events.createCardPlacedEvent(this.player, this.card, this.zone, this.targetIndex);
 	}
 
 	undo() {
@@ -246,7 +246,7 @@ export class Place extends Action {
 		]);
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (this.card.current() === null) return true;
 		return getAvailableZoneSlots(this.zone).length < this.timing.actions.filter(action => action instanceof Place).length;
 	}
@@ -286,7 +286,7 @@ export class Summon extends Action {
 		this.zone.remove(this.card.current(), this._placeAction.targetIndex);
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (this.card.current() === null) return true;
 		let slotCard = this._placeAction.zone.get(this._placeAction.targetIndex);
 		return slotCard != null && slotCard != this.card.current();
@@ -299,40 +299,37 @@ export class Summon extends Action {
 }
 
 export class Deploy extends Action {
-	constructor(player, placeAction, reason, source) {
+	constructor(player, card, zone, reason, source) {
 		let properties = {
 			dueTo: reason,
-			from: new ScriptValue("zone", [placeAction.card.zone]),
-			to: new ScriptValue("zone", [placeAction.zone])
+			from: new ScriptValue("zone", [card.zone]),
+			to: new ScriptValue("zone", [zone])
 		};
 		if (source) { // only exists if deployed by card effect
 			properties.by = source;
 		}
 		super(player, properties);
-		this._placeAction = placeAction;
-		this.card = placeAction.card.current();
+		this.card = card;
 	}
 
 	async* run() {
 		const card = this.card.current();
-		this.card = this.card.snapshot();
-		let deployEvent = events.createCardDeployedEvent(this.player, this.card, this._placeAction.zone, this._placeAction.targetIndex);
-		if (this._placeAction.card.current()) {
-			this._placeAction.zone.add(card, this._placeAction.targetIndex);
-			this._placeAction.card.globalId = card.globalId;
+		this.card = card.snapshot();
+		let deployEvent = events.createCardDeployedEvent(this.player, this.card, card.placedTo, card.index);
+		if (card) {
+			card.placedTo.add(card, card.index);
 			this.card.globalId = card.globalId;
 		}
 		return deployEvent;
 	}
 
 	undo() {
-		this.zone.remove(this.card.current(), this._placeAction.targetIndex);
+		const card = this.card.current();
+		card.zone.remove(card);
 	}
 
-	isImpossible() {
-		if (this.card.current() === null) return true;
-		let slotCard = this._placeAction.zone.get(this._placeAction.targetIndex);
-		return slotCard != null && slotCard != this.card.current();
+	async isImpossible() {
+		return this.card.current() === null;
 	}
 
 	isIdenticalTo(other) {
@@ -342,40 +339,37 @@ export class Deploy extends Action {
 }
 
 export class Cast extends Action {
-	constructor(player, placeAction, reason, source) {
+	constructor(player, card, zone, reason, source) {
 		let properties = {
 			dueTo: reason,
-			from: new ScriptValue("zone", [placeAction.card.zone]),
-			to: new ScriptValue("zone", [placeAction.zone])
+			from: new ScriptValue("zone", [card.zone]),
+			to: new ScriptValue("zone", [zone])
 		};
 		if (source) { // only exists if cast by card effect
 			properties.by = source;
 		}
 		super(player, properties);
-		this._placeAction = placeAction;
-		this.card = placeAction.card.current();
+		this.card = card;
 	}
 
 	async* run() {
 		const card = this.card.current();
-		this.card = this.card.snapshot();
-		let castEvent = events.createCardCastEvent(this.player, this.card, this._placeAction.zone, this._placeAction.targetIndex);
-		if (this._placeAction.card.current()) {
-			this._placeAction.zone.add(card, this._placeAction.targetIndex);
-			this._placeAction.card.globalId = card.globalId;
+		this.card = card.snapshot();
+		let castEvent = events.createCardCastEvent(this.player, this.card, card.placedTo, card.index);
+		if (card) {
+			card.placedTo.add(card, card.index);
 			this.card.globalId = card.globalId;
 		}
 		return castEvent;
 	}
 
 	undo() {
-		this.zone.remove(this.card.current(), this._placeAction.targetIndex);
+		const card = this.card.current();
+		card.zone.remove(card);
 	}
 
-	isImpossible() {
-		if (this.card.current() === null) return true;
-		let slotCard = this._placeAction.zone.get(this._placeAction.targetIndex);
-		return slotCard != null && slotCard != this.card.current();
+	async isImpossible() {
+		return this.card.current() === null;
 	}
 
 	isIdenticalTo(other) {
@@ -400,7 +394,7 @@ export class Move extends Action {
 			if (this.zone instanceof zones.DeckZone) {
 				this.insertedIndex = this.zone.cards.length;
 			} else {
-				this.insertedIndex = yield* queryZoneSlot(this.player, this.zone);
+				this.insertedIndex = await (yield* queryZoneSlot(this.player, this.zone));
 			}
 		} else if (this.targetIndex === -1) {
 			this.insertedIndex = this.zone.cards.length;
@@ -418,14 +412,14 @@ export class Move extends Action {
 		return event;
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (!this.card.current()) return true;
 		if (this.card.current().isRemovedToken) return true;
 		if (this.card.current().zone?.type == "partner") return true;
 		if (this.zone instanceof zones.FieldZone && getAvailableZoneSlots(this.zone).length === 0) return true;
 		return false;
 	}
-	isFullyPossible() {
+	async isFullyPossible() {
 		if (this.zone instanceof zones.FieldZone && getAvailableZoneSlots(this.zone).length < this.timing.actions.filter(action => action instanceof Move).length) return false;
 		return this.isPossible();
 	}
@@ -487,7 +481,7 @@ export class Swap extends Action {
 		return event;
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (this.cardA.current() === null) return true;
 		if (this.cardB.current() === null) return true;
 		if ((this.cardA.isToken && !(this.cardB.zone instanceof zones.FieldZone)) ||
@@ -517,12 +511,9 @@ export class EstablishAttackDeclaration extends Action {
 		}
 
 		// send selection request
-		let targetSelectRequest = new requests.chooseCards.create(this.player, eligibleUnits, [1], "selectAttackTarget");
+		let targetSelectRequest = new requests.ChooseCards(this.player, eligibleUnits, [1], "selectAttackTarget");
 		let response = yield [targetSelectRequest];
-		if (response.type != "chooseCards") {
-			throw new Error("Incorrect response type supplied during attack target selection. (expected \"chooseCards\", got \"" + response.type + "\" instead)");
-		}
-		this.attackTarget = requests.chooseCards.validate(response.value, targetSelectRequest)[0];
+		this.attackTarget = (await targetSelectRequest.extractResponseValue(response))[0];
 
 		// handle remaining attack rights
 		this.attackers = this.attackers.map(attacker => attacker.snapshot());
@@ -593,7 +584,7 @@ export class Discard extends Action {
 		return event;
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (this.card.current().zone?.type === "partner") {
 			return true;
 		}
@@ -619,7 +610,7 @@ export class Destroy extends Action {
 		// Only the accompanying discard actually does something
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (this.discard.card.zone?.type == "partner") {
 			return true;
 		}
@@ -678,7 +669,7 @@ export class Exile extends Action {
 		return event;
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (this.card.zone?.type === "partner") {
 			return true;
 		}
@@ -714,16 +705,19 @@ export class ApplyStatChange extends Action {
 			this.toObject = currentObject.snapshot();
 		}
 		currentObject.values.modifierStack.push(this.modifier);
+		this.player.game.registerPendingValueChangeFor(currentObject);
 		if (this.until) {
 			this.until.push([new RemoveStatChange(this.player, currentObject, this.modifier)]);
 		}
 	}
 
 	undo() {
-		getObjectCurrent(this.toObject).values.modifierStack.pop();
+		const currentObject = getObjectCurrent(this.toObject);
+		currentObject.values.modifierStack.pop();
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		// players are always around and anything that wants to apply to them can
 		if (this.toObject instanceof Player) return false;
 
@@ -750,7 +744,7 @@ export class ApplyStatChange extends Action {
 		ast.clearImplicit("card");
 		return validModifications === 0;
 	}
-	isFullyPossible() {
+	async isFullyPossible() {
 		// players are always around and anything that wants to apply to them can
 		if (this.toObject instanceof Player) return true;
 
@@ -786,15 +780,19 @@ export class RemoveStatChange extends Action {
 	}
 
 	async* run() {
+		const currentObject = getObjectCurrent(this.toObject);
 		if (this.object instanceof BaseCard) {
 			this.object = this.object.snapshot();
 		}
-		this._index = getObjectCurrent(this.object).values.modifierStack.indexOf(this.modifier);
-		getObjectCurrent(this.object).values.modifierStack.splice(this._index, 1);
+		this._index = currentObject.values.modifierStack.indexOf(this.modifier);
+		currentObject.values.modifierStack.splice(this._index, 1);
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
 	undo() {
-		getObjectCurrent(this.object).values.modifierStack.splice(this._index, 0, this.modifier);
+		const currentObject = getObjectCurrent(this.toObject);
+		currentObject.values.modifierStack.splice(this._index, 0, this.modifier);
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 }
 
@@ -851,7 +849,8 @@ export class SetAttackTarget extends Action {
 		}
 	}
 
-	isImpossible() {
+	async isImpossible() {
+		if (this.newTarget === null) return true;
 		return !(this.newTarget.values.current.cardTypes.includes("unit") && this.newTarget.zone instanceof zones.FieldZone);
 	}
 
@@ -877,7 +876,7 @@ export class GiveAttack extends Action {
 		this.card.canAttackAgain = this._oldCanAttackAgain;
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (this.card.isRemovedToken) return true;
 		return !this.card.values.current.cardTypes.includes("unit");
 	}
@@ -892,19 +891,29 @@ export class SelectEquipableUnit extends Action {
 	constructor(player, spellItem) {
 		super(player);
 		this.spellItem = spellItem;
-		this.chosenUnit = null;
+		this._oldEquipTarget = null;
 	}
 
 	async* run() {
-		let selectionRequest = new requests.chooseCards.create(this.player, this.spellItem.equipableTo.evalFull(new ScriptContext(this.spellItem, this.player)).next().value.get(this.player), [1], "equipTarget:" + this.spellItem.cardId);
+		let selectionRequest = new requests.ChooseCards(this.player, this.spellItem.equipableTo.evalFull(new ScriptContext(this.spellItem, this.player)).next().value.get(this.player), [1], "equipTarget:" + this.spellItem.cardId);
 		let response = yield [selectionRequest];
-		if (response.type != "chooseCards") {
-			throw new Error("Incorrect response type supplied when selecting unit to equip to. (expected \"chooseCards\", got \"" + response.type + "\" instead)");
+		// If there is no current block (during castability checking), we write nothing.
+		// This does not matter since the target availability checker doesn't validate targets for the equip action.
+		const currentBlock = this.player.game.currentBlock();
+		if (currentBlock) {
+			this._oldEquipTarget = currentBlock.equipTarget;
+			currentBlock.equipTarget = (await selectionRequest.extractResponseValue(response))[0];
 		}
-		this.chosenUnit = requests.chooseCards.validate(response.value, selectionRequest)[0];
 	}
 
-	isImpossible() {
+	undo() {
+		const currentBlock = this.player.game.currentBlock();
+		if (currentBlock) {
+			currentBlock.equipTarget = this._oldEquipTarget;
+		}
+	}
+
+	async isImpossible() {
 		return this.spellItem.equipableTo.evalFull(new ScriptContext(this.spellItem, this.player)).next().value.get(this.player).length == 0;
 	}
 }
@@ -930,7 +939,7 @@ export class EquipCard extends Action {
 		this.equipment.equippedTo = null;
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (this.equipment.current() === null) return true;
 		if (this.target.current() === null) return true;
 
@@ -988,7 +997,7 @@ export class View extends Action {
 		return events.createCardViewedEvent(this.player, this.card);
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		return this.card.isRemovedToken;
 	}
 }
@@ -1011,7 +1020,7 @@ export class Reveal extends Action {
 		this.card.current().hiddenFor = this._oldHiddenState;
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (this.card.current() == null) return true;
 		if (this.card.isRemovedToken) return true;
 		return this.card.hiddenFor.length == 0;
@@ -1047,12 +1056,12 @@ export class ChangeCounters extends Action {
 		this.card.current().counters[this.type] = this.oldAmount;
 	}
 
-	isImpossible() {
+	async isImpossible() {
 		if (this.card.current() === null) return true;
 		if (this.card.isRemovedToken) return true;
 		return (this.card.counters[this.type] ?? 0) == 0 && this.amount < 0;
 	}
-	isFullyPossible() {
+	async isFullyPossible() {
 		if (this.card.current() === null) return true;
 		if (this.card.isRemovedToken) return false;
 		return (this.card.counters[this.type] ?? 0) + this.amount >= 0;
@@ -1064,17 +1073,25 @@ export class ApplyStaticAbility extends Action {
 		super(player);
 		this.toObject = toObject;
 		this.modifier = modifier;
+		this._hadStaticAbilityBefore = null;
 	}
 
 	async* run() {
+		const currentObject = getObjectCurrent(this.toObject);
 		if (this.toObject instanceof BaseCard) {
 			this.toObject = this.toObject.snapshot();
 		}
-		getObjectCurrent(this.toObject).values.modifierStack.push(this.modifier);
+		currentObject.values.modifierStack.push(this.modifier);
+		this._hadStaticAbilityBefore = currentObject.values.modifiedByStaticAbility;
+		currentObject.values.modifiedByStaticAbility = true;
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
 	undo() {
-		getObjectCurrent(this.toObject).values.modifierStack.pop();
+		const currentObject = getObjectCurrent(this.toObject);
+		currentObject.values.modifierStack.pop();
+		currentObject.values.modifiedByStaticAbility = this._hadStaticAbilityBefore;
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 }
 
@@ -1089,30 +1106,37 @@ export class UnapplyStaticAbility extends Action {
 	}
 
 	async* run() {
+		const currentObject = getObjectCurrent(this.toObject);
 		if (this.object instanceof BaseCard) {
 			this.object = this.object.snapshot();
 		}
-		this._modifierIndex = getObjectCurrent(this.object).values.modifierStack.findIndex(modifier => modifier.ctx.ability === this.ability);
-		this._removed = getObjectCurrent(this.object).values.modifierStack.splice(this._modifierIndex, 1)[0];
+		this._modifierIndex = currentObject.values.modifierStack.findIndex(modifier => modifier.ctx.ability === this.ability);
+		this._removed = currentObject.values.modifierStack.splice(this._modifierIndex, 1)[0];
+		currentObject.values.modifiedByStaticAbility = currentObject.values.modifierStack.some(modifier => modifier.ctx.ability instanceof StaticAbility);
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
 	undo() {
-		getObjectCurrent(this.object).values.modifierStack.splice(this._modifierIndex, 0, this._removed);
+		const currentObject = getObjectCurrent(this.toObject);
+		currentObject.values.modifierStack.splice(this._modifierIndex, 0, this._removed);
+		currentObject.values.modifiedByStaticAbility = true;
+		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 }
 
 export class SelectCards extends Action {
-	constructor(player, eligibleCards, validAmounts, abilityId, validate, atRandom) {
+	constructor(player, eligibleCards, validAmounts, abilityId, validatorFunction, atRandom, ctxTargetList) {
 		super(player);
 		this.eligibleCards = eligibleCards;
 		this.atRandom = atRandom;
+		this.ctxTargetList = ctxTargetList; // the targets of the current ability context that need to be modified by this choice
 
-		this.selectionRequest = new requests.chooseCards.create(
+		this.selectionRequest = new requests.ChooseCards(
 			player,
 			eligibleCards,
 			validAmounts,
 			"cardEffect:" + abilityId,
-			validate
+			validatorFunction
 		);
 
 		this.selected = null;
@@ -1129,24 +1153,163 @@ export class SelectCards extends Action {
 			}
 		}
 		const response = yield [this.selectionRequest];
-		if (response.type != "chooseCards") {
-			throw new Error("Incorrect response type supplied during card selection. (expected \"chooseCards\", got \"" + response.type + "\" instead)");
-		}
+		this.selected = (await this.selectionRequest.extractResponseValue(response)).map(card => card.snapshot());
 		for (let i = 0; i < this.eligibleCards.length; i++) {
 			if (wasHidden[i]) {
 				this.eligibleCards[i].hideFrom(this.player);
 			}
 		}
-		this.selected = requests.chooseCards.validate(response.value, this.selectionRequest).map(card => card.snapshot());
+		for (const card of this.selected) {
+			this.ctxTargetList.push(card);
+		}
+
 		return events.createCardsSelectedEvent(this.player, this.selected);
 	}
 
 	undo() {
-		// ???
+		this.ctxTargetList.splice(-this.selected.length, this.selected.length);
 	}
 
-	isImpossible() {
-		const responses = requests.chooseCards.generateValidResponses(this.selectionRequest);
-		return responses.next().done;
+	async isImpossible() {
+		const responses = this.selectionRequest.generateValidResponses();
+		return (await responses.next()).done;
+	}
+}
+
+export class SelectAbility extends Action {
+	constructor(player, eligibleAbilities, abilityId, ctxTargetList) {
+		super(player);
+		this.ctxTargetList = ctxTargetList; // the targets of the current ability context that need to be modified by this choice
+
+		this.selectionRequest = new requests.ChooseAbility(
+			player,
+			abilityId,
+			eligibleAbilities
+		);
+
+		this.selected = null;
+	}
+
+	async* run() {
+		const response = yield [this.selectionRequest];
+		this.selected = (await this.selectionRequest.extractResponseValue(response));
+		this.ctxTargetList.push(this.selected);
+
+		return events.createAbilitySelectedEvent(this.player, this.selected);
+	}
+
+	undo() {
+		this.ctxTargetList.pop();
+	}
+
+	async isImpossible() {
+		const responses = this.selectionRequest.generateValidResponses();
+		return (await responses.next()).done;
+	}
+}
+
+export class SelectDeckSide extends Action {
+	constructor(player, deckOwner, abilityId) {
+		super(player);
+
+		this.selectionRequest = new requests.ChooseDeckSide(
+			player,
+			abilityId,
+			deckOwner
+		);
+
+		this.selected = null;
+	}
+
+	async* run() {
+		const response = yield [this.selectionRequest];
+		this.selected = await this.selectionRequest.extractResponseValue(response);
+
+		return events.createDeckSideSelectedEvent(this.player, this.selected.isTop? "top" : "bottom");
+	}
+
+	async isImpossible() {
+		const responses = this.selectionRequest.generateValidResponses();
+		return (await responses.next()).done;
+	}
+}
+
+export class SelectPlayer extends Action {
+	constructor(player, abilityId, ctxTargetList) {
+		super(player);
+		this.ctxTargetList = ctxTargetList; // the targets of the current ability context that need to be modified by this choice
+
+		this.selectionRequest = new requests.ChoosePlayer(player, "cardEffect:" + abilityId);
+
+		this.selected = null;
+	}
+
+	async* run() {
+		const response = yield [this.selectionRequest];
+		this.selected = (await this.selectionRequest.extractResponseValue(response));
+		this.ctxTargetList.push(this.selected);
+
+		return events.createPlayerSelectedEvent(this.player, this.selected);
+	}
+
+	undo() {
+		this.ctxTargetList.pop();
+	}
+
+	async isImpossible() {
+		const responses = this.selectionRequest.generateValidResponses();
+		return (await responses.next()).done;
+	}
+}
+
+export class SelectType extends Action {
+	constructor(player, eligibleTypes, abilityId) {
+		super(player);
+
+		this.selectionRequest = new requests.ChooseType(
+			player,
+			abilityId,
+			eligibleTypes
+		);
+
+		this.selected = null;
+	}
+
+	async* run() {
+		const response = yield [this.selectionRequest];
+		this.selected = (await this.selectionRequest.extractResponseValue(response));
+
+		return events.createTypeSelectedEvent(this.player, this.selected);
+	}
+
+	async isImpossible() {
+		const responses = this.selectionRequest.generateValidResponses();
+		return (await responses.next()).done;
+	}
+}
+
+export class OrderCards extends Action {
+	constructor(player, toOrder, abilityId) {
+		super(player);
+
+		this.orderRequest = new requests.OrderCards(
+			player,
+			toOrder,
+			"cardEffect:" + abilityId
+		);
+
+		this.ordered = null;
+	}
+
+	async* run() {
+		const response = yield [this.orderRequest];
+		this.ordered = (await this.orderRequest.extractResponseValue(response)).map(card => card.snapshot());
+
+		return events.createCardsOrderedEvent(this.player, this.ordered);
+	}
+
+	async isImpossible() {
+		const responses = this.orderRequest.generateValidResponses();
+		return (await responses.next()).done;
 	}
 }

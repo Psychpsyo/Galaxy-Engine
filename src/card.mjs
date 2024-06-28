@@ -1,7 +1,7 @@
 // This module exports the Card class which represents a specific card in a Game.
 
 import {CardValues, ObjectValues} from "./objectValues.mjs";
-import {ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
+import {ScriptContext, TargetObjects} from "./cdfScriptInterpreter/structs.mjs";
 import * as abilities from "./abilities.mjs";
 import * as interpreter from "./cdfScriptInterpreter/interpreter.mjs";
 import * as blocks from "./blocks.mjs";
@@ -93,32 +93,40 @@ export class BaseCard {
 			[new actions.LoseMana(player, this.values.current.level)]
 		]);
 	}
-	getCastingCost(player) {
-		let generators = [
-			timingGenerators.arrayTimingGenerator([
-				[new actions.LoseMana(player, this.values.current.level)]
-			])
+	getCastingCost(player, scriptTargets) {
+		const costActions = [
+			[new actions.LoseMana(player, this.values.current.level)]
+		];
+		if (this.values.current.cardTypes.includes("enchantSpell")) {
+			costActions.unshift([new actions.SelectEquipableUnit(player, this)]);
+		}
+		const generators = [
+			timingGenerators.arrayTimingGenerator(costActions)
 		];
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.CastAbility) {
 				if (ability.cost) {
-					generators.push(timingGenerators.abilityCostTimingGenerator(ability, this, player));
+					generators.push(timingGenerators.abilityCostTimingGenerator(ability, this, player, scriptTargets));
 				}
 				break;
 			}
 		}
 		return timingGenerators.combinedTimingGenerator(generators);
 	}
-	getDeploymentCost(player) {
-		let generators = [
-			timingGenerators.arrayTimingGenerator([
-				[new actions.LoseMana(player, this.values.current.level)]
-			])
+	getDeploymentCost(player, scriptTargets) {
+		const costActions = [
+			[new actions.LoseMana(player, this.values.current.level)]
+		];
+		if (this.values.current.cardTypes.includes("equipableItem")) {
+			costActions.unshift([new actions.SelectEquipableUnit(player, this)]);
+		}
+		const generators = [
+			timingGenerators.arrayTimingGenerator(costActions)
 		];
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.DeployAbility) {
 				if (ability.cost) {
-					generators.push(timingGenerators.abilityCostTimingGenerator(ability, this, player));
+					generators.push(timingGenerators.abilityCostTimingGenerator(ability, this, player, scriptTargets));
 				}
 				break;
 			}
@@ -130,67 +138,68 @@ export class BaseCard {
 		if (!this.values.current.cardTypes.includes("unit")) {
 			return false;
 		}
-		let timingRunner = new timingGenerators.TimingRunner(() => this.getSummoningCost(player), player.game);
+		const timingRunner = new timingGenerators.TimingRunner(() => this.getSummoningCost(player), player.game);
 		timingRunner.isCost = true;
-		let costOptionTree = await timingGenerators.generateOptionTree(player.game, timingRunner, () => !checkPlacement || player.unitZone.cards.includes(null));
-		return costOptionTree.valid;
+		const costOptionTree = new timingGenerators.OptionTreeNode(player.game, timingRunner, () => !checkPlacement || player.unitZone.getFreeSpaceCount() > 0);
+		return costOptionTree.isValid();
 	}
-	async canCast(checkPlacement, player, evaluatingPlayer = player) {
+	// If checkPlacement is false, only the casting conditions that the rules care about will be evaluated, not if the card can actually sucessfully be placed on the field
+	getCastabilityCostOptionTree(checkPlacement, player, evaluatingPlayer = player) {
 		if (!this.values.current.cardTypes.includes("spell")) {
-			return false;
+			return null;
 		}
-		let cardCtx = new ScriptContext(this, player, null, evaluatingPlayer);
+		const scriptTargets = new TargetObjects();
+		const cardCtx = new ScriptContext(this, player, null, evaluatingPlayer, scriptTargets);
 		if ((player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.CastSpell && block.card.cardId === this.cardId && block.player === player).length >= this.turnLimit.evalFull(cardCtx).next().value.getJsNum(player)) ||
-			(this.condition !== null && !this.condition.evalFull(cardCtx).next().value.get(player)) ||
-			(this.values.current.cardTypes.includes("enchantSpell") && this.equipableTo.evalFull(cardCtx).next().value.get(player).length == 0)
+			(this.condition !== null && !this.condition.evalFull(cardCtx).next().value.get(player))
 		) {
-			return false;
+			return null;
 		}
+
+		const currentZone = this.zone; // Can't discard a spell for its own cost
+		let endOfTreeCheck = () => this.zone === currentZone && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
 		// find cast ability
-		let endOfTreeCheck = () => !checkPlacement || player.spellItemZone.cards.includes(null);
 		for (const ability of this.values.current.abilities) {
 			if (ability instanceof abilities.CastAbility) {
 				if (!ability.canActivate(this, player, evaluatingPlayer)) {
-					return false;
+					return null;
 				}
-				let currentZone = this.zone; // Can't discard a spell for its own cost
-				endOfTreeCheck = () => ability.exec.hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer)) && this.zone === currentZone && (!checkPlacement || player.spellItemZone.cards.includes(null));
+				endOfTreeCheck = () => ability.exec.hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer, scriptTargets)) && this.zone === currentZone && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
 			}
 		}
 
-		let timingRunner = new timingGenerators.TimingRunner(() => this.getCastingCost(player), player.game);
+		const timingRunner = new timingGenerators.TimingRunner(() => this.getCastingCost(player, scriptTargets), player.game);
 		timingRunner.isCost = true;
-		let costOptionTree = await timingGenerators.generateOptionTree(player.game, timingRunner, endOfTreeCheck);
-		return costOptionTree.valid;
+		return new timingGenerators.OptionTreeNode(player.game, timingRunner, endOfTreeCheck);
 	}
-	// If checkPlacement is false, only teh deployment conditions that the rules care about will be evaluated, not if the card can actually sucessfully be placed on the field
-	async canDeploy(checkPlacement, player, evaluatingPlayer = player) {
+	// If checkPlacement is false, only the deployment conditions that the rules care about will be evaluated, not if the card can actually sucessfully be placed on the field
+	async getDeployabilityCostOptionTree(checkPlacement, player, evaluatingPlayer = player) {
 		if (!this.values.current.cardTypes.includes("item")) {
-			return false;
+			return null;
 		}
-		let cardCtx = new ScriptContext(this, player, null, evaluatingPlayer);
+		const scriptTargets = new TargetObjects();
+		const cardCtx = new ScriptContext(this, player, null, evaluatingPlayer, scriptTargets);
 		if ((player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.DeployItem && block.card.cardId === this.cardId && block.player === player).length >= this.turnLimit.evalFull(cardCtx).next().value.getJsNum(player)) ||
-			(this.condition !== null && !this.condition.evalFull(cardCtx).next().value.get(player)) ||
-			(this.values.current.cardTypes.includes("equipableItem") && this.equipableTo.evalFull(cardCtx).next().value.get(player).length == 0)
+			(this.condition !== null && !this.condition.evalFull(cardCtx).next().value.get(player))
 		) {
-			return false;
+			return null;
 		}
+
+		const currentZone = this.zone; // Can't discard an item for its own cost
+		let endOfTreeCheck = () => this.zone === currentZone && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
 		// find deploy ability
-		let endOfTreeCheck = () => !checkPlacement || player.spellItemZone.cards.includes(null);
 		for (const ability of this.values.current.abilities) {
 			if (ability instanceof abilities.DeployAbility) {
 				if (!ability.canActivate(this, player, evaluatingPlayer)) {
-					return false;
+					return null;
 				}
-				let currentZone = this.zone; // Can't discard an item for its own cost
-				endOfTreeCheck = () => ability.exec.hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer)) && this.zone === currentZone && (!checkPlacement || player.spellItemZone.cards.includes(null));
+				endOfTreeCheck = () => ability.exec.hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer, scriptTargets)) && this.zone === currentZone && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
 			}
 		}
 
-		let timingRunner = new timingGenerators.TimingRunner(() => this.getDeploymentCost(player), player.game);
+		const timingRunner = new timingGenerators.TimingRunner(() => this.getDeploymentCost(player, scriptTargets), player.game);
 		timingRunner.isCost = true;
-		let costOptionTree = await timingGenerators.generateOptionTree(player.game, timingRunner, endOfTreeCheck);
-		return costOptionTree.valid;
+		return new timingGenerators.OptionTreeNode(player.game, timingRunner, endOfTreeCheck);
 	}
 
 	// Does not check if the card can be declared to attack, only if it is allowed to be/stay in an attack declaration.

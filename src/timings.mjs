@@ -1,6 +1,6 @@
 
 import {createActionCancelledEvent, createValueChangedEvent, createActionModificationAbilityAppliedEvent} from "./events.mjs";
-import {chooseAbilityOrder, chooseCards, applyActionModificationAbility} from "./inputRequests.mjs";
+import {ChooseAbilityOrder, ChooseCards, ApplyActionModificationAbility} from "./inputRequests.mjs";
 import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {BaseCard} from "./card.mjs";
@@ -42,11 +42,11 @@ export class Timing {
 	}
 
 	// returns a list of actionCancelled events and sets impossible actions to cancelled
-	_cancelImpossibleActions() {
+	async _cancelImpossibleActions() {
 		let events = [];
 		for (const action of this.actions) {
 			if (action.isCancelled) continue;
-			if (action.isImpossible()) {
+			if (await action.isImpossible()) {
 				events = events.concat(this._cancelAction(action));
 			}
 		}
@@ -54,7 +54,7 @@ export class Timing {
 	}
 
 	// applies static abilities like that on 'Substitution Doll' or 'Norma, of the Sandstorm'
-	* _handleModificationAbilities() {
+	async *_handleModificationAbilities() {
 		// gather abilities
 		const activeCards = this.game.players.map(player => player.getAllCards()).flat();
 		const possibleTargets = activeCards.concat(this.game.players);
@@ -125,8 +125,10 @@ export class Timing {
 						applicableAbilities.set(target, abilities);
 						// also keep track of which targets will need to be affected
 						const oldTargets = targets.get(target.currentOwner());
-						oldTargets.push(target);
-						targets.set(target.currentOwner(), oldTargets);
+						if (!oldTargets.includes(target)) {
+							oldTargets.push(target);
+							targets.set(target.currentOwner(), oldTargets);
+						}
 					}
 				}
 			}
@@ -138,19 +140,16 @@ export class Timing {
 			while (remainingCards.length > 0) {
 				let target;
 				if (remainingCards.length > 1) {
-					const request = chooseCards.create(player, remainingCards, [1], "nextCardToApplyStaticAbilityTo");
+					const request = new ChooseCards(player, remainingCards, [1], "nextCardToApplyStaticAbilityTo");
 					const response = yield [request];
-					if (response.type != "chooseCards") {
-						throw new Error("Wrong response type supplied during action modification application (expected 'chooseCards', got '" + response.type + "')");
-					}
-					target = chooseCards.validate(response.value, request)[0];
+					target = await request.extractResponseValue(response)[0];
 				} else {
 					target = remainingCards[0];
 				}
 				remainingCards.splice(remainingCards.indexOf(target), 1);
 
 				// apply modifications to this card
-				for (const ability of yield* orderStaticAbilities(target, applicableAbilities.get(target), this.game)) {
+				for (const ability of await (yield* orderStaticAbilities(target, applicableAbilities.get(target), this.game))) {
 					const modifier = ability.getModifier();
 					let didApply = false;
 					for (let i = 0; i < this.actions.length; i++) {
@@ -183,7 +182,7 @@ export class Timing {
 							for (const replacement of replacements) {
 								replacement.timing = this;
 
-								if (!replacement.isFullyPossible()) {
+								if (!(await replacement.isFullyPossible())) {
 									foundInvalidReplacement = true;
 									break;
 								}
@@ -193,9 +192,9 @@ export class Timing {
 
 						// ask player if they want to apply optional modification
 						if (!ability.mandatory) {
-							const response = yield [applyActionModificationAbility.create(ability.card.currentOwner(), ability, target)];
-							response.value = applyActionModificationAbility.validate(response.value);
-							if (!response.value) continue;
+							const request = new ApplyActionModificationAbility(ability.card.currentOwner(), ability, target);
+							const response = yield [request];
+							if (!await request.extractResponseValue(response)) continue;
 						}
 
 						// apply the modification
@@ -231,9 +230,9 @@ export class Timing {
 		}
 	}
 
-	isFullyPossible(costIndex) {
+	async isFullyPossible(costIndex) {
 		for (const action of this.actions) {
-			if (action.costIndex === costIndex && (!action.isFullyPossible() || action.isCancelled)) {
+			if (action.costIndex === costIndex && (action.isCancelled || !(await action.isFullyPossible()))) {
 				return false;
 			}
 		}
@@ -251,7 +250,7 @@ export class Timing {
 		}
 
 		// cancel impossible actions
-		const cancelEvents = this._cancelImpossibleActions();
+		const cancelEvents = await this._cancelImpossibleActions();
 		if (cancelEvents.length > 0) {
 			yield cancelEvents;
 		}
@@ -266,7 +265,7 @@ export class Timing {
 				return;
 			}
 			for (let i = 0; i < this.costCompletions.length; i++) {
-				this.costCompletions[i] = this.costCompletions[i] && this.isFullyPossible(i);
+				this.costCompletions[i] = this.costCompletions[i] && await this.isFullyPossible(i);
 			}
 			for (const action of this.actions) {
 				if (!this.costCompletions[action.costIndex]) {
@@ -275,7 +274,7 @@ export class Timing {
 			}
 		}
 		// fully cancelled timings are not successful, they interrupt their block or indicate that paying all costs failed.
-		if (!this.actions.find(action => !action.isCancelled)) {
+		if (this.actions.every(action => action.isCancelled)) {
 			this.game.nextTimingIndex--;
 			return;
 		}
@@ -327,7 +326,7 @@ export class Timing {
 		// TODO: The following things do not have proper undo support yet.
 		// This *should* only matter when units turn into spells/items so for now it does not matter(?)
 		// (That's because in those cases, modifiers on the card are destroyed and wouldn't properly get restored)
-		const valueChangeEvents = recalculateObjectValues(this.game);
+		const valueChangeEvents = recalculateObjectValues(this.game, isPrediction);
 		if (valueChangeEvents.length > 0) {
 			yield valueChangeEvents;
 		}
@@ -355,7 +354,7 @@ export class Timing {
 		this.followupTiming = await (yield* runInterjectedTimings(this.game, isPrediction, this.actions));
 	}
 
-	* undo() {
+	* undo(isPrediction = false) {
 		// check if this timing actually ran
 		if (!this.successful) {
 			return;
@@ -367,7 +366,7 @@ export class Timing {
 				events.push(event);
 			}
 		}
-		const valueChangeEvents = recalculateObjectValues(this.game);
+		const valueChangeEvents = recalculateObjectValues(this.game, isPrediction);
 		if (valueChangeEvents.length > 0) {
 			yield valueChangeEvents;
 		}
@@ -418,7 +417,7 @@ export class Timing {
 
 		const allActions = unrevealedCards.map(card => new actions.View(card.currentOwner().next(), card.current()));
 		for (const deck of unshuffledDecks) {
-			if (!allActions.find(action => action instanceof actions.Shuffle && action.player === deck.player)) {
+			if (!allActions.some(action => action instanceof actions.Shuffle && action.player === deck.player)) {
 				allActions.push(new actions.Shuffle(deck.player));
 			}
 		}
@@ -432,7 +431,7 @@ export class Timing {
 			if (equipment && (equipment.values.current.cardTypes.includes("equipableItem") || equipment.values.current.cardTypes.includes("enchantSpell")) &&
 				(equipment.equippedTo === null || !equipment.equipableTo.evalFull(new ScriptContext(equipment, equipment.currentOwner())).next().value.get(equipment.currentOwner()).includes(equipment.equippedTo))
 			) {
-				if (!this.actions.find(action => action instanceof actions.Discard && action.card === equipment)) {
+				if (!this.actions.some(action => action instanceof actions.Discard && action.card === equipment)) {
 					invalidEquipments.push(equipment);
 				}
 			}
@@ -457,7 +456,7 @@ export class Timing {
 // This is run after every regular timing and right after blocks start and end.
 // It takes care of updating static abilities.
 export async function* runInterjectedTimings(game, isPrediction) {
-	const timing = yield* getStaticAbilityPhasingTiming(game);
+	const timing = await (yield* getStaticAbilityPhasingTiming(game));
 	if (timing) {
 		await (yield* timing.run(isPrediction));
 	}
@@ -465,7 +464,7 @@ export async function* runInterjectedTimings(game, isPrediction) {
 }
 
 // iterates over all static abilities and activates/deactivates those that need it.
-function* getStaticAbilityPhasingTiming(game) {
+async function* getStaticAbilityPhasingTiming(game) {
 	const modificationActions = []; // the list of Apply/UnapplyStaticAbility actions that this will return as a timing.
 	const activeCards = game.players.map(player => player.getActiveCards()).flat();
 	const possibleTargets = activeCards.concat(game.players);
@@ -516,7 +515,7 @@ function* getStaticAbilityPhasingTiming(game) {
 			}
 			for (const target of possibleTargets) {
 				if (abilityTargets.get(ability).includes(target)) {
-					if (!target.values.modifierStack.find(modifier => modifier.ctx.ability === ability)) {
+					if (!target.values.modifierStack.some(modifier => modifier.ctx.ability === ability)) {
 						// abilities are just dumped in a list here to be sorted later.
 						const abilities = applicableAbilities.get(target) ?? [];
 						abilities.push(ability);
@@ -528,7 +527,7 @@ function* getStaticAbilityPhasingTiming(game) {
 	}
 
 	for (const [target, abilities] of applicableAbilities) {
-		for (const ability of yield* orderStaticAbilities(target, abilities, game)) {
+		for (const ability of await (yield* orderStaticAbilities(target, abilities, game))) {
 			modificationActions.push(new actions.ApplyStaticAbility(
 				ability.card.currentOwner(), // have these be owned by the player that owns the card with the ability.
 				target,
@@ -543,7 +542,7 @@ function* getStaticAbilityPhasingTiming(game) {
 	return new Timing(game, modificationActions);
 }
 
-function* orderStaticAbilities(target, abilities, game) {
+async function* orderStaticAbilities(target, abilities, game) {
 	const orderedAbilities = [];
 
 	const fieldEnterBuckets = {};
@@ -610,12 +609,9 @@ function* orderStaticAbilities(target, abilities, game) {
 			let ordering = [0];
 			// is sorting necessary for this bucket?
 			if (bucket.abilities.length !== 1) {
-				const request = chooseAbilityOrder.create(bucket.player, target, bucket.abilities);
+				const request = new ChooseAbilityOrder(bucket.player, target, bucket.abilities);
 				const response = yield [request];
-				if (response.type != "chooseAbilityOrder") {
-					throw new Error("Wrong response type supplied during ability ordering (expected 'chooseAbilityOrder', got '" + response.type + "')");
-				}
-				ordering = chooseAbilityOrder.validate(response.value, request);
+				ordering = await request.extractResponseValue(response);
 			}
 			// we got the order for the abilities
 			for (const index of ordering) {
@@ -629,47 +625,36 @@ function* orderStaticAbilities(target, abilities, game) {
 
 // recalculates the values of every object currently in the game, according to their modifier stacks.
 // TODO: generalize this somehow. Should probably generate a list of modifiables and loop over those
-function recalculateObjectValues(game) {
+function recalculateObjectValues(game, isPrediction = false) {
 	let valueChangeEvents = [];
-	for (const player of game.players) {
-		// recalculate the player's own values
-		const oldPlayerValues = player.values.clone();
-		recalculateModifiedValuesFor(player);
-		for (const property of oldPlayerValues.base.compareTo(player.values.base)) {
-			valueChangeEvents.push(createValueChangedEvent(player, property, true));
-		}
-		for (const property of oldPlayerValues.current.compareTo(player.values.current)) {
-			valueChangeEvents.push(createValueChangedEvent(player, property, false));
-		}
+	for (const object of game.pendingValueChangeObjects) {
+		// for performance, ValueChangedEvents aren't generated during prediction since they won't be needed
+		const oldValues = isPrediction? null : object.values.clone();
+		const wasUnit = object instanceof BaseCard && object.values.current.cardTypes.includes("unit");
 
-		// recalculate the values for the player's cards
-		for (const card of player.getActiveCards()) {
-			const oldCard = card.snapshot();
-			const wasUnit = card.values.current.cardTypes.includes("unit");
-			recalculateModifiedValuesFor(card);
-			// once done, unit specific modifications may need to be removed.
-			if (wasUnit && !card.values.current.cardTypes.includes("unit")) {
-				card.canAttackAgain = false;
-				for (let i = card.values.modifierStack.length - 1; i >= 0; i--) {
-					if (card.values.modifierStack[i].removeUnitSpecificModifications()) {
-						card.values.modifierStack.splice(i, 1);
-					}
+		recalculateModifiedValuesFor(object);
+
+		// did a card stop being a unit?
+		if (wasUnit && !object.values.current.cardTypes.includes("unit")) {
+			object.canAttackAgain = false;
+			for (let i = object.values.modifierStack.length - 1; i >= 0; i--) {
+				if (object.values.modifierStack[i].removeUnitSpecificModifications()) {
+					object.values.modifierStack.splice(i, 1);
 				}
 			}
+		}
 
-			for (const property of oldCard.values.base.compareTo(card.values.base)) {
-				valueChangeEvents.push(createValueChangedEvent(card, property, true));
+		if (!isPrediction) {
+			for (const property of oldValues.base.compareTo(object.values.base)) {
+				valueChangeEvents.push(createValueChangedEvent(object, property, true));
 			}
-			for (const property of oldCard.values.current.compareTo(card.values.current)) {
-				if (valueChangeEvents.find(event => event.valueName === property && event.card === card) === undefined) {
-					valueChangeEvents.push(createValueChangedEvent(card, property, false));
+			for (const property of oldValues.current.compareTo(object.values.current)) {
+				if (!valueChangeEvents.some(event => event.valueName === property && event.object === object)) {
+					valueChangeEvents.push(createValueChangedEvent(object, property, false));
 				}
 			}
 		}
 	}
-	if (game.currentBlock() instanceof blocks.Fight) {
-		// TODO: Not duplicating the ValueChangedEvent code until this gets generalized
-		recalculateModifiedValuesFor(game.currentBlock().fight);
-	}
+	game.pendingValueChangeObjects = game.pendingValueChangeObjects.filter(obj => obj.values.modifiedByStaticAbility);
 	return valueChangeEvents;
 }

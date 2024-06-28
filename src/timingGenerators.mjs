@@ -11,22 +11,51 @@ export class TimingRunner {
 	constructor(generatorFunction, game) {
 		this.generatorFunction = generatorFunction;
 		this.game = game;
+		this.optionTree = null; // this is used to determine which options that a player could pick are actually valid
 		this.isCost = false;
 		this.timings = [];
 	}
 
 	async* run(isPrediction = false) {
+		const runGenerator = this.runAndIgnoreOptionTree(isPrediction);
+		let events = await runGenerator.next();
+		let currentOptionTreeNode = this.optionTree;
+		while (!events.done) {
+			const atInputRequest = events.value[0] instanceof requests.InputRequest;
+			if (atInputRequest) {
+				// Set the option tree node on all outgoing input requests so that they adhere to it.
+				if (currentOptionTreeNode) {
+					if (currentOptionTreeNode.request === null) {
+						currentOptionTreeNode = null;
+					} else {
+						for (const request of events.value) {
+							request.optionTreeNode = currentOptionTreeNode;
+						}
+					}
+				}
+			}
+			const response = yield events.value;
+			if (atInputRequest && currentOptionTreeNode) {
+				// Walk the tree as the player makes choices.
+				currentOptionTreeNode = currentOptionTreeNode.getChildForResponse(response);
+			}
+			events = await runGenerator.next(response);
+		}
+		return events.value;
+	}
+
+	async* runAndIgnoreOptionTree(isPrediction = false) {
 		const interjected = await (yield* runInterjectedTimings(this.game, isPrediction));
 		if (interjected) {
 			this.timings.push(interjected);
-			while(this.timings.at(-1).followupTiming) {
+			while (this.timings.at(-1).followupTiming) {
 				this.timings.push(this.timings.at(-1).followupTiming);
 			}
 		}
 
 		let generator = this.generatorFunction();
 		let timing = yield* this.getNextTiming(generator, null);
-		while(timing instanceof Timing) {
+		while (timing instanceof Timing) {
 			if (this.isCost) {
 				// if an empty timing is generated as part of a cost
 				if (timing.actions.length === 0) {
@@ -38,7 +67,7 @@ export class TimingRunner {
 			}
 			this.timings.push(timing);
 			await (yield* timing.run(isPrediction));
-			while(this.timings.at(-1).followupTiming) {
+			while (this.timings.at(-1).followupTiming) {
 				this.timings.push(this.timings.at(-1).followupTiming);
 			}
 			if (!timing.successful && this.isCost) {
@@ -49,6 +78,7 @@ export class TimingRunner {
 		return timing;
 	}
 
+	// Returns either the next timing or the final return value of the passed-in generator
 	* getNextTiming(timingGenerator, previousTiming) {
 		let generatorOutput = timingGenerator.next(previousTiming);
 		while (!generatorOutput.done && (generatorOutput.value.length == 0 || !(generatorOutput.value[0] instanceof actions.Action))) {
@@ -60,92 +90,162 @@ export class TimingRunner {
 		return new Timing(this.game, generatorOutput.value);
 	}
 
-	* undo() {
-		for (let i = this.timings.length - 1; i >= 0; i--) {
-			yield* this.timings[i].undo();
+	* undo(isPrediction = false) {
+		while (this.timings.length > 0) {
+			yield* this.timings.pop().undo(isPrediction);
 		}
-		this.timings = [];
+	}
+}
+
+export class OptionTreeNode {
+	constructor(game, runner, endOfTreeCheck, parent = null, choice = null) {
+		this.game = game;
+		this._runner = runner;
+		this.endOfTreeCheck = endOfTreeCheck;
+		this.parent = parent;
+		this.choice = choice; // the choice that got us to this node
+
+		// used to generate children
+		this.childResponseGenerator = null;
+		this.request = null;
+
+		this._childNodes = [];
+		this._isValid = null;
 	}
 
-	// starts a new generator and plays it through with the given player choices, then returns it.
-	async fastForward(playerChoices) {
-		const generator = this.run(this.isPrediction);
-		let events = await generator.next();
-		while (!events.done && (playerChoices.length > 0 || events.value[0].nature !== "request")) {
-			if (events.value[0].nature === "request") {
-				events = await generator.next(playerChoices.shift());
+	setRunner(newRunner) {
+		this._runner = newRunner;
+		for (const child of this._childNodes) {
+			child.setRunner(newRunner);
+		}
+	}
+
+	// only call if the game state is at this node's choice
+	async isValid() {
+		if (this._isValid !== null) return this._isValid;
+
+		// rewinding this tree's runner to play up to this node in our own generator
+		for (const _ of this._runner.undo(true)) {}
+
+		// gather choices needed to get to this node
+		let currentNode = this;
+		const responsesToHere = [];
+		while (currentNode?.parent) { // parent must exist to insert choice since the root of the tree (which has no parent) was not reached via choice.
+			responsesToHere.push(currentNode.choice);
+			currentNode = currentNode.parent;
+		}
+		responsesToHere.reverse();
+
+		// fast forward to this node
+		let generator = await this.fastForwardGenerator(responsesToHere); // the generator that walks down the tree
+
+		// go to next user input request
+		let events;
+		do {
+			// Check if the game has ended before advancing to the next events so that we can know that the game was ended
+			// by the previous set of events and therefore the existance of this following set needs to invalidate the node.
+			// (If the game ends as the last thing in the tree, that is valid.)
+			let gameEnded = false;
+			for (const player of this.game.players) {
+				if (player.victoryConditions.length > 0) {
+					gameEnded = true;
+				}
+			}
+			events = await generator.next();
+			// If we aren't done with events yet but the game ended, this node doesn't
+			// represent a valid path and there is no point in calculating its children.
+			if (gameEnded && !events.done) {
+				this._isValid = false;
+				break;
+			}
+		} while (!events.done && !(events.value[0] instanceof requests.InputRequest));
+
+		// do we still need to determine validity?
+		if (this._isValid === null) {
+			// if we are at a user input request, generate child nodes
+			if (!events.done) {
+				this.request = events.value[0];
+				this.childResponseGenerator = events.value[0].generateResponses();
+
+				let response = this.childResponseGenerator.next();
+				while (!response.done) {
+					const child = new OptionTreeNode(this.game, this._runner, this.endOfTreeCheck, this, {type: this.request.type, value: response.value});
+					this._childNodes.push(child);
+					if (await child.isValid()) {
+						this._isValid = true;
+						break;
+					}
+					response = this.childResponseGenerator.next();
+				}
+			} else {
+				// this tree branch is done.
+				this._isValid = events.value && this.endOfTreeCheck();
+			}
+		}
+
+		// undo everything
+		for (const _ of this._runner.undo(true)) {}
+
+		// advance the game state to where it was at the start
+		if (this.parent) { // if this is the root, we are done and trying to advance would break stuff
+			responsesToHere.pop(); // we don't want to enter this node again
+			generator = await this.fastForwardGenerator(responsesToHere);
+			do {
+				events = await generator.next();
+			} while (!(events.value[0] instanceof requests.InputRequest));
+		}
+
+		return this._isValid;
+	}
+
+	// This lazily generates child nodes as they're being iterated over
+	// isValid() needs to be called before this.
+	*getChildNodes() {
+		// list the children we already have
+		for (const child of this._childNodes) {
+			yield child;
+		}
+
+		if (!this.childResponseGenerator) return;
+
+		let response = this.childResponseGenerator.next();
+		while (!response.done) {
+			const child = new OptionTreeNode(this.game, this._runner, this.endOfTreeCheck, this, {type: this.request.type, value: response.value});
+			this._childNodes.push(child);
+			yield child;
+			response = this.childResponseGenerator.next();
+		}
+	}
+
+	// only call if the game state is at this node's choice
+	async isValidChoice(playerResponse) {
+		return await this.getChildForResponse(playerResponse)?.isValid() ?? false;
+	}
+
+	getChildForResponse(playerResponse) {
+		for (const child of this.getChildNodes()) {
+			if (this.request.areResponseValuesEquivalent(child.choice.value, playerResponse.value)) {
+				return child;
+			}
+		}
+		return null;
+	}
+
+	// Starts a new generator and plays it through with the given player choices, then returns it.
+	async fastForwardGenerator(playerChoices) {
+		const generator = this._runner.runAndIgnoreOptionTree(true);
+		let events = null;
+		let currentChoice = 0;
+		while (currentChoice < playerChoices.length && (events === null || !events.done)) {
+			if (events?.value[0] instanceof requests.InputRequest) {
+				events = await generator.next(playerChoices[currentChoice]);
+				currentChoice++;
 			} else {
 				events = await generator.next();
 			}
 		}
 		return generator;
 	}
-}
-
-class OptionTreeNode {
-	constructor(parent, choice) {
-		this.parent = parent;
-		this.choice = choice;
-		this.childNodes = [];
-		this.valid = false;
-	}
-}
-
-// Generates a tree of all player choices for a TimingRunner, tagged for validity, based on endOfTreeCheck
-// Branches in which the runner does not complete sucessfully are also tagged as invalid.
-export async function generateOptionTree(game, runner, endOfTreeCheck, generator = null, lastNode = null, lastChoice = null) {
-	if (generator === null) {
-		generator = runner.run(true);
-	}
-	const node = new OptionTreeNode(lastNode, lastChoice);
-	let events;
-	// go to next user input request
-	do {
-		// Check if the game has ended before advancing to the next events so that we can know that the game was ended
-		// by the last set of events and therefore the existance of this following set needs to invalidate the node.
-		let gameEnded = false;
-		for (const player of game.players) {
-			if (player.victoryConditions.length > 0) {
-				gameEnded = true;
-			}
-		}
-		events = await generator.next(lastChoice);
-		lastChoice = undefined;
-		// If we aren't done with events yet but the game ended, this node doesn't
-		// represent a valid path and there is no point in calculating its children.
-		if (gameEnded && !events.done) {
-			node.valid = false;
-			const undoGenerator = runner.undo();
-			while(!undoGenerator.next().done) {}
-			return node;
-		}
-	} while (!events.done && events.value[0].nature !== "request");
-
-	// if we are at a user input request, generate child nodes
-	if (!events.done) {
-		for (const response of requests[events.value[0].type].generateValidResponses(events.value[0])) {
-			const child = await generateOptionTree(game, runner, endOfTreeCheck, generator, node, {type: events.value[0].type, value: response});
-			node.childNodes.push(child);
-			if (child.valid) {
-				node.valid = true;
-			}
-			// and then we need to advance the branch to this node again.
-			let currentNode = node;
-			let responses = [];
-			while (currentNode.parent) {
-				responses.push(currentNode.choice);
-				currentNode = currentNode.parent;
-			}
-			generator = await runner.fastForward(responses.reverse());
-		}
-	} else {
-		// this tree branch is done.
-		node.valid = events.value && endOfTreeCheck();
-	}
-
-	const undoGenerator = runner.undo();
-	while(!undoGenerator.next().done) {}
-	return node;
 }
 
 // It follows: all different types of timing generators
@@ -209,8 +309,9 @@ export function* standardDrawTimingGenerator(player) {
 	return timing.successful;
 }
 
-export function* equipTimingGenerator(equipChoiceAction, player, abilityGenerator = null) {
-	const timing = yield [new actions.EquipCard(player, equipChoiceAction.spellItem, equipChoiceAction.chosenUnit)];
+export function* equipTimingGenerator(player, abilityGenerator = null) {
+	const currentBlock = player.game.currentBlock();
+	const timing = yield [new actions.EquipCard(player, currentBlock.card, currentBlock.equipTarget)];
 	if (!timing.successful) return false;
 
 	if (abilityGenerator !== null) {
