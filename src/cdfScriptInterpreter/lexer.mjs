@@ -3,8 +3,9 @@ const keywordTokenTypes = {
 	where: "where",
 	if: "if",
 	unaffectedBy: "immunityAssignment",
-	cancel: "cancel",
 	cancelAbilities: "cancelAbilities",
+	cancel: "cancel",
+	prohibit: "prohibit",
 	replace: "replace",
 	with: "with",
 

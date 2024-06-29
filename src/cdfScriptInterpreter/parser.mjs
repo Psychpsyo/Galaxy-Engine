@@ -793,6 +793,11 @@ function parseModifier(forStaticAbility = false) {
 				hasNonActionModification = true;
 				break;
 			}
+			case "prohibit": {
+				valueModifications.push(parseProhibitModification());
+				hasNonActionModification = true;
+				break;
+			}
 			case "cancel": {
 				const modificationStartToken = tokens[pos+1];
 				if (!forStaticAbility) throw new ScriptParserError("Cancel modifiers are not allowed outside of static abilities. (Did you mean cancelAbilities?)", modificationStartToken);
@@ -855,6 +860,13 @@ function parseAbilityCancelModification() {
 	pos += 2;
 
 	return new valueModifiers.AbilityCancelModification("abilities", false, parseIfCondition());
+}
+
+function parseProhibitModification() {
+	pos += 2;
+	const toProhibit = parseExpression();
+
+	return new valueModifiers.ProhibitModification(toProhibit, parseIfCondition());
 }
 
 // TODO: Make number modifiers work on yourLifeDamage and opponentLifeDamage and figure out if they need to be in this list for that.

@@ -220,7 +220,7 @@ export class Fight extends Block {
 
 export class AbilityActivation extends Block {
 	constructor(stack, player, ability) {
-		// by the time this block executes, the snapshot might not be able to resolve to a card anymore
+		// By the time this block executes, the snapshot might not be able to resolve to a card anymore
 		// This is good because any references to "this card" should be invalid by then.
 		const card = ability.card.snapshot();
 		const scriptTargets = new TargetObjects();

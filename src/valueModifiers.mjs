@@ -422,7 +422,8 @@ export class DamageOverrideSetModification extends ValueModification {
 	}
 }
 
-// These are intentionally very empty since the actual functionality is inside of the Timing class
+// ActionModifications are mandatory or optional modifications that apply to actions which are about to happen.
+// They are intentionally very empty since the actual functionality is inside of the Timing class
 export class ActionModification extends Modification {
 	constructor(toModify, condition) {
 		super(condition);
@@ -438,5 +439,13 @@ export class ActionReplaceModification extends ActionModification {
 export class ActionCancelModification extends ActionModification {
 	constructor(toCancel, condition) {
 		super(toCancel, condition);
+	}
+}
+
+// A ProhibitModification declares certain actions as impossible. (for effects that say things like "this card cannot be exiled")
+export class ProhibitModification extends Modification {
+	constructor(toProhibit, condition) {
+		super(condition);
+		this.toProhibit = toProhibit;
 	}
 }

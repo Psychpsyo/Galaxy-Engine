@@ -91,6 +91,11 @@ export class Action {
 	isIdenticalTo(other) {
 		return false;
 	}
+
+	// returns the cards that this action is affecting (for purposes of cards being immune to things)
+	get affectedObjects() {
+		return [];
+	}
 }
 
 export class GainMana extends Action {
@@ -255,6 +260,10 @@ export class Place extends Action {
 		if (this.constructor !== other.constructor) return false;
 		return this.card.current() === other.card.current();
 	}
+
+	get affectedObjects() {
+		return [this.card];
+	}
 }
 
 export class Summon extends Action {
@@ -296,6 +305,10 @@ export class Summon extends Action {
 		if (this.constructor !== other.constructor) return false;
 		return this.card.current() === other.card.current();
 	}
+
+	get affectedObjects() {
+		return [this.card];
+	}
 }
 
 export class Deploy extends Action {
@@ -336,6 +349,10 @@ export class Deploy extends Action {
 		if (this.constructor !== other.constructor) return false;
 		return this.card.current() === other.card.current();
 	}
+
+	get affectedObjects() {
+		return [this.card];
+	}
 }
 
 export class Cast extends Action {
@@ -375,6 +392,10 @@ export class Cast extends Action {
 	isIdenticalTo(other) {
 		if (this.constructor !== other.constructor) return false;
 		return this.card.current() === other.card.current();
+	}
+
+	get affectedObjects() {
+		return [this.card];
 	}
 }
 
@@ -428,6 +449,10 @@ export class Move extends Action {
 		if (this.constructor !== other.constructor) return false;
 		return this.card.current() === other.card.current();
 	}
+
+	get affectedObjects() {
+		return [this.card];
+	}
 }
 
 export class Swap extends Action {
@@ -439,8 +464,8 @@ export class Swap extends Action {
 	}
 
 	async* run() {
-		let cardA = this.cardA.current();
-		let cardB = this.cardB.current();
+		const cardA = this.cardA.current();
+		const cardB = this.cardB.current();
 		this.cardA = this.cardA.snapshot();
 		this.cardB = this.cardB.snapshot();
 
@@ -492,6 +517,10 @@ export class Swap extends Action {
 			return true;
 		}
 		return false;
+	}
+
+	get affectedObjects() {
+		return [this.cardA, this.cardB];
 	}
 }
 
@@ -595,6 +624,10 @@ export class Discard extends Action {
 		if (this.constructor !== other.constructor) return false;
 		return this.card.current() === other.card.current();
 	}
+
+	get affectedObjects() {
+		return [this.card];
+	}
 }
 
 export class Destroy extends Action {
@@ -631,6 +664,10 @@ export class Destroy extends Action {
 	isIdenticalTo(other) {
 		if (this.constructor !== other.constructor) return false;
 		return this.discard.card.current() === other.discard.card.current();
+	}
+
+	get affectedObjects() {
+		return [this.discard.card];
 	}
 }
 
@@ -679,6 +716,10 @@ export class Exile extends Action {
 	isIdenticalTo(other) {
 		if (this.constructor !== other.constructor) return false;
 		return this.card.current() === other.card.current();
+	}
+
+	get affectedObjects() {
+		return [this.card];
 	}
 }
 
@@ -769,8 +810,11 @@ export class ApplyStatChange extends Action {
 		ast.clearImplicit("card");
 		return true;
 	}
-}
 
+	get affectedObjects() {
+		return [this.toObject];
+	}
+}
 export class RemoveStatChange extends Action {
 	constructor(player, object, modifier) {
 		super(player);
@@ -794,6 +838,8 @@ export class RemoveStatChange extends Action {
 		currentObject.values.modifierStack.splice(this._index, 0, this.modifier);
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
+
+	// no objects are affected since objects cannot be immune to a stat change expiring
 }
 
 export class CancelAttack extends Action {
@@ -803,20 +849,28 @@ export class CancelAttack extends Action {
 	}
 
 	async* run() {
-		if (this.timing.game.currentAttackDeclaration) {
-			this.wasCancelled = this.timing.game.currentAttackDeclaration.isCancelled;
-			this.timing.game.currentAttackDeclaration.isCancelled = true;
+		if (this.player.game.currentAttackDeclaration) {
+			this.wasCancelled = this.player.game.currentAttackDeclaration.isCancelled;
+			this.player.game.currentAttackDeclaration.isCancelled = true;
 		}
 	}
 
 	undo() {
-		if (this.timing.game.currentAttackDeclaration) {
-			this.timing.game.currentAttackDeclaration.isCancelled = this.wasCancelled;
+		if (this.player.game.currentAttackDeclaration) {
+			this.player.game.currentAttackDeclaration.isCancelled = this.wasCancelled;
 		}
 	}
 
 	isIdenticalTo(other) {
 		return this.constructor === other.constructor;
+	}
+
+	get affectedObjects() {
+		const mainAttacker = this.player.game.currentAttackDeclaration?.mainCard;
+		if (mainAttacker) {
+			return [mainAttacker];
+		}
+		return [];
 	}
 }
 
@@ -858,6 +912,13 @@ export class SetAttackTarget extends Action {
 		if (this.constructor !== other.constructor) return false;
 		return this.newTarget.current() === other.newTarget.current();
 	}
+
+	get affectedObjects() {
+		if (this.timing.game.currentAttackDeclaration?.target) {
+			return [this.timing.game.currentAttackDeclaration.target];
+		}
+		return [];
+	}
 }
 
 export class GiveAttack extends Action {
@@ -884,6 +945,10 @@ export class GiveAttack extends Action {
 	isIdenticalTo(other) {
 		if (this.constructor !== other.constructor) return false;
 		return this.card.current() === other.card.current();
+	}
+
+	get affectedObjects() {
+		return [this.card];
 	}
 }
 
@@ -948,6 +1013,10 @@ export class EquipCard extends Action {
 		ast.clearImplicit("card");
 		return !equipTargetStillValid;
 	}
+
+	get affectedObjects() {
+		return [this.equipment, this.target];
+	}
 }
 
 export class Shuffle extends Action {
@@ -1000,6 +1069,10 @@ export class View extends Action {
 	async isImpossible() {
 		return this.card.isRemovedToken;
 	}
+
+	get affectedObjects() {
+		return [this.card];
+	}
 }
 
 export class Reveal extends Action {
@@ -1030,6 +1103,10 @@ export class Reveal extends Action {
 		if (this.constructor !== other.constructor) return false;
 		return this.card.current() === other.card.current();
 	}
+
+	get affectedObjects() {
+		return [this.card];
+	}
 }
 
 export class ChangeCounters extends Action {
@@ -1038,7 +1115,7 @@ export class ChangeCounters extends Action {
 		this.card = card;
 		this.type = type;
 		this.amount = amount;
-		this.oldAmount = null;
+		this._oldAmount = null;
 	}
 
 	async* run() {
@@ -1047,13 +1124,13 @@ export class ChangeCounters extends Action {
 		if (!card.counters[this.type]) {
 			card.counters[this.type] = 0;
 		}
-		this.oldAmount = card.counters[this.type];
+		this._oldAmount = card.counters[this.type];
 		card.counters[this.type] += this.amount;
 		return events.createCountersChangedEvent(this.card, this.type);
 	}
 
 	undo() {
-		this.card.current().counters[this.type] = this.oldAmount;
+		this.card.current().counters[this.type] = this._oldAmount;
 	}
 
 	async isImpossible() {
@@ -1065,6 +1142,10 @@ export class ChangeCounters extends Action {
 		if (this.card.current() === null) return true;
 		if (this.card.isRemovedToken) return false;
 		return (this.card.counters[this.type] ?? 0) + this.amount >= 0;
+	}
+
+	get affectedObjects() {
+		return [this.card];
 	}
 }
 
@@ -1093,8 +1174,9 @@ export class ApplyStaticAbility extends Action {
 		currentObject.values.modifiedByStaticAbility = this._hadStaticAbilityBefore;
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
-}
 
+	// doesn't affect any objects since the unaffection from static abilities has special handling.
+}
 export class UnapplyStaticAbility extends Action {
 	constructor(player, object, ability) {
 		super(player);
@@ -1122,6 +1204,8 @@ export class UnapplyStaticAbility extends Action {
 		currentObject.values.modifiedByStaticAbility = true;
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
+
+	// doesn't affect any objects since the unaffection from static abilities has special handling.
 }
 
 export class SelectCards extends Action {

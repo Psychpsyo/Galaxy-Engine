@@ -348,6 +348,20 @@ export class AttackDeclaration {
 		target.isAttackTarget = true;
 	}
 
+	get mainCard() {
+		switch (this.attackers.length) {
+			case 0: {
+				return null;
+			}
+			case 1: {
+				return this.attackers[1];
+			}
+			default: {
+				return this.attackers.find(unit => unit.zone.type == "partner") ?? null;
+			}
+		}
+	}
+
 	// An attack is only valid if it has at least one attacker, an attack target and is not cancelled.
 	isValid() {
 		if (this.isCancelled) return false;

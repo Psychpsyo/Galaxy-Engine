@@ -4,7 +4,7 @@ import {ChooseAbilityOrder, ChooseCards, ApplyActionModificationAbility} from ".
 import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {BaseCard} from "./card.mjs";
-import {recalculateModifiedValuesFor, ActionReplaceModification, ActionModification} from "./valueModifiers.mjs";
+import {recalculateModifiedValuesFor, ActionReplaceModification, ActionModification, ProhibitModification} from "./valueModifiers.mjs";
 import * as abilities from "./abilities.mjs";
 import * as blocks from "./blocks.mjs";
 import * as phases from "./phases.mjs";
@@ -48,6 +48,24 @@ export class Timing {
 			if (action.isCancelled) continue;
 			if (await action.isImpossible()) {
 				events = events.concat(this._cancelAction(action));
+			}
+			for (const affectedObject of action.affectedObjects) {
+				if (affectedObject.values.modifierStack.some(modifier => {
+					for (const modification of modifier.modifications) {
+						if (!(modification instanceof ProhibitModification)) continue;
+
+						ast.setImplicit([action], "action");
+						ast.setImplicit([affectedObject], affectedObject.cdfScriptType);
+						const doesMatch = modification.toProhibit.evalFull(modifier.ctx).next().value.get();
+						ast.clearImplicit(affectedObject.cdfScriptType);
+						ast.clearImplicit("action");
+
+						if (doesMatch) return true;
+					}
+					return false;
+				})) {
+					events = events.concat(this._cancelAction(action));
+				}
 			}
 		}
 		return events;
