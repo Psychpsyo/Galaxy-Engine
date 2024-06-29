@@ -210,10 +210,8 @@ export class Game {
 				generatorOutput = await turnGenerator.next(playerInput);
 			}
 
-			for (const card of this.getFieldCards(currentPlayer).concat(this.getFieldCards(currentPlayer.next()))) {
-				if (card) {
-					card.endOfTurnReset();
-				}
+			for (const card of currentPlayer.getActiveCards().concat(currentPlayer.next().getActiveCards())) {
+				card.endOfTurnReset();
 			}
 			currentPlayer = currentPlayer.next();
 		}
@@ -332,10 +330,6 @@ export class Game {
 	}
 	currentBlock() {
 		return this.currentStack()?.currentBlock() ?? null;
-	}
-
-	getFieldCards(player) {
-		return player.partnerZone.cards.concat(player.unitZone.cards.concat(player.spellItemZone.cards)).filter(card => card != null);
 	}
 }
 
