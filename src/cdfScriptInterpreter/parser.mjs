@@ -176,7 +176,7 @@ function parseFunctionToken(player) {
 	return new ast.FunctionNode(functionName, parameters, player, asManyAsPossible);
 }
 
-const expressionStops = ["rightParen", "rightBracket", "rightBrace", "newLine", "separator", "if", "with"];
+const expressionStops = ["rightParen", "rightBracket", "rightBrace", "newLine", "separator", "if", "with", "where"];
 function parseExpression() {
 	const expressionStartPos = pos;
 	let expression = [];
@@ -750,9 +750,9 @@ function parseCardMatcher() {
 	const objectLists = [];
 	while (tokens[pos].type != "where" && tokens[pos].type != "rightBracket") {
 		const valueStartPos = pos;
-		const source = parseValue();
+		const source = parseExpression();
 		if (!["zone", "card", "fight"].includes(source.returnType)) {
-			throw new ScriptParserError("Card matcher can only select from zones or card lists.", tokens[valueStartPos], tokens[pos-1]);
+			throw new ScriptParserError("Card matcher can only select from zones, card lists or fights.", tokens[valueStartPos], tokens[pos-1]);
 		}
 		objectLists.push(source);
 		if (tokens[pos].type == "separator") {
