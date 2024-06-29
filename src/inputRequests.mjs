@@ -74,18 +74,18 @@ export class ChooseCards extends InputRequest {
 		if (this.from.length > 0 && (
 			this.validAmounts.length === 0 || this.validAmounts.some(amount => amount <= this.from.length)
 		)) {
-			if (!this.validAmounts.includes(response.length) && this.validAmounts.length > 0) {
+			if (!this.validAmounts.includes(response.value.length) && this.validAmounts.length > 0) {
 				return "Chose invalid amount of cards.";
 			}
-		} else if (response.length != this.from.length) {
+		} else if (response.value.length != this.from.length) {
 			return "Chose invalid amount of cards.";
 		}
-		for (let cardIndex of response) {
+		for (let cardIndex of response.value) {
 			if (cardIndex < 0 || cardIndex >= this.from.length) {
 				return "Chose an invalid card index: " + cardIndex;
 			}
 		}
-		const cards = response.map(cardIndex => this.from[cardIndex]);
+		const cards = response.value.map(cardIndex => this.from[cardIndex]);
 		if (!this.validatorFunction(cards)) {
 			return "Card selection did not satisfy special validation conditions.";
 		}
@@ -139,8 +139,8 @@ export class ChoosePlayer extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response < 0 || response >= this.player.game.players.length) {
-			return "Chose an invalid player index: " + response;
+		if (response.value < 0 || response.value >= this.player.game.players.length) {
+			return "Chose an invalid player index: " + response.value;
 		}
 		return "";
 	}
@@ -168,12 +168,12 @@ export class ChooseType extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (typeof response != "number") {
-			return "Supplied an incorrect response value. Expected 'number' but got '" + (typeof response) + "' instead."
+		if (typeof response.value != "number") {
+			return "Supplied an incorrect response value. Expected 'number' but got '" + (typeof response.value) + "' instead."
 		}
 
-		if (response < 0 || response >= this.from.length) {
-			return "Chose an invalid type index: " + response;
+		if (response.value < 0 || response.value >= this.from.length) {
+			return "Chose an invalid type index: " + response.value;
 		}
 		return "";
 	}
@@ -202,7 +202,7 @@ export class ChooseDeckSide extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response != "top" && response != "bottom") {
+		if (response.value != "top" && response.value != "bottom") {
 			return `Chose an invalid deck side: ${response} (must be either "top" or "bottom")`;
 		}
 		return "";
@@ -231,8 +231,8 @@ export class ChooseAbility extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response < 0 || response >= this.from.length) {
-			return "Chose an invalid ability index: " + response;
+		if (response.value < 0 || response.value >= this.from.length) {
+			return "Chose an invalid ability index: " + response.value;
 		}
 		return "";
 	}
@@ -261,13 +261,13 @@ export class OrderCards extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response.length != this.cards.length) {
-			return "Supplied an incorrect amount of cards to order. Got " + response.length + " when it should have been between " + this.cards.length + ".";
+		if (response.value.length != this.cards.length) {
+			return "Supplied an incorrect amount of cards to order. Got " + response.value.length + " when it should have been between " + this.cards.length + ".";
 		}
-		let sortedResponse = response.toSorted();
-		for (let i = 0; i < response.length; i++) {
-			if (i != sortedResponse[i]) {
-				return "Supplied incorrect card ordering indices. Got a " + sortedResponse[i] + " when there should have been a " + i + ".";
+		let sortedResponseValue = response.value.toSorted();
+		for (let i = 0; i < response.value.length; i++) {
+			if (i != sortedResponseValue[i]) {
+				return "Supplied incorrect card ordering indices. Got a " + sortedResponseValue[i] + " when there should have been a " + i + ".";
 			}
 		}
 		return "";
@@ -302,8 +302,8 @@ export class ApplyActionModificationAbility extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (typeof response !== "boolean") {
-			return "Supplied an incorrect response value. Expected 'boolean' but got '" + (typeof response) + "' instead.";
+		if (typeof response.value !== "boolean") {
+			return "Supplied an incorrect response value. Expected 'boolean' but got '" + (typeof response.value) + "' instead.";
 		}
 		return "";
 	}
@@ -325,8 +325,8 @@ export class EnterBattlePhase extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (typeof response !== "boolean") {
-			return "Supplied an incorrect response value. Expected 'boolean' but got '" + (typeof response) + "' instead.";
+		if (typeof response.value !== "boolean") {
+			return "Supplied an incorrect response value. Expected 'boolean' but got '" + (typeof response.value) + "' instead.";
 		}
 		return "";
 	}
@@ -385,10 +385,10 @@ export class DoStandardSummon extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response < 0 || response >= this.player.handZone.cards.length) {
+		if (response.value < 0 || response.value >= this.player.handZone.cards.length) {
 			return "Supplied out-of-range hand card index for a standard summon.";
 		}
-		if (!this.eligibleUnits.includes(this.player.handZone.cards[response])) {
+		if (!this.eligibleUnits.includes(this.player.handZone.cards[response.value])) {
 			return "Tried to standard summon a non-eligible unit.";
 		}
 		return "";
@@ -420,10 +420,10 @@ export class DeployItem extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response < 0 || response >= this.player.handZone.cards.length) {
+		if (response.value < 0 || response.value >= this.player.handZone.cards.length) {
 			return "Supplied out-of-range hand card index for deploying an item.";
 		}
-		if (!this.eligibleItems.includes(this.player.handZone.cards[response])) {
+		if (!this.eligibleItems.includes(this.player.handZone.cards[response.value])) {
 			return "Tried to deploy a non-eligible item.";
 		}
 		return "";
@@ -455,10 +455,10 @@ export class CastSpell extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response < 0 || response >= this.player.handZone.cards.length) {
+		if (response.value < 0 || response.value >= this.player.handZone.cards.length) {
 			return "Supplied out-of-range hand card index for casting a spell.";
 		}
-		if (!this.eligibleSpells.includes(this.player.handZone.cards[response])) {
+		if (!this.eligibleSpells.includes(this.player.handZone.cards[response.value])) {
 			return "Tried to cast a non-eligible spell.";
 		}
 		return "";
@@ -489,21 +489,21 @@ export class DoAttackDeclaration extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		for (let i = 0; i < response.length; i++) {
-			if (response[i] < 0 || response[i] >= this.eligibleUnits.length) {
+		for (let i = 0; i < response.value.length; i++) {
+			if (response.value[i] < 0 || response.value[i] >= this.eligibleUnits.length) {
 				return "Chose an invalid attacker index for attack declaration: " + cardIndex;
 			}
-			if (response.indexOf(response[i]) !== i) {
+			if (response.value.indexOf(response.value[i]) !== i) {
 				return "Tried to make a unit participate twice in one attack.";
 			}
 		}
-		response = response.map(cardIndex => this.eligibleUnits[cardIndex]);
-		if (response.length > 1) {
-			const partner = response.find(card => card.zone.type === "partner");
+		const responseCards = response.value.map(cardIndex => this.eligibleUnits[cardIndex]);
+		if (responseCards.length > 1) {
+			const partner = responseCards.find(card => card.zone.type === "partner");
 			if (!partner) {
 				return "Tried to peform a combined attack without declaring the partner to attack.";
 			}
-			for (const unit of response) {
+			for (const unit of responseCards) {
 				if (!unit.sharesTypeWith(partner)) {
 					return "Tried to peform a combined attack where some participants do not share a type with the partner.";
 				}
@@ -576,7 +576,7 @@ export class DoRetire extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		for (const cardIndex of response) {
+		for (const cardIndex of response.value) {
 			if (cardIndex < 0 || cardIndex >= this.eligibleUnits.length) {
 				return "Chose an invalid unit retire index: " + cardIndex;
 			}
@@ -619,7 +619,7 @@ export class ActivateOptionalAbility extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response < 0 || response >= this.eligibleAbilities.length) {
+		if (response.value < 0 || response.value >= this.eligibleAbilities.length) {
 			return "Supplied out-of-range ability index for activating an optional ability.";
 		}
 
@@ -649,7 +649,7 @@ export class ActivateFastAbility extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response < 0 || response >= this.eligibleAbilities.length) {
+		if (response.value < 0 || response.value >= this.eligibleAbilities.length) {
 			return "Supplied out-of-range ability index for activating a fast ability.";
 		}
 
@@ -679,7 +679,7 @@ export class ActivateTriggerAbility extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response < 0 || response >= this.eligibleAbilities.length) {
+		if (response.value < 0 || response.value >= this.eligibleAbilities.length) {
 			return "Supplied out-of-range ability index for activating a trigger ability.";
 		}
 
@@ -710,8 +710,8 @@ export class ChooseZoneSlot extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response < 0 || response >= this.eligibleSlots.length) {
-			return "Supplied out-of-range zone slot index '" + response + "'. It should have been between 0 and " + this.eligibleSlots.length + ".";
+		if (response.value < 0 || response.value >= this.eligibleSlots.length) {
+			return "Supplied out-of-range zone slot index '" + response.value + "'. It should have been between 0 and " + this.eligibleSlots.length + ".";
 		}
 
 		return "";
@@ -737,11 +737,11 @@ export class ChooseAbilityOrder extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (response.length != this.abilities.length) {
-			return "Supplied incorrect amount of abilities to order. Got " + response.length + " when it should have been between " + this.abilities.length + ".";
+		if (response.value.length != this.abilities.length) {
+			return "Supplied incorrect amount of abilities to order. Got " + response.value.length + " when it should have been between " + this.abilities.length + ".";
 		}
-		let sortedResponse = response.toSorted();
-		for (let i = 0; i < response.length; i++) {
+		let sortedResponse = response.value.toSorted();
+		for (let i = 0; i < response.value.length; i++) {
 			if (i != sortedResponse[i]) {
 				return "Supplied incorrect ability ordering indices. Got a " + sortedResponse[i] + " when there should have been a " + i + ".";
 			}
@@ -778,8 +778,8 @@ export class SelectTokenAmount extends InputRequest {
 		const superValid = await super.validate(response);
 		if (superValid !== "") return superValid;
 
-		if (!this.eligibleAmounts.includes(response)) {
-			return "Supplied incorrect amount of tokens to summon. Got " + response + " when it should have been between any of these: " + this.eligibleAmounts;
+		if (!this.eligibleAmounts.includes(response.value)) {
+			return "Supplied incorrect amount of tokens to summon. Got " + response.value + " when it should have been between any of these: " + this.eligibleAmounts;
 		}
 
 		return "";
