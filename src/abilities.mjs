@@ -22,10 +22,6 @@ export class BaseAbility {
 		return this.condition === null || this.condition.evalFull(new ScriptContext(this.card, player, this, evaluatingPlayer)).next().value.get(player);
 	}
 
-	canActivate(card, player, evaluatingPlayer = player) {
-		return this.isConditionMet(player, evaluatingPlayer);
-	}
-
 	snapshot() {
 		return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
 	}
@@ -64,7 +60,7 @@ export class Ability extends BaseAbility {
 	}
 
 	async canActivate(card, player, evaluatingPlayer = player) {
-		if (!super.canActivate(card, player, evaluatingPlayer)) {
+		if (!this.isConditionMet(player, evaluatingPlayer)) {
 			return false;
 		}
 		if (this.cost === null) {
@@ -343,7 +339,7 @@ export class StaticAbility extends BaseAbility {
 		if (gameLimit !== Infinity && player.game.getTimings().map(timing => timing.staticAbilitiesApplied.filter(a => a.player === player && a.ability.id === this.id)).flat().length >= gameLimit)
 			return false;
 
-		return super.canActivate(card, player, evaluatingPlayer);
+		return true;
 	}
 
 	successfulApplication() {
