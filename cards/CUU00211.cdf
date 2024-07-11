@@ -12,7 +12,7 @@ after: summoned(from: hand) = thisCard
 cost:
 LOSELIFE(200);
 exec:
-APPLY(thisCard, {abilities += CUU00211:1:1}, nextTurn.end)
+APPLY(thisCard, {abilities += CUU00211:1:1}, nextTurn.end);
 
 |o: static
 applyTo: [from field where cardType = unit & level <= 2]

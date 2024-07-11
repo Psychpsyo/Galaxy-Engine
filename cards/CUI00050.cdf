@@ -9,4 +9,4 @@ cost:
 $unit = SELECT(1, [from unitZone where cardType = unit]);
 exec:
 APPLY([from $unit where cardType = unit], {attack, defense -= 300});
-APPLY([from $unit where cardType = unit], {level += 2})
+APPLY([from $unit where cardType = unit], {level += 2});

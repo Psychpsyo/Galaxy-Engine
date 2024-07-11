@@ -15,4 +15,4 @@ o: trigger
 mandatory: yes
 during: currentPhase = opponent.endPhase
 condition: thisCard.zone = field
-APPLY(thisCard, {attack, defense -= 100})
+APPLY(thisCard, {attack, defense -= 100});

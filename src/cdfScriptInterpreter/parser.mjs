@@ -89,7 +89,11 @@ function parseSteps() {
 				return new ast.ScriptRootNode(steps);
 			}
 			default: {
+				const lineStart = tokens[pos];
 				steps.push(parseLine());
+				if (tokens[pos]?.type !== "newLine") {
+					throw new ScriptParserError("Line in a script does not end with semicolon.", lineStart, tokens[pos - 1]);
+				}
 				break;
 			}
 		}
