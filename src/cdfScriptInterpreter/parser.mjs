@@ -86,7 +86,7 @@ function parseSteps() {
 				break;
 			}
 			case "rightBrace": {
-				return new ast.ScriptRootNode(steps);
+				return new ast.ScriptStepsNode(steps);
 			}
 			default: {
 				const lineStart = tokens[pos];
@@ -98,7 +98,7 @@ function parseSteps() {
 			}
 		}
 	}
-	return new ast.ScriptRootNode(steps);
+	return new ast.ScriptStepsNode(steps);
 }
 
 function parseLine() {
@@ -107,7 +107,7 @@ function parseLine() {
 		variableName = tokens[pos].value;
 		pos += 2;
 	}
-	let expr = parseExpression();
+	const expr = parseExpression();
 	// check variable type
 	if (variableName) {
 		if (!foundVariables[cardId]) {
@@ -116,7 +116,7 @@ function parseLine() {
 		if (!foundVariables[cardId][variableName]) {
 			foundVariables[cardId][variableName] = expr.returnType;
 		} else if (foundVariables[cardId][variableName] !== expr.returnType) {
-			new ScriptParserError("Invalid assignment of type " + expr.returnType + " to variable " + variableName + " of type " + foundVariables[cardId][variableName] + ".", tokens[pos - 2]);
+			throw new ScriptParserError("Invalid assignment of type " + expr.returnType + " to variable " + variableName + " of type " + foundVariables[cardId][variableName] + ".", tokens[pos - 2]);
 		}
 	}
 	return new ast.LineNode(expr, variableName);
@@ -412,6 +412,7 @@ function parseValue() {
 					case "function":
 					case "deckPosition":
 					case "playerProperty":
+					case "may":
 					case "zone": {
 						return parsePlayerDotAccess(variable);
 					}
@@ -567,12 +568,26 @@ function parsePlayerDotAccess(playerNode) {
 			return turn;
 		}
 		case "phaseType": {
-			let node = new ast.PhaseNode(playerNode, tokens[pos].value);
+			const node = new ast.PhaseNode(playerNode, tokens[pos].value);
+			pos++;
+			return node;
+		}
+		case "may": {
+			const mayToken = tokens[pos];
+			pos++;
+			if (tokens[pos].type != "leftBrace") {
+				throw new ScriptParserError(`Expected curly braces after 'may', but got '${tokens[pos].value}' instead.`, mayToken, tokens[pos]);
+			}
+			pos++;
+			const node = new ast.MayBlockNode(playerNode, parseSteps());
+			if (tokens[pos].type != "rightBrace") {
+				throw new ScriptParserError("Missing a '}' at the end of this 'may' block.", mayToken, tokens[pos] ?? tokens.at(-1));
+			}
 			pos++;
 			return node;
 		}
 	}
-	throw new ScriptParserError("'" + tokens[pos].value + "' does not begin a valid player property.", tokens[pos]);
+	throw new ScriptParserError(`'${tokens[pos].value}' does not begin a valid player property.`, tokens[pos]);
 }
 function parseCardDotAccess(cardsNode) {
 	if (tokens[pos].type != "cardProperty") {

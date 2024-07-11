@@ -8,6 +8,7 @@ const keywordTokenTypes = {
 	prohibit: "prohibit",
 	replace: "replace",
 	with: "with",
+	may: "may",
 
 	thisCard: "thisCard",
 	attackTarget: "attackTarget",

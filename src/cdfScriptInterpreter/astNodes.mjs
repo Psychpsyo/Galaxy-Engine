@@ -2,6 +2,7 @@
 
 import * as actions from "../actions.mjs";
 import * as blocks from "../blocks.mjs";
+import * as requests from "../inputRequests.mjs";
 import {BaseCard} from "../card.mjs";
 import {Modifier} from "../valueModifiers.mjs";
 import {ScriptValue, ScriptContext, DeckPosition, SomeOrMore, UntilIndicator, TurnValue} from "./structs.mjs";
@@ -79,8 +80,8 @@ class AstNode {
 	}
 }
 
-// This serves as the root node of a card's script body
-export class ScriptRootNode extends AstNode {
+// This serves as the root node of a card's script body or any block scoped lines
+export class ScriptStepsNode extends AstNode {
 	constructor(steps) {
 		super(null);
 		this.steps = steps;
@@ -172,9 +173,9 @@ export class FunctionNode extends AstNode {
 		this.asManyAsPossible = asManyAsPossible;
 	}
 	* eval(ctx) {
-		let players = (yield* this.player.eval(ctx)).get(ctx.player);
+		const players = (yield* this.player.eval(ctx)).get(ctx.player);
 		if (players.length == 1) {
-			const value = yield* this.function.run(this, new ScriptContext(ctx.card, players[0], ctx.ability, ctx.targets));
+			const value = yield* this.function.run(this, new ScriptContext(ctx.card, players[0], ctx.ability, ctx.evaluatingPlayer, ctx.targets));
 			if (!this.function.returnType) return;
 			return value;
 		}
@@ -1355,6 +1356,29 @@ export class UntilPhaseNode extends AstNode {
 				this.phaseType
 			)]
 		);
+	}
+}
+
+export class MayBlockNode extends AstNode {
+	constructor(playerNode, stepsNode) {
+		super(null);
+		this.playerNode = playerNode;
+		this.stepsNode = stepsNode;
+	}
+	* eval(ctx) {
+		// TODO: figure out how a both.may needs to work
+		const player = (yield* this.playerNode.eval(ctx)).get(ctx.player)[0];
+
+		const optionalRequest = new requests.DoOptionalEffectSection(ctx.player, ctx.ability, this.stepsNode);
+		if (optionalRequest.extractResponseValue(yield [optionalRequest])) {
+			yield* this.stepsNode.eval(new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer, ctx.targets));
+		}
+	}
+	hasAllTargets(ctx) {
+		return true;
+	}
+	getChildNodes() {
+		return [this.stepsNode];
 	}
 }
 

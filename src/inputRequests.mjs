@@ -791,3 +791,28 @@ export class SelectTokenAmount extends InputRequest {
 		}
 	}
 }
+
+export class DoOptionalEffectSection extends InputRequest {
+	constructor(player, ability, section) {
+		super(player, "doOptionalEffectSection");
+		this.ability = ability;
+		this.section = section;
+	}
+
+	// extractResponseValue() does not need to be overidden.
+
+	async validate(response) {
+		const superValid = await super.validate(response);
+		if (superValid !== "") return superValid;
+
+		if (typeof response.value !== "boolean") {
+			return "Supplied an incorrect response value. Expected 'boolean' but got '" + (typeof response.value) + "' instead.";
+		}
+		return "";
+	}
+
+	*generateResponses() {
+		yield true;
+		yield false;
+	}
+}
