@@ -113,6 +113,10 @@ export class GainMana extends Action {
 		this.player.mana -= this.amount;
 		return events.createManaChangedEvent(this.player);
 	}
+
+	async isImpossible() {
+		return this.amount === 0;
+	}
 }
 export class LoseMana extends Action {
 	constructor(player, amount) {
@@ -131,10 +135,10 @@ export class LoseMana extends Action {
 	}
 
 	async isImpossible() {
-		return this.player.mana === 0 && this.amount > 0;
+		return this.amount === 0 || this.player.mana === 0;
 	}
 	async isFullyPossible() {
-		return this.player.mana - this.amount >= 0;
+		return this.amount > 0 && this.player.mana - this.amount >= 0;
 	}
 }
 
@@ -162,8 +166,11 @@ export class LoseLife extends Action {
 		return events.createLifeChangedEvent(this.player);
 	}
 
+	async isImpossible() {
+		return this.amount === 0;
+	}
 	async isFullyPossible() {
-		return this.player.life - this.amount >= 0;
+		return this.amount > 0 && this.player.life - this.amount >= 0;
 	}
 }
 export class GainLife extends Action {
@@ -180,6 +187,10 @@ export class GainLife extends Action {
 	undo() {
 		this.player.life -= this.amount;
 		return events.createLifeChangedEvent(this.player);
+	}
+
+	async isImpossible() {
+		return this.amount === 0;
 	}
 }
 
@@ -579,6 +590,10 @@ export class DealDamage extends Action {
 		}
 		this.target.life = this.oldAmount;
 		return events.createLifeChangedEvent(this.target);
+	}
+
+	async isImpossible() {
+		return this.amount === 0;
 	}
 }
 
