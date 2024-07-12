@@ -938,6 +938,7 @@ export class GiveAttack extends Action {
 	}
 
 	async isImpossible() {
+		if (!this.card) return true;
 		if (this.card.isRemovedToken) return true;
 		return !this.card.values.current.cardTypes.includes("unit");
 	}
@@ -948,6 +949,7 @@ export class GiveAttack extends Action {
 	}
 
 	get affectedObjects() {
+		if (!this.card) return [];
 		return [this.card];
 	}
 }

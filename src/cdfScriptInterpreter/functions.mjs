@@ -480,7 +480,7 @@ export function initFunctions() {
 		null,
 		function*(astNode, ctx) {
 			const target = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0];
-			yield [new actions.GiveAttack(ctx.player, target.current())];
+			yield [new actions.GiveAttack(ctx.player, target?.current())];
 		},
 		hasCardTarget,
 		undefined // TODO: Write evalFull
