@@ -4,6 +4,7 @@ import {Step, runInterjectedSteps} from "./steps.mjs";
 import {createCardsAttackedEvent} from "./events.mjs";
 import {FieldZone} from "./zones.mjs";
 import {ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
+import {StepRunnerInsert} from "./cdfScriptInterpreter/stepRunnerInserts.mjs";
 import * as actions from "./actions.mjs";
 import * as requests from "./inputRequests.mjs";
 
@@ -13,9 +14,10 @@ export class StepRunner {
 		this.game = game;
 		this.optionTree = null; // this is used to determine which options that a player could pick are actually valid
 		this.isCost = false;
-		this.steps = [];
+		this.history = []; // contains both steps and inserts that were run
 	}
 
+	// wrapper around runAndIgnoreOptionTree() that walks the option tree as we progress through the generator
 	async* run(isPrediction = false) {
 		const runGenerator = this.runAndIgnoreOptionTree(isPrediction);
 		let events = await runGenerator.next();
@@ -47,14 +49,14 @@ export class StepRunner {
 	async* runAndIgnoreOptionTree(isPrediction = false) {
 		const interjected = await (yield* runInterjectedSteps(this.game, isPrediction));
 		if (interjected) {
-			this.steps.push(interjected);
-			while (this.steps.at(-1).followupStep) {
-				this.steps.push(this.steps.at(-1).followupStep);
+			this.history.push(interjected);
+			while (this.history.at(-1).followupStep) {
+				this.history.push(this.history.at(-1).followupStep);
 			}
 		}
 
 		let generator = this.generatorFunction();
-		let step = yield* this.getNextStep(generator, null);
+		let step = await (yield* this.getNextStep(generator, null, isPrediction));
 		while (step instanceof Step) {
 			if (this.isCost) {
 				// if an empty step is generated as part of a cost
@@ -65,23 +67,32 @@ export class StepRunner {
 					action.costIndex = 0;
 				}
 			}
-			this.steps.push(step);
-			await (yield* step.run(isPrediction));
-			while (this.steps.at(-1).followupStep) {
-				this.steps.push(this.steps.at(-1).followupStep);
+			this.history.push(step);
+			yield* step.run(isPrediction);
+			while (this.history.at(-1).followupStep) {
+				this.history.push(this.history.at(-1).followupStep);
 			}
 			if (!step.successful && this.isCost) {
 				return false;
 			}
-			step = yield* this.getNextStep(generator, step);
+			step = await (yield* this.getNextStep(generator, step, isPrediction));
 		}
 		return step;
 	}
 
 	// Returns either the next step or the final return value of the passed-in generator
-	* getNextStep(stepGenerator, previousStep) {
+	async* getNextStep(stepGenerator, previousStep, isPrediction = false) {
 		let generatorOutput = stepGenerator.next(previousStep);
-		while (!generatorOutput.done && (generatorOutput.value.length == 0 || !(generatorOutput.value[0] instanceof actions.Action))) {
+		while (!generatorOutput.done) {
+			if (generatorOutput.value instanceof StepRunnerInsert) {
+				yield* generatorOutput.value.run(isPrediction);
+				this.history.push(generatorOutput.value);
+				generatorOutput = stepGenerator.next();
+				continue;
+			}
+			if (generatorOutput.value.length > 0 && generatorOutput.value[0] instanceof actions.Action) {
+				break;
+			}
 			generatorOutput = stepGenerator.next(yield generatorOutput.value);
 		}
 		if (generatorOutput.done) {
@@ -91,9 +102,17 @@ export class StepRunner {
 	}
 
 	* undo(isPrediction = false) {
-		while (this.steps.length > 0) {
-			yield* this.steps.pop().undo(isPrediction);
+		while (this.history.length > 0) {
+			yield* this.history.pop().undo(isPrediction);
 		}
+	}
+
+	getSteps() {
+		return this.history.map(histElem => {
+			if (histElem instanceof Step) return histElem;
+			// else it's an insert
+			return histElem.getSteps();
+		}).flat();
 	}
 }
 
@@ -270,37 +289,57 @@ export function* combinedStepGenerator(generators) {
 
 export function* abilityCostStepGenerator(ability, card, player) {
 	let stepGenerator = ability.runCost(card, player);
-	let step;
+	let yieldValue;
 	let actionList;
 	do {
 		// not checking for isCancelled here since costs of cancelled abilities can still be paid.
-		actionList = stepGenerator.next(step);
+		actionList = stepGenerator.next((yieldValue instanceof Step)? yieldValue : undefined);
 		if (!actionList.done) {
 			if (actionList.value.length == 0) {
 				return false;
 			}
-			step = yield actionList.value;
+			yieldValue = yield actionList.value;
 		}
-	} while (!actionList.done && (!(step instanceof Step) || step.successful));
+	} while (!actionList.done && (!(yieldValue instanceof Step) || yieldValue.successful));
 	return true;
 }
 
 export function* abilityStepGenerator(ability, card, player) {
 	let stepGenerator = ability.run(card, player);
-	let step;
+	let yieldValue;
 	let actionList;
 	do {
 		if (ability.isCancelled) {
 			return false;
 		}
-		actionList = stepGenerator.next(step);
+		actionList = stepGenerator.next((yieldValue instanceof Step)? yieldValue : undefined);
 		if (!actionList.done) {
 			if (actionList.value.length === 0) {
 				return false;
 			}
-			step = yield actionList.value;
+			yieldValue = yield actionList.value;
 		}
-	} while (!actionList.done && (!(step instanceof Step) || step.successful));
+	} while (!actionList.done && (!(yieldValue instanceof Step) || yieldValue.successful));
+	return true;
+}
+
+// runs a part of an ability, intended for things that need OptionTree limiting during an effect
+export function* abilityFractionStepGenerator(astNode, ctx) {
+	let stepGenerator = astNode.eval(ctx);
+	let yieldValue;
+	let actionList;
+	do {
+		if (ctx.ability.isCancelled) {
+			return false;
+		}
+		actionList = stepGenerator.next((yieldValue instanceof Step)? yieldValue : undefined);
+		if (!actionList.done) {
+			if (actionList.value.length == 0) {
+				return false;
+			}
+			yieldValue = yield actionList.value;
+		}
+	} while (!actionList.done && (!(yieldValue instanceof Step) || yieldValue.successful));
 	return true;
 }
 

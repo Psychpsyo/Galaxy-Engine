@@ -59,17 +59,17 @@ class Block {
 		return this.costStepRunner?.steps ?? [];
 	}
 	getExecutionSteps() {
-		return this.stepRunner.steps;
+		return this.stepRunner.getSteps();
 	}
 	getCostActions() {
 		if (this.costStepRunner) {
-			return this.costStepRunner.steps.map(step => step.actions).flat();
+			return this.costStepRunner.getSteps().map(step => step.actions).flat();
 		} else {
 			return [];
 		}
 	}
 	getExecutionActions() {
-		return this.stepRunner.steps.map(step => step.actions).flat();
+		return this.stepRunner.getSteps().map(step => step.actions).flat();
 	}
 }
 

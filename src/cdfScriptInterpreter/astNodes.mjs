@@ -2,7 +2,7 @@
 
 import * as actions from "../actions.mjs";
 import * as blocks from "../blocks.mjs";
-import * as requests from "../inputRequests.mjs";
+import * as stepRunnerInserts from "./stepRunnerInserts.mjs";
 import {BaseCard} from "../card.mjs";
 import {Modifier} from "../valueModifiers.mjs";
 import {ScriptValue, ScriptContext, DeckPosition, SomeOrMore, UntilIndicator, TurnValue} from "./structs.mjs";
@@ -1368,11 +1368,7 @@ export class MayBlockNode extends AstNode {
 	* eval(ctx) {
 		// TODO: figure out how a both.may needs to work
 		const player = (yield* this.playerNode.eval(ctx)).get(ctx.player)[0];
-
-		const optionalRequest = new requests.DoOptionalEffectSection(ctx.player, ctx.ability, this.rootNode);
-		if (optionalRequest.extractResponseValue(yield [optionalRequest])) {
-			yield* this.rootNode.eval(new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer, ctx.targets));
-		}
+		yield new stepRunnerInserts.OptionalEffectSectionInsert(player, ctx, this.rootNode);
 	}
 	hasAllTargets(ctx) {
 		return true;
