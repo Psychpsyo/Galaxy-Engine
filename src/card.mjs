@@ -6,7 +6,7 @@ import * as abilities from "./abilities.mjs";
 import * as interpreter from "./cdfScriptInterpreter/interpreter.mjs";
 import * as blocks from "./blocks.mjs";
 import * as actions from "./actions.mjs";
-import * as timingGenerators from "./timingGenerators.mjs";
+import * as stepGenerators from "./stepGenerators.mjs";
 
 export class BaseCard {
 	constructor(player, cardId, isToken, values, deckLimit, equipableTo, turnLimit, condition) {
@@ -89,7 +89,7 @@ export class BaseCard {
 	}
 
 	getSummoningCost(player) {
-		return timingGenerators.arrayTimingGenerator([
+		return stepGenerators.arrayStepGenerator([
 			[new actions.LoseMana(player, this.values.current.level)]
 		]);
 	}
@@ -101,17 +101,17 @@ export class BaseCard {
 			costActions.unshift([new actions.SelectEquipableUnit(player, this)]);
 		}
 		const generators = [
-			timingGenerators.arrayTimingGenerator(costActions)
+			stepGenerators.arrayStepGenerator(costActions)
 		];
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.CastAbility) {
 				if (ability.cost) {
-					generators.push(timingGenerators.abilityCostTimingGenerator(ability, this, player, scriptTargets));
+					generators.push(stepGenerators.abilityCostStepGenerator(ability, this, player, scriptTargets));
 				}
 				break;
 			}
 		}
-		return timingGenerators.combinedTimingGenerator(generators);
+		return stepGenerators.combinedStepGenerator(generators);
 	}
 	getDeploymentCost(player, scriptTargets) {
 		const costActions = [
@@ -121,26 +121,26 @@ export class BaseCard {
 			costActions.unshift([new actions.SelectEquipableUnit(player, this)]);
 		}
 		const generators = [
-			timingGenerators.arrayTimingGenerator(costActions)
+			stepGenerators.arrayStepGenerator(costActions)
 		];
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.DeployAbility) {
 				if (ability.cost) {
-					generators.push(timingGenerators.abilityCostTimingGenerator(ability, this, player, scriptTargets));
+					generators.push(stepGenerators.abilityCostStepGenerator(ability, this, player, scriptTargets));
 				}
 				break;
 			}
 		}
-		return timingGenerators.combinedTimingGenerator(generators);
+		return stepGenerators.combinedStepGenerator(generators);
 	}
 
 	async canSummon(checkPlacement, player) {
 		if (!this.values.current.cardTypes.includes("unit")) {
 			return false;
 		}
-		const timingRunner = new timingGenerators.TimingRunner(() => this.getSummoningCost(player), player.game);
-		timingRunner.isCost = true;
-		const costOptionTree = new timingGenerators.OptionTreeNode(player.game, timingRunner, () => !checkPlacement || player.unitZone.getFreeSpaceCount() > 0);
+		const stepRunner = new stepGenerators.StepRunner(() => this.getSummoningCost(player), player.game);
+		stepRunner.isCost = true;
+		const costOptionTree = new stepGenerators.OptionTreeNode(player.game, stepRunner, () => !checkPlacement || player.unitZone.getFreeSpaceCount() > 0);
 		return costOptionTree.isValid();
 	}
 	// If checkPlacement is false, only the casting conditions that the rules care about will be evaluated, not if the card can actually sucessfully be placed on the field
@@ -168,9 +168,9 @@ export class BaseCard {
 			}
 		}
 
-		const timingRunner = new timingGenerators.TimingRunner(() => this.getCastingCost(player, scriptTargets), player.game);
-		timingRunner.isCost = true;
-		return new timingGenerators.OptionTreeNode(player.game, timingRunner, endOfTreeCheck);
+		const stepRunner = new stepGenerators.StepRunner(() => this.getCastingCost(player, scriptTargets), player.game);
+		stepRunner.isCost = true;
+		return new stepGenerators.OptionTreeNode(player.game, stepRunner, endOfTreeCheck);
 	}
 	// If checkPlacement is false, only the deployment conditions that the rules care about will be evaluated, not if the card can actually sucessfully be placed on the field
 	async getDeployabilityCostOptionTree(checkPlacement, player, evaluatingPlayer = player) {
@@ -197,9 +197,9 @@ export class BaseCard {
 			}
 		}
 
-		const timingRunner = new timingGenerators.TimingRunner(() => this.getDeploymentCost(player, scriptTargets), player.game);
-		timingRunner.isCost = true;
-		return new timingGenerators.OptionTreeNode(player.game, timingRunner, endOfTreeCheck);
+		const stepRunner = new stepGenerators.StepRunner(() => this.getDeploymentCost(player, scriptTargets), player.game);
+		stepRunner.isCost = true;
+		return new stepGenerators.OptionTreeNode(player.game, stepRunner, endOfTreeCheck);
 	}
 
 	// Does not check if the card can be declared to attack, only if it is allowed to be/stay in an attack declaration.
@@ -291,7 +291,7 @@ export class Card extends BaseCard {
 	}
 }
 
-// a card with all its values frozen so it can be held in internal logs of what Actions happened in a Timing.
+// a card with all its values frozen so it can be held in internal logs of what Actions happened in a Step.
 // these are also used in many actions undo() functions as a state to restore a card to.
 export class SnapshotCard extends BaseCard {
 	constructor(card, equippedToSnapshot, equipmentSnapshot) {

@@ -81,44 +81,44 @@ class AstNode {
 }
 
 // This serves as the root node of a card's script body or any block scoped lines
-export class ScriptStepsNode extends AstNode {
-	constructor(steps) {
+export class ScriptRootNode extends AstNode {
+	constructor(lines) {
 		super(null);
-		this.steps = steps;
+		this.lines = lines;
 	}
 	* eval(ctx) {
-		for (let step of this.steps) {
-			yield* step.eval(ctx);
+		for (let line of this.lines) {
+			yield* line.eval(ctx);
 		}
 	}
 	// whether or not all actions in this tree have enough targets to specify the target availability rule.
 	hasAllTargets(ctx) {
-		return this.hasAllTargetsFromStep(0, ctx);
+		return this.hasAllTargetsFromLine(0, ctx);
 	}
 	getChildNodes() {
-		return this.steps;
+		return this.lines;
 	}
 
-	hasAllTargetsFromStep(i, ctx) {
-		for (; i < this.steps.length; i++) {
-			if (!this.steps[i].hasAllTargets(ctx)) {
+	hasAllTargetsFromLine(i, ctx) {
+		for (; i < this.lines.length; i++) {
+			if (!this.lines[i].hasAllTargets(ctx)) {
 				return false;
 			}
-			// If this step is a variable assignment, we need to enumerate all possible values
+			// If this line is a variable assignment, we need to enumerate all possible values
 			// of the right-hand expression (as it may depend on player choice) and then
 			// check target availability for the rest of the script with those choices made.
 			// If just one of those branches has all targets, the ability is said to have all targets.
-			if (this.steps[i].assignTo) {
-				let oldVarValue = ctx.ability.scriptVariables[this.steps[i].assignTo];
+			if (this.lines[i].assignTo) {
+				let oldVarValue = ctx.ability.scriptVariables[this.lines[i].assignTo];
 				let foundValidBranch = false;
-				for (const possibility of this.steps[i].evalFull(ctx)) {
-					ctx.ability.scriptVariables[this.steps[i].assignTo] = possibility;
-					if (this.hasAllTargetsFromStep(i + 1, ctx)) {
+				for (const possibility of this.lines[i].evalFull(ctx)) {
+					ctx.ability.scriptVariables[this.lines[i].assignTo] = possibility;
+					if (this.hasAllTargetsFromLine(i + 1, ctx)) {
 						foundValidBranch = true;
 						break;
 					}
 				}
-				ctx.ability.scriptVariables[this.steps[i].assignTo] = oldVarValue;
+				ctx.ability.scriptVariables[this.lines[i].assignTo] = oldVarValue;
 				return foundValidBranch;
 			}
 		}
@@ -1360,25 +1360,25 @@ export class UntilPhaseNode extends AstNode {
 }
 
 export class MayBlockNode extends AstNode {
-	constructor(playerNode, stepsNode) {
+	constructor(playerNode, rootNode) {
 		super(null);
 		this.playerNode = playerNode;
-		this.stepsNode = stepsNode;
+		this.rootNode = rootNode;
 	}
 	* eval(ctx) {
 		// TODO: figure out how a both.may needs to work
 		const player = (yield* this.playerNode.eval(ctx)).get(ctx.player)[0];
 
-		const optionalRequest = new requests.DoOptionalEffectSection(ctx.player, ctx.ability, this.stepsNode);
+		const optionalRequest = new requests.DoOptionalEffectSection(ctx.player, ctx.ability, this.rootNode);
 		if (optionalRequest.extractResponseValue(yield [optionalRequest])) {
-			yield* this.stepsNode.eval(new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer, ctx.targets));
+			yield* this.rootNode.eval(new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer, ctx.targets));
 		}
 	}
 	hasAllTargets(ctx) {
 		return true;
 	}
 	getChildNodes() {
-		return [this.stepsNode];
+		return [this.rootNode];
 	}
 }
 

@@ -13,18 +13,18 @@ import * as zones from "./zones.mjs";
 import * as ast from "./cdfScriptInterpreter/astNodes.mjs";
 
 // Represents a single instance in time where multiple actions take place at once.
-export class Timing {
+export class Step {
 	constructor(game, actionList) {
 		this.game = game;
 		this.index = 0;
 		this.actions = actionList;
 		for (const action of this.actions) {
-			action.timing = this;
+			action.step = this;
 		}
 		this.costCompletions = [];
 		this.successful = false;
-		this.followupTiming = null;
-		// The static action modification abilities that were applied during this timing.
+		this.followupStep = null;
+		// The static action modification abilities that were applied during this step.
 		// This needs to be tracked for those that can only be activated once per game.
 		this.staticAbilitiesApplied = [];
 	}
@@ -198,7 +198,7 @@ export class Timing {
 							// process replacements
 							let foundInvalidReplacement = false;
 							for (const replacement of replacements) {
-								replacement.timing = this;
+								replacement.step = this;
 
 								if (!(await replacement.isFullyPossible())) {
 									foundInvalidReplacement = true;
@@ -258,8 +258,8 @@ export class Timing {
 	}
 
 	async* run(isPrediction = false) {
-		this.index = this.game.nextTimingIndex;
-		this.game.nextTimingIndex++;
+		this.index = this.game.nextStepIndex;
+		this.game.nextStepIndex++;
 
 		for (const action of this.actions) {
 			if (action.costIndex >= this.costCompletions.length) {
@@ -291,9 +291,9 @@ export class Timing {
 				}
 			}
 		}
-		// fully cancelled timings are not successful, they interrupt their block or indicate that paying all costs failed.
+		// fully cancelled steps are not successful, they interrupt their block or indicate that paying all costs failed.
 		if (this.actions.every(action => action.isCancelled)) {
-			this.game.nextTimingIndex--;
+			this.game.nextStepIndex--;
 			return;
 		}
 
@@ -369,11 +369,11 @@ export class Timing {
 			}
 		}
 
-		this.followupTiming = await (yield* runInterjectedTimings(this.game, isPrediction, this.actions));
+		this.followupStep = await (yield* runInterjectedSteps(this.game, isPrediction, this.actions));
 	}
 
 	* undo(isPrediction = false) {
-		// check if this timing actually ran
+		// check if this step actually ran
 		if (!this.successful) {
 			return;
 		}
@@ -392,7 +392,7 @@ export class Timing {
 			yield events;
 		}
 
-		this.game.nextTimingIndex--;
+		this.game.nextStepIndex--;
 	}
 
 	getFollowupActions(lastActions = []) {
@@ -471,19 +471,19 @@ export class Timing {
 	}
 }
 
-// This is run after every regular timing and right after blocks start and end.
+// This is run after every regular step and right after blocks start and end.
 // It takes care of updating static abilities.
-export async function* runInterjectedTimings(game, isPrediction) {
-	const timing = await (yield* getStaticAbilityPhasingTiming(game));
-	if (timing) {
-		await (yield* timing.run(isPrediction));
+export async function* runInterjectedSteps(game, isPrediction) {
+	const step = await (yield* getStaticAbilityPhasingStep(game));
+	if (step) {
+		await (yield* step.run(isPrediction));
 	}
-	return timing;
+	return step;
 }
 
 // iterates over all static abilities and activates/deactivates those that need it.
-async function* getStaticAbilityPhasingTiming(game) {
-	const modificationActions = []; // the list of Apply/UnapplyStaticAbility actions that this will return as a timing.
+async function* getStaticAbilityPhasingStep(game) {
+	const modificationActions = []; // the list of Apply/UnapplyStaticAbility actions that this will return as a step.
 	const activeCards = game.players.map(player => player.getActiveCards()).flat();
 	const possibleTargets = activeCards.concat(game.players);
 	if (game.currentBlock() instanceof blocks.Fight) {
@@ -557,7 +557,7 @@ async function* getStaticAbilityPhasingTiming(game) {
 	if (modificationActions.length === 0) {
 		return null;
 	}
-	return new Timing(game, modificationActions);
+	return new Step(game, modificationActions);
 }
 
 async function* orderStaticAbilities(target, abilities, game) {
@@ -571,7 +571,7 @@ async function* orderStaticAbilities(target, abilities, game) {
 			abilities.splice(i, 1);
 		} else {
 			// otherwise the abilities get ordered by when they entered the field
-			const lastMoved = abilities[i].zoneEnterTimingIndex;
+			const lastMoved = abilities[i].zoneEnterStepIndex;
 			if (fieldEnterBuckets[lastMoved] === undefined) {
 				fieldEnterBuckets[lastMoved] = [];
 			}
@@ -580,13 +580,13 @@ async function* orderStaticAbilities(target, abilities, game) {
 	}
 
 	// sort abilities by when they were put on the field, then by category bucket. (whose field they are on)
-	for (const timing of Object.keys(fieldEnterBuckets)) {
+	for (const step of Object.keys(fieldEnterBuckets)) {
 		let applyBuckets = [];
 		switch (true) {
 			case target instanceof BaseCard: { // applying to cards
 				applyBuckets.push({player: target.currentOwner(), abilities: []}); // abilities on same side of field
 				applyBuckets.push({player: target.currentOwner().next(), abilities: []}); // abilities on other side of field
-				for (const ability of fieldEnterBuckets[timing]) {
+				for (const ability of fieldEnterBuckets[step]) {
 					if (ability.card.currentOwner() === target.currentOwner()) {
 						applyBuckets[0].abilities.push(ability);
 					} else {
@@ -598,7 +598,7 @@ async function* orderStaticAbilities(target, abilities, game) {
 			case target instanceof Player: { // applying to players
 				applyBuckets.push({player: target, abilities: []}); // abilities on same side of field
 				applyBuckets.push({player: target.next(), abilities: []}); // abilities on other side of field
-				for (const ability of fieldEnterBuckets[timing]) {
+				for (const ability of fieldEnterBuckets[step]) {
 					if (ability.card.currentOwner() === target) {
 						applyBuckets[0].abilities.push(ability);
 					} else {
@@ -610,7 +610,7 @@ async function* orderStaticAbilities(target, abilities, game) {
 			default: { // applying to everything else (game processes like fights)
 				applyBuckets.push({player: game.currentTurn().player, abilities: []}); // abilities owned by the turn player
 				applyBuckets.push({player: game.currentTurn().player.next(), abilities: []}); // abilities owned by the non-turn player
-				for (const ability of fieldEnterBuckets[timing]) {
+				for (const ability of fieldEnterBuckets[step]) {
 					if (ability.card.currentOwner() === applyBuckets[0].player) {
 						applyBuckets[0].abilities.push(ability);
 					} else {

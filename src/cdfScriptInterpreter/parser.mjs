@@ -72,13 +72,13 @@ export function parseScript(tokenList, newEffectId, type, originalCodeString) {
 			return parseModifier(true);
 		}
 		default: {
-			return parseSteps();
+			return parseLines();
 		}
 	}
 }
 
-function parseSteps() {
-	let steps = [];
+function parseLines() {
+	let lines = [];
 	while(pos < tokens.length) {
 		switch (tokens[pos].type) {
 			case "newLine": {
@@ -86,11 +86,11 @@ function parseSteps() {
 				break;
 			}
 			case "rightBrace": {
-				return new ast.ScriptStepsNode(steps);
+				return new ast.ScriptRootNode(lines);
 			}
 			default: {
 				const lineStart = tokens[pos];
-				steps.push(parseLine());
+				lines.push(parseLine());
 				if (tokens[pos]?.type !== "newLine") {
 					throw new ScriptParserError("Line in a script does not end with semicolon.", lineStart, tokens[pos - 1]);
 				}
@@ -98,7 +98,7 @@ function parseSteps() {
 			}
 		}
 	}
-	return new ast.ScriptStepsNode(steps);
+	return new ast.ScriptRootNode(lines);
 }
 
 function parseLine() {
@@ -579,7 +579,7 @@ function parsePlayerDotAccess(playerNode) {
 				throw new ScriptParserError(`Expected curly braces after 'may', but got '${tokens[pos].value}' instead.`, mayToken, tokens[pos]);
 			}
 			pos++;
-			const node = new ast.MayBlockNode(playerNode, parseSteps());
+			const node = new ast.MayBlockNode(playerNode, parseLines());
 			if (tokens[pos].type != "rightBrace") {
 				throw new ScriptParserError("Missing a '}' at the end of this 'may' block.", mayToken, tokens[pos] ?? tokens.at(-1));
 			}

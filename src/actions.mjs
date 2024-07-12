@@ -57,11 +57,11 @@ function getObjectCurrent(object) {
 export class Action {
 	constructor(player, properties = {}) {
 		this.player = player;
-		this.timing = null; // Is set by the Timing itself
+		this.step = null; // Is set by the Step itself
 		this.costIndex = -1; // If this is positive, it indicates that this action is to be treated as a cost, together with other actions of the same costIndex
 		this.properties = properties; // properties are accessible to cdfScript via action accessors, like retired(byPlayer: you)
 		this.properties.byPlayer = new ScriptValue("player", [player]);
-		this.isCancelled = false; // even cancelled timings stay in the game logs for abilities like that of 'Firewall Golem'
+		this.isCancelled = false; // even cancelled step stay in the game logs for abilities like that of 'Firewall Golem'
 	}
 
 	// Returns the event that represents this action.
@@ -253,7 +253,7 @@ export class Place extends Action {
 
 	async isImpossible() {
 		if (this.card.current() === null) return true;
-		return getAvailableZoneSlots(this.zone).length < this.timing.actions.filter(action => action instanceof Place).length;
+		return getAvailableZoneSlots(this.zone).length < this.step.actions.filter(action => action instanceof Place).length;
 	}
 
 	isIdenticalTo(other) {
@@ -441,7 +441,7 @@ export class Move extends Action {
 		return false;
 	}
 	async isFullyPossible() {
-		if (this.zone instanceof zones.FieldZone && getAvailableZoneSlots(this.zone).length < this.timing.actions.filter(action => action instanceof Move).length) return false;
+		if (this.zone instanceof zones.FieldZone && getAvailableZoneSlots(this.zone).length < this.step.actions.filter(action => action instanceof Move).length) return false;
 		return this.isPossible();
 	}
 
@@ -883,9 +883,9 @@ export class SetAttackTarget extends Action {
 
 	async* run() {
 		this.newTarget = this.newTarget.snapshot();
-		if (this.timing.game.currentAttackDeclaration) {
-			this._oldTarget = this.timing.game.currentAttackDeclaration.target;
-			this.timing.game.currentAttackDeclaration.target = this.newTarget.current();
+		if (this.step.game.currentAttackDeclaration) {
+			this._oldTarget = this.step.game.currentAttackDeclaration.target;
+			this.step.game.currentAttackDeclaration.target = this.newTarget.current();
 			if (this._oldTarget) {
 				this._oldTarget.isAttackTarget = false;
 			}
@@ -894,8 +894,8 @@ export class SetAttackTarget extends Action {
 	}
 
 	undo() {
-		if (this.timing.game.currentAttackDeclaration) {
-			this.timing.game.currentAttackDeclaration.target = this._oldTarget;
+		if (this.step.game.currentAttackDeclaration) {
+			this.step.game.currentAttackDeclaration.target = this._oldTarget;
 			this.newTarget.current().isAttackTarget = false;
 			if (this._oldTarget) {
 				this._oldTarget.isAttackTarget = true;
@@ -914,8 +914,8 @@ export class SetAttackTarget extends Action {
 	}
 
 	get affectedObjects() {
-		if (this.timing.game.currentAttackDeclaration?.target) {
-			return [this.timing.game.currentAttackDeclaration.target];
+		if (this.step.game.currentAttackDeclaration?.target) {
+			return [this.step.game.currentAttackDeclaration.target];
 		}
 		return [];
 	}

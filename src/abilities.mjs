@@ -1,6 +1,6 @@
 import * as interpreter from "./cdfScriptInterpreter/interpreter.mjs";
 import * as blocks from "./blocks.mjs";
-import * as timingGenerators from "./timingGenerators.mjs";
+import * as stepGenerators from "./stepGenerators.mjs";
 import {ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
 
 export class BaseAbility {
@@ -66,9 +66,9 @@ export class Ability extends BaseAbility {
 		if (this.cost === null) {
 			return this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer));
 		}
-		const timingRunner = new timingGenerators.TimingRunner(() => timingGenerators.abilityCostTimingGenerator(this, card, player), player.game);
-		timingRunner.isCost = true;
-		const costOptionTree = new timingGenerators.OptionTreeNode(player.game, timingRunner, () => this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)));
+		const stepRunner = new stepGenerators.StepRunner(() => stepGenerators.abilityCostStepGenerator(this, card, player), player.game);
+		stepRunner.isCost = true;
+		const costOptionTree = new stepGenerators.OptionTreeNode(player.game, stepRunner, () => this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)));
 		return costOptionTree.isValid();
 	}
 
@@ -301,7 +301,7 @@ export class StaticAbility extends BaseAbility {
 		super(ability, game);
 		this.modifier = interpreter.buildAST("modifier", ability.id, ability.modifier, game);
 		this.applyTo = interpreter.buildAST("applyTarget", ability.id, ability.applyTo, game);
-		this.zoneEnterTimingIndex = 0;
+		this.zoneEnterStepIndex = 0;
 		this.mandatory = ability.mandatory; // for action-replacing abilities
 
 		// all of these are for cancel or replacement static abilities.
@@ -336,7 +336,7 @@ export class StaticAbility extends BaseAbility {
 		if (this.zoneApplicationCount >= this.zoneDurationLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
 
 		let gameLimit = this.gameLimit.evalFull(ctx).next().value.getJsNum(player);
-		if (gameLimit !== Infinity && player.game.getTimings().map(timing => timing.staticAbilitiesApplied.filter(a => a.player === player && a.ability.id === this.id)).flat().length >= gameLimit)
+		if (gameLimit !== Infinity && player.game.getSteps().map(step => step.staticAbilitiesApplied.filter(a => a.player === player && a.ability.id === this.id)).flat().length >= gameLimit)
 			return false;
 
 		return true;
@@ -349,7 +349,7 @@ export class StaticAbility extends BaseAbility {
 
 	zoneMoveReset(game) {
 		super.zoneMoveReset(game);
-		this.zoneEnterTimingIndex = game.nextTimingIndex - 1;
+		this.zoneEnterStepIndex = game.nextStepIndex - 1;
 		this.turnApplicationCount = 0;
 		this.zoneApplicationCount = 0;
 	}

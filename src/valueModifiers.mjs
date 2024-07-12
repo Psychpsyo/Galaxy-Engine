@@ -423,7 +423,7 @@ export class DamageOverrideSetModification extends ValueModification {
 }
 
 // ActionModifications are mandatory or optional modifications that apply to actions which are about to happen.
-// They are intentionally very empty since the actual functionality is inside of the Timing class
+// They are intentionally very empty since the actual functionality is inside of the Step class
 export class ActionModification extends Modification {
 	constructor(toModify, condition) {
 		super(condition);
