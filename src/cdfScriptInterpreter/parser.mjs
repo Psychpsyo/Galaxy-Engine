@@ -28,9 +28,11 @@ export class ScriptParserError extends Error {
 		const maxLineNumberLenght = endToken.line.toString().length;
 		for (let i = startToken.line; i <= endToken.line; i++) {
 			message += "\n" + i.toString().padStart(maxLineNumberLenght) + ": " + lines[i];
-			const startColumn = i === startToken.line? startToken.column : 0;
-			const endColumn = i === endToken.line? endToken.column + endToken.value.length : lines[i].length - 1;
-			message += "\n" + " ".repeat(maxLineNumberLenght + 2 + startColumn) + "^".repeat(endColumn - startColumn);
+			let lineIndent = "";
+			while ([" ", "\t"].includes(lines[i][lineIndent.length])) lineIndent += lines[i][lineIndent.length];
+			const startColumn = i === startToken.line? startToken.column - lineIndent.length : 0;
+			const endColumn = (i === endToken.line? endToken.column + endToken.value.length : lines[i].length) - lineIndent.length;
+			message += "\n" + " ".repeat(maxLineNumberLenght + 2) + lineIndent + " ".repeat(startColumn) + "^".repeat(endColumn - startColumn);
 		}
 
 		super(message);
