@@ -66,9 +66,9 @@ export class Action {
 
 	// Returns the event that represents this action.
 	// After run() finishes, this class should only hold references to card snapshots, not actual cards so it serves as a record of what it did
-	async* run() {}
+	async* run(isPrediction) {}
 
-	undo() {}
+	undo(isPrediction) {}
 
 	async isImpossible() {
 		return false;
@@ -104,12 +104,12 @@ export class GainMana extends Action {
 		this.amount = amount;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this.player.mana += this.amount;
 		return events.createManaChangedEvent(this.player);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.player.mana -= this.amount;
 		return events.createManaChangedEvent(this.player);
 	}
@@ -124,12 +124,12 @@ export class LoseMana extends Action {
 		this.amount = amount;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this.player.mana -= this.amount;
 		return events.createManaChangedEvent(this.player);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.player.mana += this.amount;
 		return events.createManaChangedEvent(this.player);
 	}
@@ -149,7 +149,7 @@ export class LoseLife extends Action {
 		this._oldAmount = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this._oldAmount = this.player.life;
 		this.player.life = Math.max(this.player.life - this.amount, 0);
 		if (this.player.life === 0) {
@@ -158,7 +158,7 @@ export class LoseLife extends Action {
 		return events.createLifeChangedEvent(this.player);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		if (this.player.life === 0) {
 			this.player.next().victoryConditions.pop();
 		}
@@ -179,12 +179,12 @@ export class GainLife extends Action {
 		this.amount = amount;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this.player.life += this.amount;
 		return events.createLifeChangedEvent(this.player);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.player.life -= this.amount;
 		return events.createLifeChangedEvent(this.player);
 	}
@@ -201,7 +201,7 @@ export class Draw extends Action {
 		this.drawnCards = [];
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		if (this.amount > this.player.deckZone.cards.length) {
 			this.player.next().victoryConditions.push("drawFromEmptyDeck");
 			return null;
@@ -220,7 +220,7 @@ export class Draw extends Action {
 		return events.createCardsDrawnEvent(this.player, this.drawnCards);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		if (this.drawnCards.length > 0) {
 			let movedCards = [];
 			for (let i = this.drawnCards.length - 1; i >= 0; i--) {
@@ -245,7 +245,7 @@ export class Place extends Action {
 		this.targetIndex = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this.targetIndex = await (yield* queryZoneSlot(this.player, this.zone));
 		const card = this.card.current();
 		this.card = this.card.snapshot();
@@ -254,7 +254,7 @@ export class Place extends Action {
 		return events.createCardPlacedEvent(this.player, this.card, this.zone, this.targetIndex);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.zone.placed[this.targetIndex] = null;
 		this.card.restore();
 		return events.createUndoCardsMovedEvent([
@@ -292,7 +292,7 @@ export class Summon extends Action {
 		this.card = placeAction.card.current();
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const card = this.card.current();
 		this.card = this.card.snapshot();
 		let summonEvent = events.createCardSummonedEvent(this.player, this.card, this._placeAction.zone, this._placeAction.targetIndex);
@@ -302,7 +302,7 @@ export class Summon extends Action {
 		return summonEvent;
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.zone.remove(this.card.current(), this._placeAction.targetIndex);
 	}
 
@@ -336,7 +336,7 @@ export class Deploy extends Action {
 		this.card = card;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const card = this.card.current();
 		this.card = card.snapshot();
 		let deployEvent = events.createCardDeployedEvent(this.player, this.card, card.placedTo, card.index);
@@ -347,7 +347,7 @@ export class Deploy extends Action {
 		return deployEvent;
 	}
 
-	undo() {
+	undo(isPrediction) {
 		const card = this.card.current();
 		card.zone.remove(card);
 	}
@@ -380,7 +380,7 @@ export class Cast extends Action {
 		this.card = card;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const card = this.card.current();
 		this.card = card.snapshot();
 		let castEvent = events.createCardCastEvent(this.player, this.card, card.placedTo, card.index);
@@ -391,7 +391,7 @@ export class Cast extends Action {
 		return castEvent;
 	}
 
-	undo() {
+	undo(isPrediction) {
 		const card = this.card.current();
 		card.zone.remove(card);
 	}
@@ -419,7 +419,7 @@ export class Move extends Action {
 		this.insertedIndex = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const card = this.card.current();
 		this.card = this.card.snapshot();
 		if (this.targetIndex === null) {
@@ -436,7 +436,7 @@ export class Move extends Action {
 		return events.createCardMovedEvent(this.player, this.card, this.zone, this.insertedIndex);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		let event = events.createUndoCardsMovedEvent([
 			{fromZone: this.card.current().zone, fromIndex: this.card.current().index, toZone: this.card.zone, toIndex: this.card.index}
 		]);
@@ -474,7 +474,7 @@ export class Swap extends Action {
 		this.transferEquipments = transferEquipments;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const cardA = this.cardA.current();
 		const cardB = this.cardB.current();
 		this.cardA = this.cardA.snapshot();
@@ -506,7 +506,7 @@ export class Swap extends Action {
 		return events.createCardsSwappedEvent(this.player, this.cardA, this.cardB, this.transferEquipments);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		let event = events.createUndoCardsSwappedEvent(this.cardA, this.cardB);
 
 		this.cardA.current().zone.remove(this.cardA.current());
@@ -543,7 +543,7 @@ export class EstablishAttackDeclaration extends Action {
 	}
 
 	// TODO: Is this impossible if no attackers left?
-	async* run() {
+	async* run(isPrediction) {
 		// determine possible attack targets
 		let eligibleUnits = this.player.next().partnerZone.cards.concat(this.player.next().unitZone.cards.filter(card => card !== null));
 		if (eligibleUnits.length > 1) {
@@ -575,7 +575,7 @@ export class DealDamage extends Action {
 		this.oldAmount = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this.oldAmount = this.target.life;
 		this.target.life = Math.max(this.target.life - this.amount, 0);
 		if (this.target.life == 0) {
@@ -584,7 +584,7 @@ export class DealDamage extends Action {
 		return events.createDamageDealtEvent(this.target, this.amount);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		if (this.target.life === 0) {
 			this.target.next().victoryConditions.pop();
 		}
@@ -611,7 +611,7 @@ export class Discard extends Action {
 		this.card = card;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const card = this.card.current();
 		this.card = this.card.snapshot();
 		let event = events.createCardDiscardedEvent(this.card, this.card.owner.discardPile);
@@ -620,7 +620,7 @@ export class Discard extends Action {
 		return event;
 	}
 
-	undo() {
+	undo(isPrediction) {
 		let event = events.createUndoCardsMovedEvent([
 			{fromZone: this.card.current().zone, fromIndex: this.card.current().index, toZone: this.card.zone, toIndex: this.card.index}
 		]);
@@ -651,7 +651,7 @@ export class Destroy extends Action {
 		this.discard = discard;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this.discard.card = this.discard.card.snapshot();
 		return events.createCardDestroyedEvent(this.discard.card, this.discard.card.owner.discardPile);
 		// destroying a card doesn't do anything.
@@ -701,7 +701,7 @@ export class Exile extends Action {
 		this.until = until; // the array that the 'undo' action goes into (to exile until some time)
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const card = this.card.current();
 		this.card = this.card.snapshot();
 		let event = events.createCardExiledEvent(this.card, this.card.owner.exileZone);
@@ -713,7 +713,7 @@ export class Exile extends Action {
 		return event;
 	}
 
-	undo() {
+	undo(isPrediction) {
 		let event = events.createUndoCardsMovedEvent([
 			{fromZone: this.card.current().zone, fromIndex: this.card.current().index, toZone: this.card.zone, toIndex: this.card.index}
 		]);
@@ -746,7 +746,7 @@ export class ApplyStatChange extends Action {
 		this.until = until; // the array that the un-apply action goes into (or null, if it is permanent)
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const currentObject = getObjectCurrent(this.toObject);
 		// remove invalid modifications
 		ast.setImplicit([this.modifier.card], "card");
@@ -767,7 +767,7 @@ export class ApplyStatChange extends Action {
 		}
 	}
 
-	undo() {
+	undo(isPrediction) {
 		const currentObject = getObjectCurrent(this.toObject);
 		currentObject.values.modifierStack.pop();
 		this.player.game.registerPendingValueChangeFor(currentObject);
@@ -838,7 +838,7 @@ export class RemoveStatChange extends Action {
 		this._index = -1;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const currentObject = getObjectCurrent(this.object);
 		if (this.object instanceof BaseCard) {
 			this.object = this.object.snapshot();
@@ -848,7 +848,7 @@ export class RemoveStatChange extends Action {
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		const currentObject = getObjectCurrent(this.object);
 		currentObject.values.modifierStack.splice(this._index, 0, this.modifier);
 		this.player.game.registerPendingValueChangeFor(currentObject);
@@ -863,14 +863,14 @@ export class CancelAttack extends Action {
 		this.wasCancelled = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		if (this.player.game.currentAttackDeclaration) {
 			this.wasCancelled = this.player.game.currentAttackDeclaration.isCancelled;
 			this.player.game.currentAttackDeclaration.isCancelled = true;
 		}
 	}
 
-	undo() {
+	undo(isPrediction) {
 		if (this.player.game.currentAttackDeclaration) {
 			this.player.game.currentAttackDeclaration.isCancelled = this.wasCancelled;
 		}
@@ -896,7 +896,7 @@ export class SetAttackTarget extends Action {
 		this._oldTarget = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this.newTarget = this.newTarget.snapshot();
 		if (this.step.game.currentAttackDeclaration) {
 			this._oldTarget = this.step.game.currentAttackDeclaration.target;
@@ -908,7 +908,7 @@ export class SetAttackTarget extends Action {
 		}
 	}
 
-	undo() {
+	undo(isPrediction) {
 		if (this.step.game.currentAttackDeclaration) {
 			this.step.game.currentAttackDeclaration.target = this._oldTarget;
 			this.newTarget.current().isAttackTarget = false;
@@ -943,12 +943,12 @@ export class GiveAttack extends Action {
 		this._oldCanAttackAgain = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this._oldCanAttackAgain = this.card.canAttackAgain;
 		this.card.canAttackAgain = true;
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.card.canAttackAgain = this._oldCanAttackAgain;
 	}
 
@@ -976,7 +976,7 @@ export class SelectEquipableUnit extends Action {
 		this._oldEquipTarget = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		let selectionRequest = new requests.ChooseCards(this.player, this.spellItem.equipableTo.evalFull(new ScriptContext(this.spellItem, this.player)).next().value.get(this.player), [1], "equipTarget:" + this.spellItem.cardId);
 		let response = yield [selectionRequest];
 		// If there is no current block (during castability checking), we write nothing.
@@ -988,7 +988,7 @@ export class SelectEquipableUnit extends Action {
 		}
 	}
 
-	undo() {
+	undo(isPrediction) {
 		const currentBlock = this.player.game.currentBlock();
 		if (currentBlock) {
 			currentBlock.equipTarget = this._oldEquipTarget;
@@ -1007,7 +1007,7 @@ export class EquipCard extends Action {
 		this.target = target;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this.equipment = this.equipment.snapshot();
 		this.target = this.target.snapshot();
 		let event = events.createCardEquippedEvent(this.equipment, this.target);
@@ -1016,7 +1016,7 @@ export class EquipCard extends Action {
 		return event;
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.target.current().equipments.pop();
 		this.equipment.equippedTo = null;
 	}
@@ -1041,12 +1041,15 @@ export class Shuffle extends Action {
 		super(player);
 	}
 
-	async* run() {
+	async* run(isPrediction) {
+		// during predictions, anything that needs randomness must be avoided since randomness can require cooperation by the opponent
+		if (isPrediction) return;
 		await this.player.deckZone.shuffle();
 		return events.createDeckShuffledEvent(this.player);
 	}
 
-	undo() {
+	undo(isPrediction) {
+		if (isPrediction) return;
 		this.player.deckZone.undoShuffle();
 	}
 }
@@ -1057,12 +1060,21 @@ export class RollDice extends Action {
 		this.result = null;
 	}
 
-	async* run() {
-		this.result = await this.player.game.randomInt(this.sidedness) + 1;
+	async* run(isPrediction) {
+		if (!isPrediction) {
+			this.result = await this.player.game.randomInt(this.sidedness) + 1;
+		} else {
+			// during predictions, anything that needs randomness must be avoided since randomness can require cooperation by the opponent, so we just pretend it's 1.
+			// TODO: Currently, there are no dice rolls in predicted sections. If they come up this probably needs to be revisited and all results must create option tree branches.
+			this.result = 1;
+		}
 		return events.createDiceRolledEvent(this.player, this.sidedness, this.result);
 	}
 
-	undo() {
+	undo(isPrediction) {
+		if (!isPrediction) {
+			this.player.game.undoRandom();
+		}
 		this.result = null;
 	}
 }
@@ -1073,7 +1085,7 @@ export class View extends Action {
 		this.card = card;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		let wasHidden = this.card.hiddenFor.includes(this.player);
 		this.card.showTo(this.player);
 		this.card = this.card.snapshot();
@@ -1099,14 +1111,14 @@ export class Reveal extends Action {
 		this._oldHiddenState = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		this._oldHiddenState = this.card.current().hiddenFor;
 		this.card.current().hiddenFor = [];
 		this.card = this.card.snapshot();
 		return events.createCardRevealedEvent(this.player, this.card);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.card.current().hiddenFor = this._oldHiddenState;
 	}
 
@@ -1135,7 +1147,7 @@ export class ChangeCounters extends Action {
 		this._oldAmount = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const card = this.card.current();
 		this.card = this.card.snapshot();
 		if (!card.counters[this.type]) {
@@ -1146,7 +1158,7 @@ export class ChangeCounters extends Action {
 		return events.createCountersChangedEvent(this.card, this.type);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.card.current().counters[this.type] = this._oldAmount;
 	}
 
@@ -1174,7 +1186,7 @@ export class ApplyStaticAbility extends Action {
 		this._hadStaticAbilityBefore = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const currentObject = getObjectCurrent(this.toObject);
 		if (this.toObject instanceof BaseCard) {
 			this.toObject = this.toObject.snapshot();
@@ -1185,7 +1197,7 @@ export class ApplyStaticAbility extends Action {
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		const currentObject = getObjectCurrent(this.toObject);
 		currentObject.values.modifierStack.pop();
 		currentObject.values.modifiedByStaticAbility = this._hadStaticAbilityBefore;
@@ -1204,7 +1216,7 @@ export class UnapplyStaticAbility extends Action {
 		this._removed = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const currentObject = getObjectCurrent(this.object);
 		if (this.object instanceof BaseCard) {
 			this.object = this.object.snapshot();
@@ -1215,7 +1227,7 @@ export class UnapplyStaticAbility extends Action {
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		const currentObject = getObjectCurrent(this.object);
 		currentObject.values.modifierStack.splice(this._modifierIndex, 0, this._removed);
 		currentObject.values.modifiedByStaticAbility = true;
@@ -1243,7 +1255,7 @@ export class SelectCards extends Action {
 		this.selected = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const wasHidden = [];
 		for (const card of this.eligibleCards) {
 			wasHidden.push(card.hiddenFor.includes(this.player));
@@ -1267,7 +1279,7 @@ export class SelectCards extends Action {
 		return events.createCardsSelectedEvent(this.player, this.selected);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.ctxTargetList.splice(-this.selected.length, this.selected.length);
 	}
 
@@ -1291,7 +1303,7 @@ export class SelectAbility extends Action {
 		this.selected = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const response = yield [this.selectionRequest];
 		this.selected = (await this.selectionRequest.extractResponseValue(response));
 		this.ctxTargetList.push(this.selected);
@@ -1299,7 +1311,7 @@ export class SelectAbility extends Action {
 		return events.createAbilitySelectedEvent(this.player, this.selected);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.ctxTargetList.pop();
 	}
 
@@ -1322,7 +1334,7 @@ export class SelectDeckSide extends Action {
 		this.selected = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const response = yield [this.selectionRequest];
 		this.selected = await this.selectionRequest.extractResponseValue(response);
 
@@ -1345,7 +1357,7 @@ export class SelectPlayer extends Action {
 		this.selected = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const response = yield [this.selectionRequest];
 		this.selected = (await this.selectionRequest.extractResponseValue(response));
 		this.ctxTargetList.push(this.selected);
@@ -1353,7 +1365,7 @@ export class SelectPlayer extends Action {
 		return events.createPlayerSelectedEvent(this.player, this.selected);
 	}
 
-	undo() {
+	undo(isPrediction) {
 		this.ctxTargetList.pop();
 	}
 
@@ -1376,7 +1388,7 @@ export class SelectType extends Action {
 		this.selected = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const response = yield [this.selectionRequest];
 		this.selected = (await this.selectionRequest.extractResponseValue(response));
 
@@ -1402,7 +1414,7 @@ export class OrderCards extends Action {
 		this.ordered = null;
 	}
 
-	async* run() {
+	async* run(isPrediction) {
 		const response = yield [this.orderRequest];
 		this.ordered = (await this.orderRequest.extractResponseValue(response)).map(card => card.snapshot());
 

@@ -9,6 +9,8 @@ const keywordTokenTypes = {
 	replace: "replace",
 	with: "with",
 	may: "may",
+	then: "then",
+	else: "else",
 
 	thisCard: "thisCard",
 	attackTarget: "attackTarget",

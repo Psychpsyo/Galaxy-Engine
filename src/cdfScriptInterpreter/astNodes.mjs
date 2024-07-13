@@ -1360,21 +1360,29 @@ export class UntilPhaseNode extends AstNode {
 }
 
 export class MayBlockNode extends AstNode {
-	constructor(playerNode, rootNode) {
+	constructor(playerNode, mainBlock, thenBlock, elseBlock) {
 		super(null);
 		this.playerNode = playerNode;
-		this.rootNode = rootNode;
+		this.mainBlock = mainBlock;
+		this.thenBlock = thenBlock;
+		this.elseBlock = elseBlock;
 	}
 	* eval(ctx) {
 		// TODO: figure out how a both.may needs to work
 		const player = (yield* this.playerNode.eval(ctx)).get(ctx.player)[0];
-		yield new stepRunnerInserts.OptionalEffectSectionInsert(player, ctx, this.rootNode);
+		yield new stepRunnerInserts.OptionalEffectSectionInsert(player, ctx, this.mainBlock, this.thenBlock, this.elseBlock);
 	}
 	hasAllTargets(ctx) {
-		return true;
+		// just one path needs all targets
+		if (this.elseBlock?.hasAllTargets(ctx) || this.thenBlock?.hasAllTargets(ctx)) return true;
+		// if no path exists, it is ok for them to not have targets
+		return this.thenBlock === null && this.elseBlock === null;
 	}
 	getChildNodes() {
-		return [this.rootNode];
+		const children = [this.mainBlock];
+		if (this.thenBlock) children.push(this.thenBlock);
+		if (this.elseBlock) children.push(this.elseBlock);
+		return children;
 	}
 }
 

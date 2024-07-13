@@ -89,14 +89,17 @@ export class BaseCard {
 	}
 
 	getSummoningCost(player) {
-		return stepGenerators.arrayStepGenerator([
-			[new actions.LoseMana(player, this.values.current.level)]
-		]);
+		const costActions = [];
+		if (this.values.current.level > 0) {
+			costActions.push([new actions.LoseMana(player, this.values.current.level)]);
+		}
+		return stepGenerators.arrayStepGenerator(costActions);
 	}
 	getCastingCost(player, scriptTargets) {
-		const costActions = [
-			[new actions.LoseMana(player, this.values.current.level)]
-		];
+		const costActions = [];
+		if (this.values.current.level > 0) {
+			costActions.push([new actions.LoseMana(player, this.values.current.level)]);
+		}
 		if (this.values.current.cardTypes.includes("enchantSpell")) {
 			costActions.unshift([new actions.SelectEquipableUnit(player, this)]);
 		}
@@ -114,9 +117,10 @@ export class BaseCard {
 		return stepGenerators.combinedStepGenerator(generators);
 	}
 	getDeploymentCost(player, scriptTargets) {
-		const costActions = [
-			[new actions.LoseMana(player, this.values.current.level)]
-		];
+		const costActions = [];
+		if (this.values.current.level > 0) {
+			costActions.push([new actions.LoseMana(player, this.values.current.level)]);
+		}
 		if (this.values.current.cardTypes.includes("equipableItem")) {
 			costActions.unshift([new actions.SelectEquipableUnit(player, this)]);
 		}

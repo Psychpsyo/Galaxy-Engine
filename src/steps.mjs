@@ -328,7 +328,7 @@ export class Step {
 		for (const action of this.actions) {
 			if (action.isCancelled) continue;
 
-			const event = await (yield* action.run());
+			const event = await (yield* action.run(isPrediction));
 			if (event) {
 				events.push(event);
 			}
@@ -379,7 +379,7 @@ export class Step {
 		}
 		let events = [];
 		for (let i = this.actions.length - 1; i >= 0; i--) {
-			const event = this.actions[i].undo();
+			const event = this.actions[i].undo(isPrediction);
 			if (event) {
 				events.push(event);
 			}

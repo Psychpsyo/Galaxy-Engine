@@ -503,6 +503,19 @@ function parseValue() {
 	}
 }
 
+function parseLineBlock(openingToken) {
+	if (tokens[pos].type != "leftBrace") {
+		throw new ScriptParserError(`Expected curly braces after '${openingToken.value}', but got '${tokens[pos].value}' instead.`, openingToken, tokens[pos]);
+	}
+	pos++;
+	const lines = parseLines();
+	if (tokens[pos].type != "rightBrace") {
+		throw new ScriptParserError(`Missing a '}' at the end of this '${openingToken.value}' block.`, openingToken, tokens[pos] ?? tokens.at(-1));
+	}
+	pos++;
+	return lines;
+}
+
 function parseTurnDotAccess(turnNode) {
 	switch (tokens[pos].type) {
 		case "actionAccessor": {
@@ -522,7 +535,6 @@ function parseTurnDotAccess(turnNode) {
 		}
 	}
 }
-
 function parsePlayerDotAccess(playerNode) {
 	switch (tokens[pos].type) {
 		case "playerProperty": {
@@ -573,18 +585,19 @@ function parsePlayerDotAccess(playerNode) {
 			return node;
 		}
 		case "may": {
-			const mayToken = tokens[pos];
 			pos++;
-			if (tokens[pos].type != "leftBrace") {
-				throw new ScriptParserError(`Expected curly braces after 'may', but got '${tokens[pos].value}' instead.`, mayToken, tokens[pos]);
+			const mainBlock = parseLineBlock(tokens[pos-1]);
+			let thenBlock = null;
+			if (tokens[pos].type === "then") {
+				pos++;
+				thenBlock = parseLineBlock(tokens[pos-1]);
 			}
-			pos++;
-			const node = new ast.MayBlockNode(playerNode, parseLines());
-			if (tokens[pos].type != "rightBrace") {
-				throw new ScriptParserError("Missing a '}' at the end of this 'may' block.", mayToken, tokens[pos] ?? tokens.at(-1));
+			let elseBlock = null;
+			if (tokens[pos].type === "else") {
+				pos++;
+				elseBlock = parseLineBlock(tokens[pos-1]);
 			}
-			pos++;
-			return node;
+			return new ast.MayBlockNode(playerNode, mainBlock, thenBlock, elseBlock);
 		}
 	}
 	throw new ScriptParserError(`'${tokens[pos].value}' does not begin a valid player property.`, tokens[pos]);
