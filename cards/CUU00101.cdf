@@ -20,7 +20,7 @@ o: trigger
 during: currentPhase = you.endPhase
 mandatory: yes
 condition: thisCard.zone = field
-you.try {
+try {
 	LOSELIFE(100);
 } else {
 	DISCARD(thisCard);

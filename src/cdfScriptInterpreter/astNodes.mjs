@@ -1360,18 +1360,17 @@ export class UntilPhaseNode extends AstNode {
 }
 
 export class OptionalSectionNode extends AstNode {
-	constructor(playerNode, isForced, mainBlock, thenBlock, elseBlock) {
+	constructor(playerNode, mainBlock, thenBlock, elseBlock) {
 		super(null);
 		this.playerNode = playerNode;
-		this.isForced = isForced;
 		this.mainBlock = mainBlock;
 		this.thenBlock = thenBlock;
 		this.elseBlock = elseBlock;
 	}
 	* eval(ctx) {
 		// TODO: figure out how a both.may needs to work
-		const player = (yield* this.playerNode.eval(ctx)).get(ctx.player)[0];
-		yield new stepRunnerInserts.OptionalEffectSectionInsert(player, ctx, this.isForced, this.mainBlock, this.thenBlock, this.elseBlock);
+		const player = this.playerNode? (yield* this.playerNode.eval(ctx)).get(ctx.player)[0] : null;
+		yield new stepRunnerInserts.OptionalEffectSectionInsert(player, ctx, this.mainBlock, this.thenBlock, this.elseBlock);
 	}
 	hasAllTargets(ctx) {
 		// just one path needs all targets

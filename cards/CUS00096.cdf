@@ -14,7 +14,7 @@ o: trigger
 during: currentPhase = you.endPhase
 mandatory: yes
 condition: thisCard.zone = field
-you.try {
+try {
 	EXILE(SELECT(1, [from you.discard where types = Ice]));
 } else {
 	DISCARD(thisCard);

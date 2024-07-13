@@ -13,7 +13,7 @@ o: trigger
 during: currentPhase = you.drawPhase
 mandatory: yes
 condition: thisCard.zone = field
-you.try {
+try {
 	LOSEMANA(COUNT([from you.unitZone where types = Earth & cardType = unit]));
 } else {
 	DISCARD(thisCard);

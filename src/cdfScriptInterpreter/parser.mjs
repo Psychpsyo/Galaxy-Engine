@@ -106,6 +106,8 @@ function parseLine() {
 	if (tokens[pos].type === "variable" && tokens[pos+1].type === "equals") {
 		variableName = tokens[pos].value;
 		pos += 2;
+	} else if (tokens[pos].type === "try") {
+		return new ast.LineNode(parseOptionalSection(null), null);
 	}
 	const expr = parseExpression();
 	// check variable type
@@ -412,8 +414,7 @@ function parseValue() {
 					case "function":
 					case "deckPosition":
 					case "playerProperty":
-					case "may":
-					case "try":
+					case "may": // TODO: restrict this to the beginning of non-variable-assignment lines.
 					case "zone": {
 						return parsePlayerDotAccess(variable);
 					}
@@ -516,6 +517,22 @@ function parseLineBlock(openingToken) {
 	pos++;
 	return lines;
 }
+// if playerNode is null, no player is given a choice and the section is forced.
+function parseOptionalSection(playerNode) {
+	pos++;
+	const mainBlock = parseLineBlock(tokens[pos-1]);
+	let thenBlock = null;
+	if (tokens[pos].type === "then") {
+		pos++;
+		thenBlock = parseLineBlock(tokens[pos-1]);
+	}
+	let elseBlock = null;
+	if (tokens[pos].type === "else") {
+		pos++;
+		elseBlock = parseLineBlock(tokens[pos-1]);
+	}
+	return new ast.OptionalSectionNode(playerNode, mainBlock, thenBlock, elseBlock);
+}
 
 function parseTurnDotAccess(turnNode) {
 	switch (tokens[pos].type) {
@@ -585,22 +602,8 @@ function parsePlayerDotAccess(playerNode) {
 			pos++;
 			return node;
 		}
-		case "may":
-		case "try": {
-			const isForced = tokens[pos].type === "try";
-			pos++;
-			const mainBlock = parseLineBlock(tokens[pos-1]);
-			let thenBlock = null;
-			if (tokens[pos].type === "then") {
-				pos++;
-				thenBlock = parseLineBlock(tokens[pos-1]);
-			}
-			let elseBlock = null;
-			if (tokens[pos].type === "else") {
-				pos++;
-				elseBlock = parseLineBlock(tokens[pos-1]);
-			}
-			return new ast.OptionalSectionNode(playerNode, isForced, mainBlock, thenBlock, elseBlock);
+		case "may": {
+			return parseOptionalSection(playerNode);
 		}
 	}
 	throw new ScriptParserError(`'${tokens[pos].value}' does not begin a valid player property.`, tokens[pos]);
