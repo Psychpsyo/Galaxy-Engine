@@ -9,5 +9,5 @@ condition: you.life >= 2000
 cost:
 LOSELIFE(you.life / 2);
 exec:
-SUMMON([from you.deck, you.hand, you.discard where name = CUU00101], no);
+SUMMON(SELECT(1, [from you.deck, you.hand, you.discard where name = CUU00101]), no);
 DESTROY([from field]);

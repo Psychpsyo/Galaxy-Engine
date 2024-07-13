@@ -413,6 +413,7 @@ function parseValue() {
 					case "deckPosition":
 					case "playerProperty":
 					case "may":
+					case "try":
 					case "zone": {
 						return parsePlayerDotAccess(variable);
 					}
@@ -584,7 +585,9 @@ function parsePlayerDotAccess(playerNode) {
 			pos++;
 			return node;
 		}
-		case "may": {
+		case "may":
+		case "try": {
+			const isForced = tokens[pos].type === "try";
 			pos++;
 			const mainBlock = parseLineBlock(tokens[pos-1]);
 			let thenBlock = null;
@@ -597,7 +600,7 @@ function parsePlayerDotAccess(playerNode) {
 				pos++;
 				elseBlock = parseLineBlock(tokens[pos-1]);
 			}
-			return new ast.MayBlockNode(playerNode, mainBlock, thenBlock, elseBlock);
+			return new ast.OptionalSectionNode(playerNode, isForced, mainBlock, thenBlock, elseBlock);
 		}
 	}
 	throw new ScriptParserError(`'${tokens[pos].value}' does not begin a valid player property.`, tokens[pos]);

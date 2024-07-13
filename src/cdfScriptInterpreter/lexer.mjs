@@ -8,6 +8,7 @@ const keywordTokenTypes = {
 	prohibit: "prohibit",
 	replace: "replace",
 	with: "with",
+	try: "try",
 	may: "may",
 	then: "then",
 	else: "else",
