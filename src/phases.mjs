@@ -186,13 +186,13 @@ export class ManaSupplyPhase extends Phase {
 			// RULES: Then they pay their partner's level in mana. If they can't pay, they loose the game.
 			const payForPartnerActions = [];
 			for (const player of manaPlayers) {
-				if (player.values.current.needsToPayForPartner) {
-					const partnerLevel = player.partnerZone.cards[0].values.current.level;
-					if (player.mana < partnerLevel) {
-						player.next().victoryConditions.push("partnerCostTooHigh");
-					} else {
-						payForPartnerActions.push(new actions.LoseMana(player, partnerLevel));
-					}
+				if (!player.values.current.needsToPayForPartner) continue;
+				const partnerLevel = player.partnerZone.cards[0].values.current.level;
+				if (partnerLevel == 0) continue;
+				if (player.mana < partnerLevel) {
+					player.next().victoryConditions.push("partnerCostTooHigh");
+				} else {
+					payForPartnerActions.push(new actions.LoseMana(player, partnerLevel));
 				}
 			}
 			// player(s) might've just lost

@@ -45,7 +45,7 @@ function* directOrImplicitBoolCompare(ctx, expr, scriptValue) {
 		clearImplicit(scriptValue.type);
 		return retVal;
 	}
-	throw new Error(`Tried to match a ${scriptValue.type} value against a ${expr.returnType} expression.`);
+	return false;
 }
 
 class AstNode {
