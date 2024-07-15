@@ -18,6 +18,6 @@ The following is an index of all language features in cdfScript, linking to thei
 - [Variables](./TODO:)
 - [Types](./TODO:)
 - [Objects](./TODO:)
-- [Optional Sections](./optionalSections.md)
+- [Control Flow](./controlFlow.md)
 - [Object Match Syntax (`[from ... where ...]`)](./TODO:)
 - [Object Modifier Syntax (like `{prop += expr}`)](./TODO:)

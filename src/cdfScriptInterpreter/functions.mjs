@@ -719,17 +719,16 @@ export function initFunctions() {
 				eligibleCards = eligibleCards.filter(card => !ctx.targets.card.includes(card));
 			}
 
-			// minimum number of cards the player can legally choose
+			// figure out how many cards the player should be asked to choose.
+			// In the case of X+ cards, the actual maximum is clamped away from Infinity for practicality.
 			const chooseAtLeast = astNode.asManyAsPossible?
 			                      1 : choiceAmounts instanceof SomeOrMore?
 			                      choiceAmounts.lowest : Math.min(...choiceAmounts);
-			// maximum number of cards the player can legally choose
-			const chooseAtMost = Math.min(
-				eligibleCards.length,
-				choiceAmounts instanceof SomeOrMore? Infinity : Math.max(...choiceAmounts)
-			);
 
-			// remap valid choice amounts to go from minimum amount to how many cards are available
+			const chooseAtMost = choiceAmounts instanceof SomeOrMore?
+			                     Math.max(eligibleCards.length, choiceAmounts.lowest) : // clamp down to not go to infinity
+			                     Math.max(...choiceAmounts);
+
 			choiceAmounts = [];
 			for (let i = chooseAtLeast; i <= chooseAtMost; i++) {
 				choiceAmounts.push(i);

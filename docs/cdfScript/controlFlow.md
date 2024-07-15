@@ -1,6 +1,17 @@
-# CDF Script Optional Sections
+# Control Flow
 
-Optional sections are a cdfScript feature used to express card effects where one thing or another happens based on whether or not a player wants to or is able to do something.  
+By default, the execution of an effect is linear, going from the top of the script to the bottom.  
+But for cards that necessitate branches, the following features can be used.
+
+# If-Statements
+If-statements can be used to do something only if a condition is met and are written like so:  
+```
+if (condition) {} else {};
+```
+`condition` can be any expression that evaluates to `yes` or `no`. Anything within the first set of curly braces is done if said condition is met and anything in the second set is done if it isn't met.
+
+# Optional Sections
+Optional sections are used to express card effects where one thing or another happens based on whether or not a player wants to or is able to do it.  
 These sections are usually worded as such:  
 "Next, you may do X."  
 "Do X. If you can't, do Y."  

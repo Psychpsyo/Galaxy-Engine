@@ -1380,7 +1380,7 @@ export class OptionalSectionNode extends AstNode {
 		this.elseBlock = elseBlock;
 	}
 	* eval(ctx) {
-		// TODO: figure out how a both.may needs to work
+		// TODO: figure out how a both.may needs to work or if it should be forbidden
 		const player = this.playerNode? (yield* this.playerNode.eval(ctx)).get(ctx.player)[0] : null;
 		yield new stepRunnerInserts.OptionalEffectSectionInsert(player, ctx, this.mainBlock, this.thenBlock, this.elseBlock);
 	}
@@ -1393,6 +1393,32 @@ export class OptionalSectionNode extends AstNode {
 	getChildNodes() {
 		const children = [this.mainBlock];
 		if (this.thenBlock) children.push(this.thenBlock);
+		if (this.elseBlock) children.push(this.elseBlock);
+		return children;
+	}
+}
+
+export class IfNode extends AstNode {
+	constructor(condition, mainBlock, elseBlock) {
+		super(null);
+		this.condition = condition;
+		this.mainBlock = mainBlock;
+		this.elseBlock = elseBlock;
+	}
+	* eval(ctx) {
+		if ((yield* this.condition.eval(ctx)).get(ctx.player)) {
+			yield* this.mainBlock.eval(ctx);
+		} else if (this.elseBlock) {
+			yield* this.elseBlock.eval(ctx);
+		}
+	}
+	hasAllTargets(ctx) {
+		// TODO: this needs to do actual branching like variables do
+		if (!this.condition.hasAllTargets(ctx)) return false;
+		return this.mainBlock.hasAllTargets(ctx) || (this.elseBlock?.hasAllTargets(ctx) ?? true);
+	}
+	getChildNodes() {
+		const children = [this.condition, this.mainBlock];
 		if (this.elseBlock) children.push(this.elseBlock);
 		return children;
 	}

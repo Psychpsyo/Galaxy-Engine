@@ -105,11 +105,20 @@ function parseLines() {
 
 function parseLine() {
 	let variableName = null;
-	if (tokens[pos].type === "variable" && tokens[pos+1].type === "equals") {
-		variableName = tokens[pos].value;
-		pos += 2;
-	} else if (tokens[pos].type === "try") {
-		return new ast.LineNode(parseOptionalSection(null), null);
+	switch (tokens[pos].type) {
+		case "if": {
+			return new ast.LineNode(parseIfStatement(), null);
+		}
+		case "try": {
+			return new ast.LineNode(parseOptionalSection(null), null);
+		}
+		case "variable": {
+			if (tokens[pos+1].type === "equals") {
+				variableName = tokens[pos].value;
+				pos += 2;
+			}
+			break;
+		}
 	}
 	const expr = parseExpression();
 	// check variable type
@@ -509,7 +518,7 @@ function parseValue() {
 
 function parseLineBlock(openingToken) {
 	if (tokens[pos].type != "leftBrace") {
-		throw new ScriptParserError(`Expected curly braces after '${openingToken.value}', but got '${tokens[pos].value}' instead.`, openingToken, tokens[pos]);
+		throw new ScriptParserError(`Expected curly braces for block after '${openingToken.value}', but got '${tokens[pos].value}' instead.`, openingToken, tokens[pos]);
 	}
 	pos++;
 	const lines = parseLines();
@@ -518,6 +527,30 @@ function parseLineBlock(openingToken) {
 	}
 	pos++;
 	return lines;
+}
+function parseIfStatement() {
+	const ifToken = tokens[pos];
+	pos++;
+	if (tokens[pos]?.type !== "leftParen") {
+		throw new ScriptParserError("Expected parenthesized expression after 'if'.", tokens[pos-1]);
+	}
+	const conditionStart = tokens[pos];
+	pos++;
+	const condition = parseExpression();
+	if (tokens[pos]?.type !== "rightParen") {
+		throw new ScriptParserError("Expected a ')' at the end of this expression." + (tokens[pos]? ` Found '${tokens[pos].value}' instead.` : ""), conditionStart, tokens[pos] ?? tokens.at(-1));
+	}
+	if (condition.returnType !== "bool") {
+		throw new ScriptParserError(`An if-statement's condition must evaluate to a bool. This evaluates to a value of type '${condition.returnType}'`, conditionStart, tokens[pos]);
+	}
+	pos++;
+	const mainBlock = parseLineBlock(ifToken);
+	let elseBlock = null;
+	if (tokens[pos]?.type === "else") {
+		pos++;
+		elseBlock = parseLineBlock(tokens[pos-1]);
+	}
+	return new ast.IfNode(condition, mainBlock, elseBlock);
 }
 // if playerNode is null, no player is given a choice and the section is forced.
 function parseOptionalSection(playerNode) {
