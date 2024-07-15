@@ -98,6 +98,21 @@ export class Action {
 	}
 }
 
+export class WinGame extends Action {
+	constructor(player, effectId) {
+		super(player);
+		this.effectId = effectId;
+	}
+
+	async* run(isPrediction) {
+		this.player.victoryConditions.push("cardEffect:" + this.effectId);
+	}
+
+	undo(isPrediction) {
+		this.player.victoryConditions.pop();
+	}
+}
+
 export class GainMana extends Action {
 	constructor(player, amount) {
 		super(player);

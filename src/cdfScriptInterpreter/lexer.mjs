@@ -155,6 +155,7 @@ const keywordTokenTypes = {
 	SUMMONTOKENS: "function",
 	SWAP: "function",
 	VIEW: "function",
+	WINGAME: "function",
 
 	attacked: "actionAccessor",
 	cast: "actionAccessor",

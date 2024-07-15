@@ -1231,6 +1231,18 @@ defense: ${defense}`;
 		function*(astNode, ctx) {
 			yield* this.getParameter(astNode, "card").evalFull(ctx);
 		}
+	),
+
+	// Swaps two cards with eachother
+	WINGAME: new ScriptFunction(
+		[],
+		[],
+		null,
+		function*(astNode, ctx) {
+			yield [new actions.WinGame(ctx.player, ctx.ability.id)];
+		},
+		alwaysHasTarget,
+		undefined // TODO: Write evalFull
 	)
 }
 };
