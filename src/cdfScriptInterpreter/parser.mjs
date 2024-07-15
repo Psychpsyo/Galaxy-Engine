@@ -255,7 +255,7 @@ function parseExpression() {
 	}
 
 	if (expression.length == 0) {
-		return null;
+		return new ast.NullNode();
 	}
 
 	// consolidate 'X+' notation

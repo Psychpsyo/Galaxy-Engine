@@ -79,6 +79,12 @@ class AstNode {
 		return [];
 	}
 }
+// not intended for actual scripts. Should cause an error if created at parse time.
+export class NullNode extends AstNode {
+	constructor() {
+		super(null);
+	}
+}
 
 // This serves as the root node of a card's script body or any block scoped lines
 export class ScriptRootNode extends AstNode {
@@ -217,7 +223,13 @@ export class FunctionNode extends AstNode {
 		// iterates over the cartesian product of the function's runFull generators.
 		for (const list of cartesianProduct(
 			players.map(
-				player => this.function.runFull?.(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer, ctx.targets))
+				player => {
+					const oldCtxPlayer = ctx.player;
+					ctx.player = player;
+					const retVal = this.function.runFull?.(this, ctx);
+					ctx.player = oldCtxPlayer;
+					return retVal;
+				}
 			)
 		)) {
 			const valueMap = new Map();
@@ -1164,7 +1176,7 @@ export class ActionAccessorNode extends AstNode {
 					break;
 				}
 				// check if property matches
-				if (!directOrImplicitBoolCompare(ctx, this.actionProperties[property], action.properties[property])) {
+				if (!(yield* directOrImplicitBoolCompare(ctx, this.actionProperties[property], action.properties[property]))) {
 					propertiesMatch = false;
 					break;
 				}

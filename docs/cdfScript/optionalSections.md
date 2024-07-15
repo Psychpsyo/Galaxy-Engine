@@ -11,7 +11,7 @@ They also use cost-wording. ("Pay 100 life." instead of "Lose 100 life.")
 ## Types of Optional Sections
 There are two main types of optional sections. `may` statements and `try` statements.  
 
-`may` statements are to give them player a choice of whether or not to do a certain part of the effect.
+`may` statements are to give the player a choice of whether or not to do a certain part of the effect.
 
 `try` statements specify a part of the effect that is done only if fully possible.
 

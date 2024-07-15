@@ -204,7 +204,8 @@ export function initFunctions() {
 
 			return new ScriptValue("bool", false);
 		},
-		alwaysHasTarget
+		alwaysHasTarget,
+		undefined // TODO: Write evalFull
 	),
 
 	// Cancels an attack
@@ -265,7 +266,13 @@ export function initFunctions() {
 		[null],
 		"card",
 		function*(astNode, ctx) {
-			return new ScriptValue("card", ctx.player.deckZone.cards.slice(Math.max(0, ctx.player.deckZone.cards.length - (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0]), ctx.player.deckZone.cards.length));
+			return new ScriptValue(
+				"card",
+				ctx.player.deckZone.cards.slice(
+					Math.max(0, ctx.player.deckZone.cards.length - (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0]),
+					ctx.player.deckZone.cards.length
+				)
+			);
 		},
 		function(astNode, ctx) {
 			if (astNode.asManyAsPossible) {
@@ -434,7 +441,9 @@ export function initFunctions() {
 			return new ScriptValue("number", [getSuccessfulActions(step, [gainLifeAction])[0]?.amount ?? 0]);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		function*(astNode, ctx) {
+			yield* this.getParameter(astNode, "number").evalFull(ctx);
+		}
 	),
 
 	// The executing player gains X mana
@@ -448,7 +457,9 @@ export function initFunctions() {
 			return new ScriptValue("number", [getSuccessfulActions(step, [gainManaAction])[0]?.amount ?? 0]);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		function*(astNode, ctx) {
+			yield* this.getParameter(astNode, "number").evalFull(ctx);
+		}
 	),
 
 	// Returns how many counters of the given type are on the given cards
@@ -708,23 +719,24 @@ export function initFunctions() {
 				eligibleCards = eligibleCards.filter(card => !ctx.targets.card.includes(card));
 			}
 
-			// If the player can't choose enough and the card doesn't say 'as many as possible', no cards are chosen.
+			// minimum number of cards the player can legally choose
 			const chooseAtLeast = astNode.asManyAsPossible?
 			                      1 : choiceAmounts instanceof SomeOrMore?
-								  choiceAmounts.lowest : Math.min(...choiceAmounts);
-			if (eligibleCards.length < chooseAtLeast) {
-				return new ScriptValue("card", []);
+			                      choiceAmounts.lowest : Math.min(...choiceAmounts);
+			// maximum number of cards the player can legally choose
+			const chooseAtMost = Math.min(
+				eligibleCards.length,
+				choiceAmounts instanceof SomeOrMore? Infinity : Math.max(...choiceAmounts)
+			);
+
+			// remap valid choice amounts to go from minimum amount to how many cards are available
+			choiceAmounts = [];
+			for (let i = chooseAtLeast; i <= chooseAtMost; i++) {
+				choiceAmounts.push(i);
 			}
 
-			// clamp 'any' (or 'X+') to the amount of cards we have available
-			if (choiceAmounts instanceof SomeOrMore) {
-				const newAmounts = [];
-				for (let i = choiceAmounts.lowest; i <= eligibleCards.length; i++) {
-					newAmounts.push(i);
-				}
-				choiceAmounts = newAmounts;
-			}
-
+			// TODO: In the case of astNode.asManyAsPossible, we need to force the player to choose
+			//       the largest combination of cards that matches the validator
 			const validator = this.getParameter(astNode, "bool");
 			const selectAction = new actions.SelectCards(
 				ctx.player,
@@ -993,8 +1005,8 @@ export function initFunctions() {
 			const freeZoneSlots = zone.getFreeSpaceCount();
 			if (freeZoneSlots < cards.length) {
 				// Not being able to summon enough units must interrupt the block
-				if (freeZoneSlots === 0) return new ScriptValue("card", []);
-				if (!astNode.asManyAsPossible) return new ScriptValue("card", []);
+				if (freeZoneSlots === 0) yield [];
+				if (!astNode.asManyAsPossible) yield [];
 
 				const selectionRequest = new requests.ChooseCards(ctx.player, cards, [freeZoneSlots], "cardEffectSummon:" + ctx.ability.id);
 				const response = yield [selectionRequest];
@@ -1114,7 +1126,7 @@ export function initFunctions() {
 			const freeSpaces = zone.getFreeSpaceCount()
 			if (amount > freeSpaces && !astNode.asManyAsPossible) {
 				// Not being able to summon enough tokens must interrupt the block
-				return new ScriptValue("card", []);
+				yield [];
 			}
 
 			// create those tokens
