@@ -60,9 +60,46 @@ export class ScriptValue {
 		}
 		return a !== b;
 	}
+	plus(other, player) {
+		if (this.type !== other.type) {
+			throw new Error(`Cannot add a value of type '${this.type}' to one of type '${other.type}'!`);
+		}
+		if (this.type == "number") {
+			return [this.get(player)[0] + other.get(player)[0]];
+		}
+		// for non-number types this concatenates the two lists.
+		const retVal = this.get(player).concat(other.get(player));
+		// de-duplicate identical values
+		for (let i = 0; i < retVal.length - 1; i++) {
+			for (let j = i + 1; j < retVal.length; j++) {
+				if (equalityCompare(retVal[i], retVal[j], player.game)) {
+					retVal.splice(j, 1);
+					j--;
+				}
+			}
+		}
+		return retVal;
+	}
+	minus(other, player) {
+		if (this.type !== other.type) {
+			throw new Error(`Cannot subtract a value of type '${this.type}' from one of type '${other.type}'!`);
+		}
+		if (this.type == "number") {
+			return [this.get(player)[0] - other.get(player)[0]];
+		}
+		// for non-number types this removes everything in other from this.
+		const retVal = [];
+		const otherValues = other.get(player);
+		for (const element of this.get(player)) {
+			if (!otherValues.some(elem => equalityCompare(elem, element, player.game))) {
+				retVal.push(element);
+			}
+		}
+		return retVal;
+	}
 }
-// compares two scripting
-function equalityCompare(elemA, elemB, game) {
+// compares two cdfScript values
+export function equalityCompare(elemA, elemB, game) {
 	switch (true) {
 		case elemA instanceof BaseCard: {
 			return elemA.globalId === elemB.globalId;

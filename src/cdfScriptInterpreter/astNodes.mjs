@@ -17,15 +17,7 @@ const implicit = {
 	fight: [[]]
 }
 
-// helper functions
-function equalityCompare(a, b) {
-	if (a instanceof BaseCard && b instanceof BaseCard) {
-		return a.globalId === b.globalId;
-	}
-	return a === b;
-}
-
-// these intentionally error when implicit[type] is undefined
+// these error when implicit[type] is undefined, that is intentional
 export function setImplicit(objects, type) {
 	implicit[type].push(objects);
 }
@@ -739,13 +731,7 @@ export class PlusNode extends DashMathNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
-		left = left.get(player);
-		right = right.get(player);
-		if (typeof left[0] == "number" && typeof right[0] == "number") {
-			return [left[0] + right[0]];
-		}
-		// for non-number types this concatenates the two lists.
-		return left.concat(right);
+		return left.plus(right, player);
 	}
 }
 export class MinusNode extends DashMathNode {
@@ -753,19 +739,7 @@ export class MinusNode extends DashMathNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
-		left = left.get(player);
-		right = right.get(player);
-		if (typeof left[0] == "number" && typeof right[0] == "number") {
-			return [left[0] - right[0]];
-		}
-		// for non-number types this subtracts the right list from the left one.
-		let outputList = [];
-		for (let element of left) {
-			if (!right.some(elem => equalityCompare(elem, element))) {
-				outputList.push(element);
-			}
-		}
-		return outputList;
+		return left.minus(right, player);
 	}
 }
 export class DotMathNode extends MathNode {

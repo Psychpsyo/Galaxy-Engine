@@ -2,21 +2,14 @@ import * as actions from "../actions.mjs";
 import * as ast from "./astNodes.mjs";
 import * as requests from "../inputRequests.mjs";
 import * as zones from "../zones.mjs";
-import {Card, BaseCard} from "../card.mjs";
+import {Card} from "../card.mjs";
 import {nChooseK} from "../math.mjs";
-import {ScriptValue, DeckPosition, SomeOrMore} from "./structs.mjs";
+import {ScriptValue, DeckPosition, SomeOrMore, equalityCompare} from "./structs.mjs";
 import {buildAST} from "./interpreter.mjs"
 import {ActionReplaceModification} from "../valueModifiers.mjs";
 
 // general helper functions
 
-// compares two values for cdfScript equality
-function equalityCompare(a, b) {
-	if (a instanceof BaseCard && b instanceof BaseCard) {
-		return a.globalId === b.globalId;
-	}
-	return a === b;
-}
 // Used by the MOVE() function, primarily to figure out which field zone a given card needs to return to.
 function getZoneForCard(zoneList, card, ctx) {
 	const rightType = [];
