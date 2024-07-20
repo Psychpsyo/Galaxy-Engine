@@ -1346,7 +1346,7 @@ export class UntilPhaseNode extends AstNode {
 }
 
 export class OptionalSectionNode extends AstNode {
-	constructor(playerNode, mainBlock, thenBlock, elseBlock) {
+	constructor(playerNode, mainBlock, thenBlock = null, elseBlock = null) {
 		super(null);
 		this.playerNode = playerNode;
 		this.mainBlock = mainBlock;
@@ -1373,7 +1373,7 @@ export class OptionalSectionNode extends AstNode {
 }
 
 export class IfNode extends AstNode {
-	constructor(condition, mainBlock, elseBlock) {
+	constructor(condition, mainBlock, elseBlock = null) {
 		super(null);
 		this.condition = condition;
 		this.mainBlock = mainBlock;
@@ -1389,7 +1389,8 @@ export class IfNode extends AstNode {
 	hasAllTargets(ctx) {
 		// TODO: this needs to do actual branching like variables do
 		if (!this.condition.hasAllTargets(ctx)) return false;
-		return this.mainBlock.hasAllTargets(ctx) || (this.elseBlock?.hasAllTargets(ctx) ?? true);
+		if (this.elseBlock === null) return true; // shortcut for performance (empty branches always have all their targets)
+		return this.mainBlock.hasAllTargets(ctx) || this.elseBlock.hasAllTargets(ctx);
 	}
 	getChildNodes() {
 		const children = [this.condition, this.mainBlock];

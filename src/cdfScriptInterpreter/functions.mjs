@@ -767,19 +767,25 @@ export function initFunctions() {
 				eligibleCards = eligibleCards.get(ctx.player);
 				for (let choiceAmounts of this.getParameter(astNode, "number").evalFull(ctx)) {
 					choiceAmounts = choiceAmounts.get(ctx.player);
+
+					// if we are not explicitly choosing from prior targets, already targeted cards need to be invalid choices.
+					if (!eligibleCards.explicitTarget) {
+						eligibleCards = eligibleCards.filter(card => !ctx.targets.card.includes(card));
+					}
+
+					// figure out how many cards the player should be asked to choose.
+					// In the case of X+ cards, the actual maximum is clamped away from Infinity for practicality.
 					const chooseAtLeast = astNode.asManyAsPossible?
-					                      1 : choiceAmounts instanceof SomeOrMore?
-										  choiceAmounts.lowest : Math.min(...choiceAmounts);
+										1 : choiceAmounts instanceof SomeOrMore?
+										choiceAmounts.lowest : Math.min(...choiceAmounts);
 
-					if (eligibleCards.length < chooseAtLeast) continue;
+					const chooseAtMost = choiceAmounts instanceof SomeOrMore?
+										Math.max(eligibleCards.length, choiceAmounts.lowest) : // clamp down to not go to infinity
+										Math.max(...choiceAmounts);
 
-					// expand 'any' to a list of all possible numbers
-					if (choiceAmounts instanceof SomeOrMore) {
-						const newAmounts = [];
-						for (let i = choiceAmounts.lowest; i <= eligibleCards.length; i++) {
-							newAmounts.push(i);
-						}
-						choiceAmounts = newAmounts;
+					choiceAmounts = [];
+					for (let i = chooseAtLeast; i <= chooseAtMost; i++) {
+						choiceAmounts.push(i);
 					}
 
 					const validator = this.getParameter(astNode, "bool");
@@ -995,7 +1001,7 @@ export function initFunctions() {
 			const modifier = this.getParameter(astNode, "modifier")? (yield* this.getParameter(astNode, "modifier").eval(ctx)).get(ctx.player) : null;
 			const boolParam = (yield* this.getParameter(astNode, "bool").eval(ctx)).get(ctx.player);
 
-			// remove cards that can no longer be summoned
+			// check for unsummonable cards
 			for (let i = cards.length - 1; i >= 0; i--) {
 				if (cards[i].current() === null) {
 					cards.splice(i, 1);
