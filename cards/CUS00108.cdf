@@ -7,7 +7,7 @@ types: Earth, Water
 o: fast
 turnLimit: 1
 condition: thisCard.zone = field & currentTurn = you.turn
-$viewed = both.VIEW(you.DECKTOP(1));
+$viewed = both.VIEW(DECKTOP(you, 1));
 if ($viewed.types = Earth) {
 	DISCARD($viewed);
 	GAINLIFE(100);

@@ -11,7 +11,7 @@ mandatory: no
 turnLimit: 1
 during: attackers.owner = opponent
 condition: thisCard.zone = field
-$viewed = both.VIEW(you.DECKTOP(1));
+$viewed = both.VIEW(DECKTOP(you, 1));
 if ($viewed.types = thisCard.types & viewed.cardType = unit) {
 	CANCELATTACK();
 };

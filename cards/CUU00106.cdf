@@ -15,4 +15,4 @@ o: trigger
 mandatory: yes
 condition: thisCard.zone = field
 after: COUNT([from destroyed(dueTo: fight, by: thisCard) where cardType = unit]) > 0
-EXILE(opponent.DECKTOP(1));
+EXILE(DECKTOP(opponent, 1));

@@ -10,7 +10,7 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand]));
 exec:
-$viewed = both.VIEW(you.DECKTOP(3));
+$viewed = both.VIEW(DECKTOP(you, 3));
 $selected = SELECT(1, $viewed);
 MOVE($selected, you.hand);
 DISCARD($viewed - $selected);

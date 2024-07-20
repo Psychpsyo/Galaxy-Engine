@@ -9,7 +9,7 @@ cost:
 LOSELIFE(100);
 exec:
 SHUFFLE();
-$viewed = both.VIEW(you.DECKTOP(1));
+$viewed = both.VIEW(DECKTOP(you, 1));
 if ($viewed.level = 7) {
 	MOVE($viewed, you.hand);
 } else {

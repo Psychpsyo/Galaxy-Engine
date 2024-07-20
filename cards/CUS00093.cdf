@@ -5,7 +5,7 @@ level: 0
 types:
 
 o: cast
-$exiled = EXILE(opponent.DECKTOP(1));
+$exiled = EXILE(DECKTOP(opponent, 1));
 if (COUNT([from opponent.discard where name = $exiled.name]) > 0) {
 	EXILE([from opponent.discard where name = $exiled.name]);
 };

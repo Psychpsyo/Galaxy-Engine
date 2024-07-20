@@ -10,9 +10,9 @@ o: optional
 turnLimit: 1
 condition: thisCard.zone = field
 cost:
-EXILE(you.DECKTOP(1));
+EXILE(DECKTOP(you, 1));
 exec:
-both.VIEW(opponent.DECKTOP(1));
+both.VIEW(DECKTOP(opponent, 1));
 
 o: optional
 zoneDurationLimit: 1

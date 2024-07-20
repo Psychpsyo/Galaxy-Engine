@@ -6,7 +6,7 @@ types: Electric, Light
 
 o: cast
 condition: COUNT([from you.exile where types = Electric]) >= 4
-$viewed = both.VIEW(you.DECKTOP(2));
+$viewed = both.VIEW(DECKTOP(you, 2));
 if ($viewed.types = Electric) {
 	MOVE([from $viewed where types = Electric], hand);
 };

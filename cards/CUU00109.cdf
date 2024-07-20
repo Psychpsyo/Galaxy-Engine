@@ -12,7 +12,7 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand]));
 exec:
-$viewed = VIEW(opponent.DECKTOP(2));
+$viewed = VIEW(DECKTOP(opponent, 2));
 $toExile = SELECT(1, $viewed);
 EXILE($toExile);
 MOVE($viewed - $toExile, opponent.deckTop);

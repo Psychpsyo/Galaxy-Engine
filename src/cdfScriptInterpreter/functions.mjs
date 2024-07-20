@@ -255,17 +255,25 @@ export function initFunctions() {
 
 	// Returns the top X cards of the executing player's deck
 	DECKTOP: new ScriptFunction(
-		["number"],
-		[null],
+		["player", "number"],
+		[new ast.PlayerNode("own"), null],
 		"card",
 		function*(astNode, ctx) {
-			return new ScriptValue(
-				"card",
-				ctx.player.deckZone.cards.slice(
-					Math.max(0, ctx.player.deckZone.cards.length - (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0]),
-					ctx.player.deckZone.cards.length
-				)
-			);
+			const players = (yield* this.getParameter(astNode, "player").eval(ctx)).get(ctx.player);
+			const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
+			let cards = [];
+			for (const player of players) {
+				if (!astNode.asManyAsPossible && player.deckZone.cards.length < amount) {
+					yield []; // interrupts the effect
+				}
+				cards = cards.concat(
+					player.deckZone.cards.slice(
+						Math.max(0, player.deckZone.cards.length - amount),
+						player.deckZone.cards.length
+					)
+				);
+			}
+			return new ScriptValue("card", cards);
 		},
 		function(astNode, ctx) {
 			if (astNode.asManyAsPossible) {

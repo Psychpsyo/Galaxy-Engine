@@ -8,7 +8,7 @@ o: cast
 cost:
 $selected = SELECT(any, [from you.unitZone where cardType = unit]);
 exec:
-$viewed = VIEW(opponent.DECKTOP(1));
+$viewed = VIEW(DECKTOP(opponent, 1));
 if ($viewed.level >= SUM($selected.level)) {
 	GAINMANA(SUM($selected.level));
 } else {

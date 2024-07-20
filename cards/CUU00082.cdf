@@ -12,4 +12,4 @@ condition: thisCard.zone = field
 cost:
 $player = SELECTPLAYER();
 exec:
-DISCARD($player.DECKTOP(1));
+DISCARD(DECKTOP($player, 1));

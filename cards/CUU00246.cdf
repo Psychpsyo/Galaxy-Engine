@@ -12,5 +12,5 @@ condition: thisCard.zone = field
 cost:
 $player = SELECTPLAYER();
 exec:
-$viewed = both.VIEW($player.DECKTOP(1));
+$viewed = both.VIEW(DECKTOP($player, 1));
 MOVE($viewed, SELECTDECKSIDE($player));
