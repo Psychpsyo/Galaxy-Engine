@@ -943,7 +943,7 @@ function parseProhibitModification() {
 }
 
 // TODO: Make number modifiers work on yourLifeDamage and opponentLifeDamage and figure out if they need to be in this list for that.
-const numberProperties = ["level", "attack", "defense", "manaGainAmount", "standardDrawAmount"];
+const numberProperties = ["level", "attack", "defense", "attackRights", "manaGainAmount", "standardDrawAmount"];
 function parseValueModifications() {
 	const modificationStartPos = pos;
 	let valueIdentifiers = [];
