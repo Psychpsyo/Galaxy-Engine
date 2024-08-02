@@ -12,9 +12,8 @@ condition: thisCard.zone = field
 modifier: {attack, defense += you.life}
 
 o: static
-applyTo: thisCard
 condition: thisCard.zone = field
-modifier: {prohibit destroyed(dueTo: effect, by: self != thisCard) = self}
+modifier: {prohibit destroyed(dueTo: effect, by: self != thisCard) = thisCard}
 
 o: trigger
 during: currentPhase = you.endPhase

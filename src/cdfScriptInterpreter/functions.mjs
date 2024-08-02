@@ -123,14 +123,13 @@ export function initFunctions() {
 		function*(astNode, ctx) {
 			let until = (yield* this.getParameter(astNode, "untilIndicator").eval(ctx)).get(ctx.player);
 			let applyActions = [];
-			let objects = (yield* (
-				this.getParameter(astNode, "card") ??
-				this.getParameter(astNode, "player") ??
-				this.getParameter(astNode, "fight")).eval(ctx));
+			let objectParam = this.getParameter(astNode, "card") ??
+			                  this.getParameter(astNode, "player") ??
+			                  this.getParameter(astNode, "fight");
+
+			let objects = objectParam? (yield* objectParam.eval(ctx)).get(ctx.player) : [ctx.game];
 			if (objects.type === "card") {
-				objects = objects.get(ctx.player).map(card => card.current());
-			} else {
-				objects = objects.get(ctx.player);
+				objects = objects.map(card => card.current());
 			}
 			for (const target of objects) {
 				// targets that don't exist anymore can't be modified
@@ -148,6 +147,7 @@ export function initFunctions() {
 			let target = this.getParameter(astNode, "card") ??
 			             this.getParameter(astNode, "player") ??
 			             this.getParameter(astNode, "fight");
+			if (!target) return true; // applying to game
 			for (const list of target.evalFull(ctx)) {
 				if (list.get(ctx.player).length > 0) return true;
 			}

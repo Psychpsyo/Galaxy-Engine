@@ -8,8 +8,7 @@ o: cast
 APPLY(SELECT(1, [from you.field where types = Earth & cardType = unit]), {defense += 100}, currentTurn.end);
 
 o: static
-applyTo: [from you.field where types = Earth & cardType = unit & defense >= 500]
 condition: thisCard.zone = discard & you.partner.name = [CUU00029, CUU00260]
-modifier: {cancel destroyed = self}
+modifier: {cancel destroyed = [from you.field where types = Earth & cardType = unit & defense >= 500]}
 mandatory: no
 gameLimit: 1

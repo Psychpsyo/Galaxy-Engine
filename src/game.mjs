@@ -3,6 +3,7 @@
 import {Player} from "./player.mjs";
 import {Turn} from "./turns.mjs";
 import {CURandom} from "./random.mjs";
+import {ObjectValues, GameValues} from "./objectValues.mjs";
 import {createDeckShuffledEvent, createStartingPlayerSelectedEvent, createCardsDrawnEvent, createPartnerRevealedEvent, createTurnStartedEvent, createPlayerWonEvent, createGameDrawnEvent} from "./events.mjs";
 import * as phases from "./phases.mjs";
 import * as requests from "./inputRequests.mjs";
@@ -129,6 +130,10 @@ export class Game {
 
 		// a list of all objects whose values might have changed and need recalculating
 		this.pendingValueChangeObjects = [];
+
+		// the game itself is able to be affected by static abilities
+		this.values = new ObjectValues(new GameValues());
+		this.cdfScriptType = "game";
 	}
 
 	// Iterate over this function after setting the decks of both players and putting their partners into the partner zones.

@@ -7,9 +7,8 @@ attack: 600
 defense: 400
 
 o: static
-applyTo: thisCard
 condition: thisCard.zone = discard
-modifier: {prohibit exiled = self}
+modifier: {prohibit exiled = thisCard}
 
 o: trigger
 mandatory: no

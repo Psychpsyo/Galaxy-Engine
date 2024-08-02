@@ -12,9 +12,8 @@ EXILE(SELECT(2, [from you.discard where level <= 3 & types = Dragon & cardType =
 APPLY([from $unit where cardType = unit], {abilities += [CUS00232:1:1, CUS00232:1:2]}, currentTurn.end);
 
 |o: static
-applyTo: thisCard
 condition: thisCard.zone = field
-modifier: {cancel destroyed = self}
+modifier: {cancel destroyed = thisCard}
 mandatory: no
 zoneDurationLimit: 1
 

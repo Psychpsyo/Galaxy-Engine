@@ -7,9 +7,8 @@ attack: 200
 defense: 500
 
 o: static
-applyTo: thisCard
 condition: thisCard.zone = field
-modifier: {cancel destroyed(dueTo: fight) = self}
+modifier: {cancel destroyed(dueTo: fight) = thisCard}
 mandatory: no
 zoneDurationLimit: 1
 

@@ -9,4 +9,4 @@ cost:
 DISCARD(SELECT(1, [from you.hand]));
 $unit = SELECT(1, [from field where types = Machine]);
 exec:
-APPLY($unit, {prohibit destroyed(dueTo: effect) = self}, currentTurn.end);
+APPLY({prohibit destroyed(dueTo: effect) = $unit}, currentTurn.end);

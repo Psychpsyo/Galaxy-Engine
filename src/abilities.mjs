@@ -313,10 +313,14 @@ export class StaticAbility extends BaseAbility {
 	}
 
 	getTargets(player, evaluatingPlayer = player) {
-		if (this.isConditionMet(player, evaluatingPlayer = player)) {
+		if (!this.isConditionMet(player, evaluatingPlayer = player)) {
+			return [];
+		}
+		// no applyTo means this is an action / prohibit modification and target is deduced at apply time by the step processing
+		if (this.applyTo) {
 			return this.applyTo.evalFull(new ScriptContext(this.card, player, this, evaluatingPlayer)).next().value.get(player);
 		}
-		return [];
+		return [player.game];
 	}
 
 	getModifier() {

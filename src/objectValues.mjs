@@ -175,3 +175,16 @@ export class FightValues {
 		return differences;
 	}
 };
+
+// more just a stand-in, probably won't have any actual properties ever since game-affecting effects are prohibit, cancel and replace modifications
+export class GameValues {
+	constructor() {}
+
+	clone() {
+		return this;
+	}
+
+	compareTo(other) {
+		return [];
+	}
+};

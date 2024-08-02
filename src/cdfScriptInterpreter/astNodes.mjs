@@ -14,7 +14,8 @@ const implicit = {
 	card: [[]],
 	action: [[]],
 	player: [[]],
-	fight: [[]]
+	fight: [[]],
+	game: [[]] // unused, just needs to exist for static abilities that apply to the game
 }
 
 // these error when implicit[type] is undefined, that is intentional
@@ -640,7 +641,7 @@ export class VariableNode extends AstNode {
 		this.name = name;
 	}
 	* eval(ctx) {
-		let variable = ctx.ability.scriptVariables[this.name];
+		let variable = ctx.variables[this.name] ?? ctx.ability?.scriptVariables[this.name];
 		if (variable === undefined) {
 			throw new Error(`Tried to access unitialized variable '${this.name}'.`);
 		}
@@ -1287,7 +1288,7 @@ export class ModifierNode extends AstNode {
 		this.modifications = modifications;
 	}
 	* eval(ctx) {
-		return new ScriptValue("modifier", new Modifier(this.modifications, ctx));
+		return new ScriptValue("modifier", new Modifier(this.modifications, ctx.freeze()));
 	}
 }
 

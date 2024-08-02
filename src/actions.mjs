@@ -1047,7 +1047,7 @@ export class EquipCard extends Action {
 	}
 
 	get affectedObjects() {
-		return [this.equipment, this.target];
+		return [this.equipment];
 	}
 }
 

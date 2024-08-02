@@ -424,7 +424,7 @@ export class DeployItem extends InputRequest {
 			return "Supplied out-of-range hand card index for deploying an item.";
 		}
 		if (!this.eligibleItems.includes(this.player.handZone.cards[response.value])) {
-			return "Tried to deploy a non-eligible item.";
+			return `Tried to deploy the non-eligible item '${this.player.handZone.cards[response.value].cardId}'.`;
 		}
 		return "";
 	}

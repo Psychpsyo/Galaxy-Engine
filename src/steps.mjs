@@ -49,23 +49,25 @@ export class Step {
 			if (await action.isImpossible()) {
 				events = events.concat(this._cancelAction(action));
 			}
-			for (const affectedObject of action.affectedObjects) {
-				if (affectedObject.values.modifierStack.some(modifier => {
-					for (const modification of modifier.modifications) {
-						if (!(modification instanceof ProhibitModification)) continue;
+			if (this.game.values.modifierStack.some(modifier => {
+				for (const modification of modifier.modifications) {
+					if (!(modification instanceof ProhibitModification)) continue;
 
-						ast.setImplicit([action], "action");
-						ast.setImplicit([affectedObject], affectedObject.cdfScriptType);
-						const doesMatch = modification.toProhibit.evalFull(modifier.ctx).next().value.get();
-						ast.clearImplicit(affectedObject.cdfScriptType);
-						ast.clearImplicit("action");
-
-						if (doesMatch) return true;
+					ast.setImplicit([action], "action");
+					if (action.affectedObjects.length > 0) {
+						ast.setImplicit(action.affectedObjects, action.affectedObjects[0].cdfScriptType);
 					}
-					return false;
-				})) {
-					events = events.concat(this._cancelAction(action));
+					const doesMatch = modification.toProhibit.evalFull(modifier.ctx).next().value.get();
+					if (action.affectedObjects.length > 0) {
+						ast.clearImplicit(action.affectedObjects[0].cdfScriptType);
+					}
+					ast.clearImplicit("action");
+
+					if (doesMatch) return true;
 				}
+				return false;
+			})) {
+				events = events.concat(this._cancelAction(action));
 			}
 		}
 		return events;
@@ -74,79 +76,68 @@ export class Step {
 	// applies static abilities like that on 'Substitution Doll' or 'Norma, of the Sandstorm'
 	async *_handleModificationAbilities() {
 		// gather abilities
-		const activeCards = this.game.players.map(player => player.getAllCards()).flat();
-		const possibleTargets = activeCards.concat(this.game.players);
 		const applicableAbilities = new Map();
-		const targets = new Map(); // cards that modification abilities will apply tozz
+		const targets = new Map(); // cards that modification abilities will apply to
 		for (const player of this.game.players) {
 			targets.set(player, []);
 		}
-		for (const currentCard of activeCards) {
-			for (const ability of currentCard.values.current.abilities) {
-				if (ability instanceof abilities.StaticAbility && ability.getModifier().modifications[0] instanceof ActionModification) {
-					if (!ability.canApply(currentCard, currentCard.currentOwner())) continue;
 
-					// go through all targets that this ability could apply to
-					const eligibleTargets = ability.getTargets(currentCard.currentOwner());
-					if (eligibleTargets.length === 0) continue;
+		for (const modifier of this.game.values.modifierStack) { // where ActionReplaceModifications are kept
+			if (!(modifier.modifications[0] instanceof ActionModification)) continue;
 
-					// add all the targets
-					for (const target of possibleTargets) {
-						if (!eligibleTargets.includes(target)) continue;
+			for (const action of this.actions) {
+				// can't modify cancelled actions as they are not about to happen
+				if (action.isCancelled) continue;
 
-						// check if there is an action that this ability could apply to for this card
-						const modifier = ability.getModifier();
-
-						// for replacement abilities, we need to figure out if the replacement is not already happening.
-						if (modifier.modifications[0] instanceof ActionReplaceModification) {
-							let replacements;
-							let replacementsValid = true;
-							// TODO: This currently yields requests to the user but should ideally play through all options to figure out if a valid
-							//       replacement can be constructed. This does not currently matter on any official cards.
-							// TODO: evaluating the replacement needs to have the replaced action as an implicit one so this needs to be moved down into the actions loop
-							//       (this currently does not matter on any implemented cards)
-							for (const output of modifier.modifications[0].replacement.eval(modifier.ctx)) {
-								if (output[0] instanceof actions.Action) {
-									replacements = output;
-									for (const action of this.actions) {
-										for (const replacement of replacements) {
-											if (action.isIdenticalTo(replacement)) replacementsValid = false;
-										}
-									}
-									break;
+				// for replacement abilities, we need to figure out if the replacement is not already happening.
+				if (modifier.modifications[0] instanceof ActionReplaceModification) {
+					let replacementsValid = true;
+					// TODO: This currently yields requests to the user but should ideally play through all options to figure out if a valid
+					//       replacement can be constructed. This does not currently matter on any official cards.
+					// TODO: evaluating the replacement needs to have the replaced action as an implicit one so this needs to be moved down into the actions loop
+					//       (this currently does not matter on any implemented cards)
+					ast.setImplicit([action], "action");
+					for (const output of modifier.modifications[0].replacement.eval(modifier.ctx)) {
+						if (output[0] instanceof actions.Action) {
+							let replacements = output;
+							for (const action of this.actions) {
+								for (const replacement of replacements) {
+									if (action.isIdenticalTo(replacement)) replacementsValid = false;
 								}
-								yield output;
 							}
-							if (!replacementsValid) continue;
+							break;
 						}
+						yield output;
+					}
+					ast.clearImplicit("action");
+					if (!replacementsValid) continue;
+				}
 
-						let foundMatching = false;
-						for (const action of this.actions) {
-							// can't modify cancelled actions as they are not about to happen
-							if (action.isCancelled) continue;
+				for (const target of action.affectedObjects) {
+					if (target.cdfScriptType != "card") continue; // TODO: this should work but ordering can't deal with non-cards yet.
+					                                              //       (this is also not needed for any official cards)
 
-							ast.setImplicit([action], "action");
-							ast.setImplicit([target], "card");
-							const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).get();
-							ast.clearImplicit("card");
-							ast.clearImplicit("action");
-							if (doesMatch) {
-								foundMatching = true;
-								break;
-							}
-						}
-						if (!foundMatching) continue;
+					// check if the action matches
+					ast.setImplicit([action], "action");
+					if (action.affectedObjects.length > 0) {
+						ast.setImplicit(action.affectedObjects, target.cdfScriptType);
+					}
+					const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).get();
+					if (action.affectedObjects.length > 0) {
+						ast.clearImplicit(target.cdfScriptType);
+					}
+					ast.clearImplicit("action");
+					if (!doesMatch) continue;
 
-						// abilities are just dumped in a list here to be sorted later.
-						const abilities = applicableAbilities.get(target) ?? [];
-						abilities.push(ability);
-						applicableAbilities.set(target, abilities);
-						// also keep track of which targets will need to be affected
-						const oldTargets = targets.get(target.currentOwner());
-						if (!oldTargets.includes(target)) {
-							oldTargets.push(target);
-							targets.set(target.currentOwner(), oldTargets);
-						}
+					// abilities are just dumped in a list here to be sorted later.
+					const abilities = applicableAbilities.get(target) ?? [];
+					abilities.push(modifier.ctx.ability);
+					applicableAbilities.set(target, abilities);
+					// also keep track of which targets will need to be affected
+					const oldTargets = targets.get(target.currentOwner());
+					if (!oldTargets.includes(target)) {
+						oldTargets.push(target);
+						targets.set(target.currentOwner(), oldTargets);
 					}
 				}
 			}
@@ -485,7 +476,7 @@ export async function* runInterjectedSteps(game, isPrediction) {
 async function* getStaticAbilityPhasingStep(game) {
 	const modificationActions = []; // the list of Apply/UnapplyStaticAbility actions that this will return as a step.
 	const activeCards = game.players.map(player => player.getActiveCards()).flat();
-	const possibleTargets = activeCards.concat(game.players);
+	const possibleTargets = activeCards.concat(game.players).concat(game);
 	if (game.currentBlock() instanceof blocks.Fight) {
 		possibleTargets.push(game.currentBlock().fight);
 	}
@@ -496,7 +487,7 @@ async function* getStaticAbilityPhasingStep(game) {
 		// unapplying old static abilities from this object
 		for (const modifier of target.values.modifierStack) {
 			// is this a regular static ability?
-			if (!(modifier.ctx.ability instanceof abilities.StaticAbility) || (modifier.modifications[0] instanceof ActionModification)) continue;
+			if (!(modifier.ctx.ability instanceof abilities.StaticAbility)) continue;
 
 			// has this ability been removed from its card?
 			if (!modifier.ctx.card.values.current.abilities.includes(modifier.ctx.ability)) {
@@ -526,7 +517,7 @@ async function* getStaticAbilityPhasingStep(game) {
 	for (const currentCard of activeCards) {
 		for (const ability of currentCard.values.current.abilities) {
 			// is this a regular static ability?
-			if (!(ability instanceof abilities.StaticAbility) || (ability.getModifier().modifications[0] instanceof ActionModification)) continue;
+			if (!(ability instanceof abilities.StaticAbility)) continue;
 
 			if (!abilityTargets.has(ability)) {
 				abilityTargets.set(ability, ability.getTargets(currentCard.currentOwner()));
@@ -642,7 +633,6 @@ async function* orderStaticAbilities(target, abilities, game) {
 }
 
 // recalculates the values of every object currently in the game, according to their modifier stacks.
-// TODO: generalize this somehow. Should probably generate a list of modifiables and loop over those
 function recalculateObjectValues(game, isPrediction = false) {
 	let valueChangeEvents = [];
 	for (const object of game.pendingValueChangeObjects) {
@@ -662,6 +652,7 @@ function recalculateObjectValues(game, isPrediction = false) {
 			}
 		}
 
+		// during prediction, events don't need to be created
 		if (!isPrediction) {
 			for (const property of oldValues.base.compareTo(object.values.base)) {
 				valueChangeEvents.push(createValueChangedEvent(object, property, true));

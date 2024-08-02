@@ -7,7 +7,6 @@ attack: 800
 defense: 200
 
 o: static
-applyTo: thisCard
 condition: thisCard.zone = field
 modifier: {replace destroyed = thisCard with APPLY(thisCard, {defense -= 100});}
 mandatory: no

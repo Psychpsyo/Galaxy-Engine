@@ -7,8 +7,7 @@ attack: 0
 defense: 100
 
 o: static
-applyTo: [from you.field where types = thisCard.types]
 condition: thisCard.zone = field
-modifier: {cancel destroyed = self}
+modifier: {cancel destroyed = [from you.field where self != thisCard & types = thisCard.types]}
 mandatory: no
 zoneDurationLimit: 1

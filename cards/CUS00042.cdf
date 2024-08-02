@@ -8,4 +8,4 @@ o: cast
 cost:
 $unit = SELECT(1, [from field]);
 exec:
-APPLY($unit, {prohibit destroyed = self}, currentTurn.end);
+APPLY({prohibit destroyed = $unit}, currentTurn.end);

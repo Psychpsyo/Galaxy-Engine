@@ -120,9 +120,22 @@ export class ScriptContext {
 		this.game = player.game; // just for convenience
 		this.card = card; // The card that the portion of script currently resides on
 		this.player = player; // The player executing the script
-		this.evaluatingPlayer = evaluatingPlayer; // The player evaluating the script (cards may be hidden from the script like this)
+		this.evaluatingPlayer = evaluatingPlayer; // The player evaluating the script (cards that that player can't see are hidden from the script if set)
 		this.ability = ability; // The ability that the script belongs to
-		this.targets = targets;
+		this.targets = targets; // which objects have already been chosen as targets
+
+		// only used when context is frozen for use in a modifier
+		this.variables = {};
+	}
+
+	// returns a new context, which is a copy of this one, except that it has captured the current variables in the ability
+	// currently only used for modifiers (mainly in the APPLY function)
+	freeze() {
+		const ctx = new ScriptContext(this.card, this.player, this.ability, this.evaluatingPlayer);
+		for (const [key, value] of Object.entries(this.ability?.scriptVariables ?? {})) {
+			ctx.variables[key] = new ScriptValue(value.type, value.get(this.player));
+		}
+		return ctx;
 	}
 }
 
