@@ -1089,8 +1089,8 @@ export function initFunctions() {
 					summons.push(new actions.Summon(
 						ctx.player,
 						placeActions[i],
-						new ScriptValue("dueToReason", "effect"),
-						new ScriptValue("by", ctx.card)
+						new ScriptValue("dueToReason", ["effect"]),
+						new ScriptValue("card", [ctx.card])
 					));
 				}
 			}
@@ -1177,8 +1177,8 @@ defense: ${defense}`;
 					summons.push(new actions.Summon(
 						ctx.player,
 						placeActions[i],
-						new ScriptValue("dueToReason", "effect"),
-						new ScriptValue("by", ctx.card)
+						new ScriptValue("dueToReason", ["effect"]),
+						new ScriptValue("card", [ctx.card])
 					));
 				}
 			}

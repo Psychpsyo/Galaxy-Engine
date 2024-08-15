@@ -1178,13 +1178,13 @@ export class ChangeCounters extends Action {
 	}
 
 	async isImpossible() {
+		if (this.amount === 0) return true;
 		if (this.card.current() === null) return true;
 		if (this.card.isRemovedToken) return true;
 		return (this.card.counters[this.type] ?? 0) == 0 && this.amount < 0;
 	}
 	async isFullyPossible() {
-		if (this.card.current() === null) return true;
-		if (this.card.isRemovedToken) return false;
+		if (this.isImpossible()) return false;
 		return (this.card.counters[this.type] ?? 0) + this.amount >= 0;
 	}
 

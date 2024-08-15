@@ -18,7 +18,7 @@ const implicit = {
 	game: [[]] // unused, just needs to exist for static abilities that apply to the game
 }
 
-// these error when implicit[type] is undefined, that is intentional
+// these error when implicit[type] is undefined, that is intentional as other types shouldn't ever be implicit
 export function setImplicit(objects, type) {
 	implicit[type].push(objects);
 }

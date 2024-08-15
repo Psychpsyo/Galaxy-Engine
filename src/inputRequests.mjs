@@ -187,7 +187,7 @@ export class ChooseType extends InputRequest {
 
 export class ChooseDeckSide extends InputRequest {
 	constructor(player, effect, deckOwner) {
-		super(player, "chooseType");
+		super(player, "chooseDeckSide");
 		this.effect = effect;
 		this.deckOwner = deckOwner;
 	}
