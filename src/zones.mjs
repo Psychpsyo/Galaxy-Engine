@@ -2,11 +2,18 @@
 
 import * as abilities from "./abilities.mjs";
 
+// superclass and also the basic "pile of cards, visible to all players", like discard and exile
 export class Zone {
 	constructor(player, type) {
 		this.player = player;
 		this.type = type;
 		this.cards = [];
+	}
+
+	// which players cannot see the cards in this zone
+	// this is a getter since not all players are added to the game at constructor time.
+	get defaultHiddenFor() {
+		return [];
 	}
 
 	// returns the index at which the card was inserted.
@@ -31,7 +38,6 @@ export class Zone {
 			index = -1;
 			card.isRemovedToken = true;
 		}
-		card.zone = this;
 
 		if (clearValues) {
 			// remove this card from relevant actions
@@ -77,6 +83,9 @@ export class Zone {
 			// Snapshots pointing to this card become invalid. (The card stops being tracked as that specific instance)
 			card.invalidateSnapshots();
 		}
+		card.zone = this;
+		card.index = index;
+		card.hiddenFor = this.defaultHiddenFor;
 		return index;
 	}
 
@@ -106,16 +115,9 @@ export class HandZone extends Zone {
 		super(player, "hand");
 	}
 
-	add(card, index, clearValues = true) {
-		const insertedIndex = super.add(card, index, clearValues);
-		for (const player of card.owner.game.players) {
-			if (player === this.player) {
-				card.showTo(player);
-			} else {
-				card.hideFrom(player);
-			}
-		}
-		return insertedIndex;
+	get defaultHiddenFor() {
+		// TODO: this will need changes for multiplayer
+		return [this.player.next()];
 	}
 }
 
@@ -124,10 +126,8 @@ export class DeckZone extends Zone {
 		super(player, "deck");
 	}
 
-	add(card, index, clearValues = true) {
-		let insertedIndex = super.add(card, index, clearValues);
-		card.hiddenFor = [...card.owner.game.players];
-		return insertedIndex;
+	get defaultHiddenFor() {
+		return [...this.player.game.players];
 	}
 
 	async shuffle() {
@@ -154,18 +154,6 @@ export class DeckZone extends Zone {
 			[this.cards[i], this.cards[rand]] = [this.cards[rand], this.cards[i]];
 		}
 		this.reindex();
-	}
-}
-
-export class PileZone extends Zone {
-	constructor(player, type) {
-		super(player, type);
-	}
-
-	add(card, index, clearValues = true) {
-		let insertedIndex = super.add(card, index, clearValues);
-		card.hiddenFor = [];
-		return insertedIndex;
 	}
 }
 
@@ -214,9 +202,9 @@ export class FieldZone extends Zone {
 		}
 		this.cards[index] = card;
 		card.zone = this;
-		card.lastFieldSidePlayer = this.player;
 		card.index = index;
-		card.hiddenFor = [];
+		card.hiddenFor = this.defaultHiddenFor;
+		card.lastFieldSidePlayer = this.player;
 		return index;
 	}
 
@@ -235,6 +223,7 @@ export class FieldZone extends Zone {
 			this.placed[index] = card;
 			card.placedTo = this;
 			card.index = index;
+			card.hiddenFor = this.defaultHiddenFor;
 		}
 	}
 

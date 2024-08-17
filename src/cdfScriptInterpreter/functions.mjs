@@ -643,10 +643,12 @@ export function initFunctions() {
 
 	// Makes the executing player reveal the given card
 	REVEAL: new ScriptFunction(
-		["card"],
-		[null],
+		["card", "untilIndicator"],
+		[null, null],
 		"card",
 		function*(astNode, ctx) {
+			const untilParameter = this.getParameter(astNode, "untilIndicator");
+			const until = untilParameter? (yield* untilParameter.eval(ctx)).get(ctx.player)[0].getStepList(ctx.game) : false;
 			const revealActions = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).map(card => new actions.Reveal(ctx.player, card));
 			const step = yield [...revealActions];
 			return new ScriptValue("card", getSuccessfulActions(step, revealActions).map(action => action.card));

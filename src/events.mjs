@@ -310,11 +310,21 @@ export function createCardViewedEvent(player, card) {
 	}
 }
 
-export function createCardRevealedEvent(player, card) {
+export function createCardRevealedEvent(player, card, momentarily) {
 	return {
 		"nature": "event",
 		"type": "cardRevealed",
 		"player": player,
+		"card": card,
+		"momentarily": momentarily
+	}
+}
+
+export function createCardUnrevealedEvent(players, card) {
+	return {
+		"nature": "event",
+		"type": "cardUnrevealed",
+		"players": players,
 		"card": card
 	}
 }

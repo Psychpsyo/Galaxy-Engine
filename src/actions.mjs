@@ -264,7 +264,6 @@ export class Place extends Action {
 		this.targetIndex = await (yield* queryZoneSlot(this.player, this.zone));
 		const card = this.card.current();
 		this.card = this.card.snapshot();
-		card.hiddenFor = [];
 		this.zone.place(card, this.targetIndex);
 		return events.createCardPlacedEvent(this.player, this.card, this.zone, this.targetIndex);
 	}
@@ -1120,27 +1119,38 @@ export class View extends Action {
 }
 
 export class Reveal extends Action {
-	constructor(player, card) {
+	constructor(player, card, until = false) {
 		super(player);
 		this.card = card;
-		this._oldHiddenState = null;
+		this.until = until; // the array that the un-reveal action goes into (null, if permanent, false if momentarily)
 	}
 
 	async* run(isPrediction) {
-		this._oldHiddenState = this.card.current().hiddenFor;
 		this.card.current().hiddenFor = [];
-		this.card = this.card.snapshot();
-		return events.createCardRevealedEvent(this.player, this.card);
+		this.card = this.card.current().snapshot();
+		switch (this.until) {
+			case false: { // Hide away immediately
+				this.card.current().hiddenFor = this.card.current().zone.defaultHiddenFor;
+				break;
+			}
+			case null: { // just keep revealed ( = do nothing right now )
+				break;
+			}
+			default: { // until some specified time
+				this.until.push([new Unreveal(this.player, this.card.current())]);
+			}
+		}
+		return events.createCardRevealedEvent(this.player, this.card, this.until === false);
 	}
 
 	undo(isPrediction) {
-		this.card.current().hiddenFor = this._oldHiddenState;
+		this.card.current().hiddenFor = this.card.current().zone.defaultHiddenFor;
 	}
 
 	async isImpossible() {
-		if (this.card.current() == null) return true;
+		if (this.card.current() === null) return true;
 		if (this.card.isRemovedToken) return true;
-		return this.card.hiddenFor.length == 0;
+		return this.card.hiddenFor.length === 0;
 	}
 
 	isIdenticalTo(other) {
@@ -1151,6 +1161,40 @@ export class Reveal extends Action {
 	get affectedObjects() {
 		return [this.card];
 	}
+}
+export class Unreveal extends Action {
+	constructor(player, card) {
+		super(player);
+		this.card = card;
+		this._oldHiddenState = null;
+	}
+
+	async* run(isPrediction) {
+		this._oldHiddenState = this.card.current().hiddenFor;
+		this.card = this.card.snapshot();
+		this.card.current().hiddenFor = this.card.current().zone.defaultHiddenFor;
+		return events.createCardUnrevealedEvent(this.card.current().hiddenFor, this.card);
+	}
+
+	undo(isPrediction) {
+		this.card.current().hiddenFor = this._oldHiddenState;
+	}
+
+	async isImpossible() {
+		const currentCard = this.card.current();
+		if (currentCard === null) return true;
+		if (currentCard.isRemovedToken) return true;
+		// is the card already hidden from the right people?
+		return currentCard.zone.defaultHiddenFor.filter(player => !currentCard.hiddenFor.includes(player)).length === 0;
+	}
+
+	isIdenticalTo(other) {
+		if (this.constructor !== other.constructor) return false;
+		return this.card.current() === other.card.current();
+	}
+
+	// no objects are affected since cards cannot be immune to a stat change expiring
+	// TODO: clarify if this actually applies to unrevealing cards
 }
 
 export class ChangeCounters extends Action {

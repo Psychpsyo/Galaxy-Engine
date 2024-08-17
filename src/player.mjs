@@ -19,8 +19,8 @@ export class Player {
 		this.unitZone = new zones.FieldZone(this, "unit", 5);
 		this.spellItemZone = new zones.FieldZone(this, "spellItem", 4);
 		this.partnerZone = new zones.FieldZone(this, "partner", 1);
-		this.discardPile = new zones.PileZone(this, "discard");
-		this.exileZone = new zones.PileZone(this, "exile");
+		this.discardPile = new zones.Zone(this, "discard");
+		this.exileZone = new zones.Zone(this, "exile");
 
 		// cdfScript object values
 		this.values = new ObjectValues(new PlayerValues());
