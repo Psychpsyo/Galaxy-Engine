@@ -392,7 +392,8 @@ export class CardPropertyNode extends AstNode {
 			"fightingAgainst": "card",
 			"self": "card",
 			"zone": "zone",
-			"isToken": "bool"
+			"isToken": "bool",
+			"isRevealed": "bool"
 		}[property]);
 		this.cards = cards;
 		this.property = property;
@@ -510,6 +511,9 @@ export class CardPropertyNode extends AstNode {
 			}
 			case "isToken": {
 				return card.isToken;
+			}
+			case "isRevealed": {
+				return card.hiddenFor.length === 0;
 			}
 		}
 	}

@@ -649,7 +649,7 @@ export function initFunctions() {
 		function*(astNode, ctx) {
 			const untilParameter = this.getParameter(astNode, "untilIndicator");
 			const until = untilParameter? (yield* untilParameter.eval(ctx)).get(ctx.player)[0].getStepList(ctx.game) : false;
-			const revealActions = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).map(card => new actions.Reveal(ctx.player, card));
+			const revealActions = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).map(card => new actions.Reveal(ctx.player, card, until));
 			const step = yield [...revealActions];
 			return new ScriptValue("card", getSuccessfulActions(step, revealActions).map(action => action.card));
 		},

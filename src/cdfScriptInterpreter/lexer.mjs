@@ -72,6 +72,7 @@ const keywordTokenTypes = {
 	self: "cardProperty",
 	zone: "cardProperty",
 	isToken: "cardProperty",
+	isRevealed: "cardProperty",
 
 	participants: "fightProperty",
 	counterattackFirst: "fightProperty",

@@ -172,7 +172,7 @@ export class UntilIndicator {
 		this.phaseType = phaseType;
 	}
 
-	// gets the list that an 'undo' step needs to be put into for actions that can be applied until a certain point
+	// gets the list that an 'undo' step needs to be put into for actions that can be applied until a certain point or, in case of 'forever', returns null
 	getStepList(game) {
 		switch (this.type) {
 			case "forever": {
