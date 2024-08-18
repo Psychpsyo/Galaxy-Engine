@@ -754,7 +754,7 @@ function parseNumber() {
 }
 
 function parseBool() {
-	const node = new ast.BoolNode(tokens[pos].value);
+	const node = new ast.ValueNode([tokens[pos].value === "yes"], "bool");
 	pos++;
 	return node;
 }
@@ -909,7 +909,11 @@ function parseIfCondition() {
 
 function parseReplaceModification() {
 	pos += 2;
+	const startToken = tokens[pos];
 	const toReplace = parseExpression();
+	if (toReplace.returnType !== "bool") {
+		throw new ScriptParserError(`The replace check expression must return a value of type 'bool', not '${toReplace.returnType}'.`, startToken, tokens[pos-1]);
+	}
 
 	if (tokens[pos].type !== "with") {
 		throw new ScriptParserError("Expected a 'with' here.", tokens[pos]);
@@ -924,7 +928,11 @@ function parseReplaceModification() {
 
 function parseCancelModification() {
 	pos += 2;
+	const startToken = tokens[pos];
 	const toCancel = parseExpression();
+	if (toCancel.returnType !== "bool") {
+		throw new ScriptParserError(`The cancel check expression must return a value of type 'bool', not '${toCancel.returnType}'.`, startToken, tokens[pos-1]);
+	}
 
 	return new valueModifiers.ActionCancelModification(toCancel, parseIfCondition());
 }
@@ -937,7 +945,11 @@ function parseAbilityCancelModification() {
 
 function parseProhibitModification() {
 	pos += 2;
+	const startToken = tokens[pos];
 	const toProhibit = parseExpression();
+	if (toProhibit.returnType !== "bool") {
+		throw new ScriptParserError(`The prohibit check expression must return a value of type 'bool', not '${toProhibit.returnType}'.`, startToken, tokens[pos-1]);
+	}
 
 	return new valueModifiers.ProhibitModification(toProhibit, parseIfCondition());
 }

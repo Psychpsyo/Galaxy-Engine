@@ -94,10 +94,12 @@ export class Step {
 					let replacementsValid = true;
 					// TODO: This currently yields requests to the user but should ideally play through all options to figure out if a valid
 					//       replacement can be constructed. This does not currently matter on any official cards.
-					// TODO: evaluating the replacement needs to have the replaced action as an implicit one so this needs to be moved down into the actions loop
-					//       (this currently does not matter on any implemented cards)
 					ast.setImplicit([action], "action");
 					for (const output of modifier.modifications[0].replacement.eval(modifier.ctx)) {
+						if (output.length === 0) {
+							replacementsValid = false;
+							break;
+						}
 						if (output[0] instanceof actions.Action) {
 							let replacements = output;
 							for (const action of this.actions) {

@@ -163,7 +163,7 @@ export function initFunctions() {
 	// Checks if there exist X cards in the given location that satisfy a given condition
 	ARE:  new ScriptFunction(
 		["number", "card", "bool"],
-		[null, null, new ast.BoolNode("yes")],
+		[null, null, new ast.ValueNode([true], "bool")],
 		"bool",
 		function*(astNode, ctx) {
 			let eligibleAmounts = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
@@ -714,7 +714,7 @@ export function initFunctions() {
 	// those conform to any additional constraints the card text imposes. (all having different names, for example)
 	SELECT: new ScriptFunction(
 		["number", "card", "bool", "bool"],
-		[null, null, new ast.BoolNode("yes"), new ast.BoolNode("no")],
+		[null, null, new ast.ValueNode([true], "bool"), new ast.ValueNode([false], "bool")],
 		"card",
 		function*(astNode, ctx) {
 			let choiceAmounts = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
@@ -999,7 +999,7 @@ export function initFunctions() {
 	// If a modifier is given, the bool refers to whether or not it is mandatory, otherwise it indicates whether or not the cost needs to be paid at all.
 	SUMMON: new ScriptFunction(
 		["card", "zone", "modifier", "bool"],
-		[null, new ast.ZoneNode("unitZone", new ast.PlayerNode("you")), null, new ast.BoolNode("yes")],
+		[null, new ast.ZoneNode("unitZone", new ast.PlayerNode("you")), null, new ast.ValueNode([true], "bool")],
 		"card",
 		function*(astNode, ctx) {
 			let cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
@@ -1198,7 +1198,7 @@ defense: ${defense}`;
 	// Swaps two cards with eachother
 	SWAP: new ScriptFunction(
 		["card", "card", "bool"],
-		[null, null, new ast.BoolNode("no")],
+		[null, null, new ast.ValueNode([false], "bool")],
 		null,
 		function*(astNode, ctx) {
 			let cardA = (yield* this.getParameter(astNode, "card", 0).eval(ctx)).get(ctx.player)[0];

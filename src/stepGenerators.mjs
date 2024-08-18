@@ -410,23 +410,14 @@ function* attackGenerator(attackDeclaration, fight, isCounterattack) {
 	let target = attackDeclaration.target;
 	let attackers = attackDeclaration.attackers;
 	if (isCounterattack) {
-		if (attackDeclaration.target === null || !attackDeclaration.attackers[0].values.current.canCounterattack) return true;
+		// if this is supposed to be a counterattack, a missing target(attacker) is a normal way for this to exit.
+		if (attackDeclaration.target === null || !attackDeclaration.target.values.current.canCounterattack) return true;
 
-		// attacker is the original target
+		// swap attacker(s) and target
 		attackers = [attackDeclaration.target];
-		// target is the attacker or, in a combined attack, the partner
-		if (attackDeclaration.attackers.length === 1) {
-			target = attackDeclaration.attackers[0];
-		} else {
-			for (const unit of attackDeclaration.attackers) {
-				if (unit.zone.type === "partner") {
-					target = unit;
-					break;
-				}
-			}
-		}
+		target = attackDeclaration.mainCard;
 	}
-	// if this is supposed to be a counterattack, a missing target/attackers is a normal way for this to exit.
+
 	if (target === null || attackers.length === 0) return false;
 
 

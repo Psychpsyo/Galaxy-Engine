@@ -230,7 +230,7 @@ export class ValueSetModification extends ValueModification {
 		if (valueArray.length == 0) {
 			return null;
 		}
-		return new ValueSetModification(this.value, new ast.ValueNode(valueArray), this.toBase, this.condition);
+		return new ValueSetModification(this.value, new ast.ValueNode(valueArray, this.newValue.returnType), this.toBase, this.condition);
 	}
 }
 
@@ -305,7 +305,7 @@ export class NumericChangeModification extends ValueModification {
 		if (valueArray.length == 0) {
 			return null;
 		}
-		return new NumericChangeModification(this.value, new ast.ValueNode(valueArray), this.toBase, this.condition);
+		return new NumericChangeModification(this.value, new ast.ValueNode(valueArray, this.amount.returnType), this.toBase, this.condition);
 	}
 	canFullyApplyTo(target, ctx) {
 		if (!this.canApplyTo(target, ctx)) return false;
@@ -333,7 +333,7 @@ export class NumericDivideModification extends ValueModification {
 		if (valueArray.length == 0) {
 			return null;
 		}
-		return new NumericDivideModification(this.value, new ast.ValueNode(valueArray), this.toBase, this.condition);
+		return new NumericDivideModification(this.value, new ast.ValueNode(valueArray, this.byAmount.returnType), this.toBase, this.condition);
 	}
 }
 

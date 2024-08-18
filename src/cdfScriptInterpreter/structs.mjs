@@ -19,7 +19,7 @@ export class ScriptValue {
 	// Returns this value as a single number.
 	// The 'any' value (and 'x+' values) are represented by infinity, non-number values by NaN.
 	getJsNum(player) {
-		let val = this.get(player);
+		const val = this.get(player);
 		if (val instanceof SomeOrMore) return Infinity;
 		if (typeof val[0] === "number") return val[0];
 		return NaN;
@@ -27,7 +27,7 @@ export class ScriptValue {
 	// Returns this as a single bool, either true or false.
 	// If any of the bools in the array are true, this is true.
 	getJsBool(player) {
-		let val = this.get(player);
+		const val = this.get(player);
 		return val.some(b => b); // if any are true, this is true
 	}
 	getJsVal(player) {

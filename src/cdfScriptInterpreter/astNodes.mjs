@@ -918,16 +918,6 @@ export class UnaryNotNode extends AstNode {
 	}
 }
 
-export class BoolNode extends AstNode {
-	constructor(value) {
-		super("bool");
-		this.isYes = value === "yes";
-	}
-	* eval(ctx) {
-		return new ScriptValue("bool", [this.isYes]);
-	}
-}
-
 export class PlayerNode extends AstNode {
 	constructor(playerKeyword) {
 		super("player");
