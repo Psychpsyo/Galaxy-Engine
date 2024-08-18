@@ -157,27 +157,31 @@ export class OptionTreeNode {
 
 		// fast forward to this node
 		let generator = await this.fastForwardGenerator(responsesToHere); // the generator that walks down the tree
-
-		// go to next user input request
 		let events;
-		do {
-			// Check if the game has ended before advancing to the next events so that we can know that the game was ended
-			// by the previous set of events and therefore the existance of this following set needs to invalidate the node.
-			// (If the game ends as the last thing in the tree, that is valid.)
-			let gameEnded = false;
-			for (const player of this.game.players) {
-				if (player.victoryConditions.length > 0) {
-					gameEnded = true;
+
+		if (generator) {
+			// go to next user input request
+			do {
+				// Check if the game has ended before advancing to the next events so that we can know that the game was ended
+				// by the previous set of events and therefore the existance of this following set needs to invalidate the node.
+				// (If the game ends as the last thing in the tree, that is valid.)
+				let gameEnded = false;
+				for (const player of this.game.players) {
+					if (player.victoryConditions.length > 0) {
+						gameEnded = true;
+					}
 				}
-			}
-			events = await generator.next();
-			// If we aren't done with events yet but the game ended, this node doesn't
-			// represent a valid path and there is no point in calculating its children.
-			if (gameEnded && !events.done) {
-				this._isValid = false;
-				break;
-			}
-		} while (!events.done && !(events.value[0] instanceof requests.InputRequest));
+				events = await generator.next();
+				// If we aren't done with events yet but the game ended, this node doesn't
+				// represent a valid path and there is no point in calculating its children.
+				if (gameEnded && !events.done) {
+					this._isValid = false;
+					break;
+				}
+			} while (!events.done && !(events.value[0] instanceof requests.InputRequest));
+		} else { // we are at the end, do not try and go further
+			this._isValid = this.endOfTreeCheck();
+		}
 
 		// do we still need to determine validity?
 		if (this._isValid === null) {
@@ -250,7 +254,7 @@ export class OptionTreeNode {
 		return null;
 	}
 
-	// Starts a new generator and plays it through with the given player choices, then returns it.
+	// Starts a new generator and plays it through with the given player choices, then returns it (or null, if it is finished)
 	async fastForwardGenerator(playerChoices) {
 		const generator = this._runner.runAndIgnoreOptionTree(true);
 		let events = null;
@@ -263,6 +267,7 @@ export class OptionTreeNode {
 				events = await generator.next();
 			}
 		}
+		if (events?.done) return null;
 		return generator;
 	}
 }

@@ -107,7 +107,7 @@ export class StackPhase extends Phase {
 		const costOptionTrees = [];
 		for (const card of player.handZone.cards) {
 			const costOptionTree = await card.getCastabilityCostOptionTree(true, player);
-			if (await costOptionTree?.isValid()) {
+			if (await costOptionTree?.isValid()) { // no tree = not a spell = invalid
 				castable.push(card);
 				costOptionTrees.push(costOptionTree);
 			}
@@ -329,7 +329,7 @@ export class MainPhase extends StackPhase {
 		const costOptionTrees = [];
 		for (const card of this.turn.player.handZone.cards) {
 			const costOptionTree = await card.getDeployabilityCostOptionTree(true, this.turn.player)
-			if (await costOptionTree?.isValid()) {
+			if (await costOptionTree?.isValid()) { // no tree = not an item = invalid
 				deployable.push(card);
 				costOptionTrees.push(costOptionTree);
 			}
