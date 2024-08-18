@@ -283,7 +283,7 @@ export function initFunctions() {
 			if (astNode.asManyAsPossible) {
 				return ctx.player.deckZone.cards.length > 0;
 			}
-			for (let amount of this.getParameter(astNode, "number").evalFull(ctx)) {
+			for (const amount of this.getParameter(astNode, "number").evalFull(ctx)) {
 				if (ctx.player.deckZone.cards.length >= amount.get(ctx.player)[0]) {
 					return true;
 				}

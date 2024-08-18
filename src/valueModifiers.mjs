@@ -5,6 +5,8 @@ import {BaseCard} from "./card.mjs";
 import {makeAbility} from "./cdfScriptInterpreter/interpreter.mjs";
 import {ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
 
+const unitSpecificValues = ["attack", "defense", "attackRights", "canAttack", "canCounterattack"];
+
 export function recalculateModifiedValuesFor(object) {
 	// for cards, all abilities need to be un-cancelled as a baseline
 	if (object instanceof BaseCard) {
@@ -28,11 +30,9 @@ export function recalculateModifiedValuesFor(object) {
 	// non-unit cards need to loose unit-specific base values
 	if (object instanceof BaseCard) {
 		if (!object.values.base.cardTypes.includes("unit")) {
-			object.values.base.attack = null;
-			object.values.base.defense = null;
-			object.values.base.attackRights = null;
-			object.values.base.canAttack = null;
-			object.values.base.canCounterAttack = null;
+			for (const value of unitSpecificValues) {
+				object.values.base[value] = null;
+			}
 		}
 	}
 
@@ -45,11 +45,9 @@ export function recalculateModifiedValuesFor(object) {
 	// non-unit cards also need to loose unit-specific regular values
 	if (object instanceof BaseCard) {
 		if (!object.values.current.cardTypes.includes("unit")) {
-			object.values.current.attack = null;
-			object.values.current.defense = null;
-			object.values.current.attackRights = null;
-			object.values.current.canAttack = null;
-			object.values.current.canCounterAttack = null;
+			for (const value of unitSpecificValues) {
+				object.values.current[value] = null;
+			}
 		}
 	}
 }
@@ -181,7 +179,7 @@ export class ValueModification extends Modification {
 	}
 
 	isUnitSpecific() {
-		return ["attack", "defense", "attackRights", "canAttack", "canCounterattack"].includes(this.value);
+		return unitSpecificValues.includes(this.value);
 	}
 
 	canApplyTo(target, ctx) {
@@ -222,12 +220,7 @@ export class ValueSetModification extends ValueModification {
 
 	modify(values, ctx, toBaseValues) {
 		if (toBaseValues === this.toBase) {
-			let newValue = this.newValue.evalFull(ctx).next().value.get(ctx.player);
-			if (["level", "attack", "defense"].includes(this.value)) {
-				values[this.value] = newValue[0];
-			} else {
-				values[this.value] = newValue;
-			}
+			values[this.value] = this.newValue.evalFull(ctx).next().value.getJsVal(ctx.player);
 		}
 		return values;
 	}
@@ -308,7 +301,7 @@ export class NumericChangeModification extends ValueModification {
 	}
 
 	bake(ctx, target) {
-		let valueArray = this.amount.evalFull(ctx).next().value.get(ctx.player);
+		const valueArray = this.amount.evalFull(ctx).next().value.get(ctx.player);
 		if (valueArray.length == 0) {
 			return null;
 		}
@@ -329,14 +322,14 @@ export class NumericDivideModification extends ValueModification {
 
 	modify(values, ctx, toBaseValues) {
 		if (toBaseValues === this.toBase) {
-			let byAmount = this.byAmount.evalFull(ctx).next().value.get(ctx.player)[0];
+			const byAmount = this.byAmount.evalFull(ctx).next().value.get(ctx.player)[0];
 			values[this.value] = Math.ceil(values[this.value] / byAmount);
 		}
 		return values;
 	}
 
 	bake(ctx, target) {
-		let valueArray = this.byAmount.evalFull(ctx).next().value.get(ctx.player);
+		const valueArray = this.byAmount.evalFull(ctx).next().value.get(ctx.player);
 		if (valueArray.length == 0) {
 			return null;
 		}

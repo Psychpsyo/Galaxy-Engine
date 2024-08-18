@@ -24,9 +24,24 @@ export class ScriptValue {
 		if (typeof val[0] === "number") return val[0];
 		return NaN;
 	}
+	// Returns this as a single bool, either true or false.
+	// If any of the bools in the array are true, this is true.
 	getJsBool(player) {
 		let val = this.get(player);
 		return val.some(b => b); // if any are true, this is true
+	}
+	getJsVal(player) {
+		switch(this.type) {
+			case "number": {
+				return this.getJsNum(player);
+			}
+			case "bool": {
+				return this.getJsBool(player);
+			}
+			default: {
+				return this.get(player);
+			}
+		}
 	}
 
 	// TODO: write functions for other operators

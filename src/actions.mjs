@@ -1024,7 +1024,7 @@ export class EquipCard extends Action {
 	async* run(isPrediction) {
 		this.equipment = this.equipment.snapshot();
 		this.target = this.target.snapshot();
-		let event = events.createCardEquippedEvent(this.equipment, this.target);
+		const event = events.createCardEquippedEvent(this.equipment, this.target);
 		this.equipment.current().equippedTo = this.target.current();
 		this.target.current().equipments.push(this.equipment.current());
 		return event;
@@ -1040,7 +1040,7 @@ export class EquipCard extends Action {
 		if (this.target.current() === null) return true;
 
 		ast.setImplicit([this.target], "card");
-		let equipTargetStillValid = this.equipment.equipableTo.evalFull(new ScriptContext(this.equipment, this.player)).next().value.get(this.player).includes(this.target);
+		const equipTargetStillValid = this.equipment.equipableTo.evalFull(new ScriptContext(this.equipment, this.player)).next().value.get(this.player).includes(this.target);
 		ast.clearImplicit("card");
 		return !equipTargetStillValid;
 	}
