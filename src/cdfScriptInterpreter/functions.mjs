@@ -174,7 +174,7 @@ export function initFunctions() {
 			                      1 : eligibleAmounts instanceof SomeOrMore?
 								  eligibleAmounts.lowest : Math.min(...eligibleAmounts);
 			if (eligibleCards.length < chooseAtLeast) {
-				return new ScriptValue("bool", false);
+				return new ScriptValue("bool", [false]);
 			}
 
 			// clamp 'any' (or 'X+') to the amount of cards we have available
@@ -192,14 +192,14 @@ export function initFunctions() {
 				const cardLists = nChooseK(eligibleCards.length, amount).map(list => list.map(i => eligibleCards[i]));
 				for (const list of cardLists) {
 					ast.setImplicit(list, "card");
-					if(validator.evalFull(ctx).next().value.get(ctx.player)) {
-						return new ScriptValue("bool", true);
+					if(validator.evalFull(ctx).next().value.getJsBool(ctx.player)) {
+						return new ScriptValue("bool", [true]);
 					}
 					ast.clearImplicit("card");
 				}
 			}
 
-			return new ScriptValue("bool", false);
+			return new ScriptValue("bool", [false]);
 		},
 		alwaysHasTarget,
 		undefined // TODO: Write evalFull
@@ -335,16 +335,16 @@ export function initFunctions() {
 		function*(astNode, ctx) {
 			let list = (yield* this.getParameter(astNode, "*").eval(ctx)).get(ctx.player);
 			if (list.length === 1) {
-				return new ScriptValue("bool", true);
+				return new ScriptValue("bool", [true]);
 			}
 			for (let i = 0; i < list.length - 1; i++) {
 				for (let j = i + 1; j < list.length; j++) {
 					if (equalityCompare(list[i], list[j])) {
-						return new ScriptValue("bool", false);
+						return new ScriptValue("bool", [false]);
 					}
 				}
 			}
-			return new ScriptValue("bool", true);
+			return new ScriptValue("bool", [true]);
 		},
 		alwaysHasTarget,
 		undefined // TODO: Write evalFull
@@ -696,14 +696,14 @@ export function initFunctions() {
 		function*(astNode, ctx) {
 			let list = (yield* this.getParameter(astNode, "*").eval(ctx)).get(ctx.player);
 			if (list.length === 1) {
-				return new ScriptValue("bool", true);
+				return new ScriptValue("bool", [true]);
 			}
 			for (let i = 1; i < list.length; i++) {
 				if (!equalityCompare(list[i], list[i-1])) {
-					return new ScriptValue("bool", false);
+					return new ScriptValue("bool", [false]);
 				}
 			}
-			return new ScriptValue("bool", true);
+			return new ScriptValue("bool", [true]);
 		},
 		alwaysHasTarget,
 		undefined // TODO: Write evalFull
@@ -719,7 +719,7 @@ export function initFunctions() {
 		function*(astNode, ctx) {
 			let choiceAmounts = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player);
 			let eligibleCards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
-			const atRandom = (yield* this.getParameter(astNode, "bool", 1).eval(ctx)).get(ctx.player);
+			const atRandom = (yield* this.getParameter(astNode, "bool", 1).eval(ctx)).getJsBool(ctx.player);
 
 			// if we are not explicitly choosing from prior targets, already targeted cards need to be invalid choices.
 			if (!eligibleCards.explicitTarget) {
@@ -751,7 +751,7 @@ export function initFunctions() {
 				ctx.ability.id,
 				cards => {
 					ast.setImplicit(cards, "card");
-					const result = validator.evalFull(ctx).next().value.get(ctx.player);
+					const result = validator.evalFull(ctx).next().value.getJsBool(ctx.player);
 					ast.clearImplicit("card");
 					return result;
 				},
@@ -800,7 +800,7 @@ export function initFunctions() {
 						const cardLists = nChooseK(eligibleCards.length, amount).map(list => list.map(i => eligibleCards[i]));
 						for (const list of cardLists) {
 							ast.setImplicit(list, "card");
-							if(validator.evalFull(ctx).next().value.get(ctx.player)) {
+							if(validator.evalFull(ctx).next().value.getJsBool(ctx.player)) {
 								list.explicitTarget = true;
 								yield new ScriptValue("card", list);
 							}
@@ -1005,7 +1005,7 @@ export function initFunctions() {
 			let cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player);
 			const zone = (yield* this.getParameter(astNode, "zone").eval(ctx)).get(ctx.player).find(zone => zone.type === "unit");
 			const modifier = this.getParameter(astNode, "modifier")? (yield* this.getParameter(astNode, "modifier").eval(ctx)).get(ctx.player) : null;
-			const boolParam = (yield* this.getParameter(astNode, "bool").eval(ctx)).get(ctx.player);
+			const boolParam = (yield* this.getParameter(astNode, "bool").eval(ctx)).getJsBool(ctx.player);
 
 			// check for unsummonable cards
 			for (let i = cards.length - 1; i >= 0; i--) {
@@ -1055,7 +1055,7 @@ export function initFunctions() {
 						for (const action of costs) {
 							// can this modification be applied to this cost action?
 							ast.setImplicit([action], "action");
-							const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).get();
+							const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).getJsBool();
 							ast.clearImplicit("action");
 							if (!doesMatch) continue;
 
@@ -1203,7 +1203,7 @@ defense: ${defense}`;
 		function*(astNode, ctx) {
 			let cardA = (yield* this.getParameter(astNode, "card", 0).eval(ctx)).get(ctx.player)[0];
 			let cardB = (yield* this.getParameter(astNode, "card", 1).eval(ctx)).get(ctx.player)[0];
-			let transferEquipments = (yield* this.getParameter(astNode, "bool").eval(ctx)).get(ctx.player);
+			let transferEquipments = (yield* this.getParameter(astNode, "bool").eval(ctx)).getJsBool(ctx.player);
 
 			yield [new actions.Swap(ctx.player, cardA, cardB, transferEquipments)];
 		},

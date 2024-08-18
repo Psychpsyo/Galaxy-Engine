@@ -24,11 +24,18 @@ export class ScriptValue {
 		if (typeof val[0] === "number") return val[0];
 		return NaN;
 	}
+	getJsBool(player) {
+		let val = this.get(player);
+		return val.some(b => b); // if any are true, this is true
+	}
 
 	// TODO: write functions for other operators
 	equals(other, player) {
 		if (this.type !== other.type) {
 			return false;
+		}
+		if (this.type === "bool") {
+			return this.getJsBool(player) === other.getJsBool(player);
 		}
 
 		let a = this.get(player);
@@ -47,6 +54,9 @@ export class ScriptValue {
 		if (this.type !== other.type) {
 			return true;
 		}
+		if (this.type === "bool") {
+			return this.getJsBool(player) !== other.getJsBool(player);
+		}
 
 		let a = this.get(player);
 		let b = other.get(player);
@@ -64,38 +74,52 @@ export class ScriptValue {
 		if (this.type !== other.type) {
 			throw new Error(`Cannot add a value of type '${this.type}' to one of type '${other.type}'!`);
 		}
-		if (this.type == "number") {
-			return [this.get(player)[0] + other.get(player)[0]];
-		}
-		// for non-number types this concatenates the two lists.
-		const retVal = this.get(player).concat(other.get(player));
-		// de-duplicate identical values
-		for (let i = 0; i < retVal.length - 1; i++) {
-			for (let j = i + 1; j < retVal.length; j++) {
-				if (equalityCompare(retVal[i], retVal[j], player.game)) {
-					retVal.splice(j, 1);
-					j--;
+		switch (this.type) {
+			case "number": {
+				return [this.get(player)[0] + other.get(player)[0]];
+			}
+			case "bool": {
+				throw new Error("Cannot add values of type 'bool' together!");
+			}
+			default: {
+				// for non-number types this concatenates the two lists.
+				const retVal = this.get(player).concat(other.get(player));
+				// de-duplicate identical values
+				for (let i = 0; i < retVal.length - 1; i++) {
+					for (let j = i + 1; j < retVal.length; j++) {
+						if (equalityCompare(retVal[i], retVal[j], player.game)) {
+							retVal.splice(j, 1);
+							j--;
+						}
+					}
 				}
+				return retVal;
 			}
 		}
-		return retVal;
 	}
 	minus(other, player) {
 		if (this.type !== other.type) {
 			throw new Error(`Cannot subtract a value of type '${this.type}' from one of type '${other.type}'!`);
 		}
-		if (this.type == "number") {
-			return [this.get(player)[0] - other.get(player)[0]];
-		}
-		// for non-number types this removes everything in other from this.
-		const retVal = [];
-		const otherValues = other.get(player);
-		for (const element of this.get(player)) {
-			if (!otherValues.some(elem => equalityCompare(elem, element, player.game))) {
-				retVal.push(element);
+		switch (this.type) {
+			case "number": {
+				return [this.get(player)[0] - other.get(player)[0]];
+			}
+			case "bool": {
+				throw new Error("Cannot subtract values of type 'bool' from each other!");
+			}
+			default: {
+				// for non-number types this removes everything in other from this.
+				const retVal = [];
+				const otherValues = other.get(player);
+				for (const element of this.get(player)) {
+					if (!otherValues.some(elem => equalityCompare(elem, element, player.game))) {
+						retVal.push(element);
+					}
+				}
+				return retVal;
 			}
 		}
-		return retVal;
 	}
 }
 // compares two cdfScript values

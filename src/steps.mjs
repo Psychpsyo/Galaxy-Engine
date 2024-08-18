@@ -57,7 +57,7 @@ export class Step {
 					if (action.affectedObjects.length > 0) {
 						ast.setImplicit(action.affectedObjects, action.affectedObjects[0].cdfScriptType);
 					}
-					const doesMatch = modification.toProhibit.evalFull(modifier.ctx).next().value.get();
+					const doesMatch = modification.toProhibit.evalFull(modifier.ctx).next().value.getJsBool();
 					if (action.affectedObjects.length > 0) {
 						ast.clearImplicit(action.affectedObjects[0].cdfScriptType);
 					}
@@ -122,7 +122,7 @@ export class Step {
 					if (action.affectedObjects.length > 0) {
 						ast.setImplicit(action.affectedObjects, target.cdfScriptType);
 					}
-					const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).get();
+					const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).getJsBool();
 					if (action.affectedObjects.length > 0) {
 						ast.clearImplicit(target.cdfScriptType);
 					}
@@ -167,7 +167,7 @@ export class Step {
 
 						ast.setImplicit([this.actions[i]], "action");
 						ast.setImplicit([target], "card");
-						const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).get();
+						const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).getJsBool();
 						ast.clearImplicit("card");
 						ast.clearImplicit("action");
 						if (!doesMatch) continue;

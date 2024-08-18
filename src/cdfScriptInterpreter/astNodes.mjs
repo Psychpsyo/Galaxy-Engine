@@ -34,7 +34,7 @@ function* directOrImplicitBoolCompare(ctx, expr, scriptValue) {
 	} else if (expr.returnType === "bool") {
 		// the value should be implicit and matches if the given expression is true
 		setImplicit(scriptValue.get(ctx.player), scriptValue.type);
-		const retVal = (yield* expr.eval(ctx)).get(ctx.player);
+		const retVal = (yield* expr.eval(ctx)).getJsBool(ctx.player);
 		clearImplicit(scriptValue.type);
 		return retVal;
 	}
@@ -300,7 +300,7 @@ export class ObjectMatchNode extends AstNode {
 				continue;
 			}
 			setImplicit([checkObj], this.returnType);
-			if ((!this.conditions || (yield* this.conditions.eval(ctx)).get(ctx.player))) {
+			if ((!this.conditions || (yield* this.conditions.eval(ctx)).getJsBool(ctx.player))) {
 				matchingObjects.push(checkObj);
 				clearImplicit(this.returnType);
 				continue;
@@ -400,18 +400,8 @@ export class CardPropertyNode extends AstNode {
 	}
 
 	* eval(ctx) {
-		let cards = (yield* this.cards.eval(ctx)).get(ctx.player);
-		let retVal = cards.map(card => this.accessProperty(card)).flat();
-		if (this.returnType === "bool") {
-			let newVal = false;
-			for (const value of retVal) {
-				if (value === true) {
-					newVal = true;
-					break;
-				}
-			}
-			retVal = newVal;
-		}
+		const cards = (yield* this.cards.eval(ctx)).get(ctx.player);
+		const retVal = cards.map(card => this.accessProperty(card)).flat();
 		return new ScriptValue(this.returnType, retVal);
 	}
 
@@ -535,16 +525,8 @@ export class PlayerPropertyNode extends AstNode {
 	}
 
 	* eval(ctx) {
-		let players = (yield* this.players.eval(ctx)).get(ctx.player);
-		let retVal = players.map(player => this.accessProperty(player)).flat();
-		if (this.returnType === "bool") {
-			for (const value of retVal) {
-				if (value === true) {
-					retVal = true;
-					break;
-				}
-			}
-		}
+		const players = (yield* this.players.eval(ctx)).get(ctx.player);
+		const retVal = players.map(player => this.accessProperty(player)).flat();
 		return new ScriptValue(this.returnType, retVal);
 	}
 
@@ -596,15 +578,7 @@ export class FightPropertyNode extends AstNode {
 
 	* eval(ctx) {
 		const fights = (yield* this.fights.eval(ctx)).get(ctx.player);
-		let retVal = fights.map(fight => this.accessProperty(fight, ctx)).flat();
-		if (this.returnType === "bool") {
-			for (const value of retVal) {
-				if (value === true) {
-					retVal = true;
-					break;
-				}
-			}
-		}
+		const retVal = fights.map(fight => this.accessProperty(fight, ctx)).flat();
 		return new ScriptValue(this.returnType, retVal);
 	}
 
@@ -803,7 +777,7 @@ export class EqualsNode extends ComparisonNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
-		return left.equals(right, player);
+		return [left.equals(right, player)];
 	}
 }
 export class NotEqualsNode extends ComparisonNode {
@@ -811,7 +785,7 @@ export class NotEqualsNode extends ComparisonNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
-		return left.notEquals(right, player);
+		return [left.notEquals(right, player)];
 	}
 }
 export class GreaterThanNode extends ComparisonNode {
@@ -824,11 +798,11 @@ export class GreaterThanNode extends ComparisonNode {
 		for (const rightSide of right) {
 			for (const leftSide of left) {
 				if (leftSide > rightSide) {
-					return true;
+					return [true];
 				}
 			}
 		}
-		return false;
+		return [false];
 	}
 }
 export class GreaterEqualsNode extends ComparisonNode {
@@ -841,11 +815,11 @@ export class GreaterEqualsNode extends ComparisonNode {
 		for (const rightSide of right) {
 			for (const leftSide of left) {
 				if (leftSide >= rightSide) {
-					return true;
+					return [true];
 				}
 			}
 		}
-		return false;
+		return [false];
 	}
 }
 export class LessThanNode extends ComparisonNode {
@@ -858,11 +832,11 @@ export class LessThanNode extends ComparisonNode {
 		for (const rightSide of right) {
 			for (const leftSide of left) {
 				if (leftSide < rightSide) {
-					return true;
+					return [true];
 				}
 			}
 		}
-		return false;
+		return [false];
 	}
 }
 export class LessEqualsNode extends ComparisonNode {
@@ -875,11 +849,11 @@ export class LessEqualsNode extends ComparisonNode {
 		for (const rightSide of right) {
 			for (const leftSide of left) {
 				if (leftSide <= rightSide) {
-					return true;
+					return [true];
 				}
 			}
 		}
-		return false;
+		return [false];
 	}
 }
 export class LogicNode extends MathNode {
@@ -892,9 +866,9 @@ export class AndNode extends LogicNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
-		left = left.get(player);
-		right = right.get(player);
-		return left && right;
+		left = left.getJsBool(player);
+		right = right.getJsBool(player);
+		return [left && right];
 	}
 }
 export class OrNode extends LogicNode {
@@ -902,9 +876,9 @@ export class OrNode extends LogicNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
-		left = left.get(player);
-		right = right.get(player);
-		return left || right;
+		left = left.getJsBool(player);
+		right = right.getJsBool(player);
+		return [left || right];
 	}
 }
 
@@ -932,11 +906,11 @@ export class UnaryNotNode extends AstNode {
 		this.operand = operand;
 	}
 	* eval(ctx) {
-		return new ScriptValue("bool", !(yield* this.operand.eval(ctx)).get(ctx.player));
+		return new ScriptValue("bool", [!(yield* this.operand.eval(ctx)).getJsBool(ctx.player)]);
 	}
 	* evalFull(ctx) {
 		for (const value of this.operand.evalFull(ctx)) {
-			yield new ScriptValue("bool", !value.get(ctx.player))
+			yield new ScriptValue("bool", [!value.getJsBool(ctx.player)]);
 		}
 	}
 	getChildNodes() {
@@ -947,10 +921,10 @@ export class UnaryNotNode extends AstNode {
 export class BoolNode extends AstNode {
 	constructor(value) {
 		super("bool");
-		this.value = value == "yes";
+		this.isYes = value === "yes";
 	}
 	* eval(ctx) {
-		return new ScriptValue("bool", this.value);
+		return new ScriptValue("bool", [this.isYes]);
 	}
 }
 
@@ -1387,7 +1361,7 @@ export class IfNode extends AstNode {
 		this.elseBlock = elseBlock;
 	}
 	* eval(ctx) {
-		if ((yield* this.condition.eval(ctx)).get(ctx.player)) {
+		if ((yield* this.condition.eval(ctx)).getJsBool(ctx.player)) {
 			yield* this.mainBlock.eval(ctx);
 		} else if (this.elseBlock) {
 			yield* this.elseBlock.eval(ctx);

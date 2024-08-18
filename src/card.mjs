@@ -155,7 +155,7 @@ export class BaseCard {
 		const scriptTargets = new TargetObjects();
 		const cardCtx = new ScriptContext(this, player, null, evaluatingPlayer, scriptTargets);
 		if ((player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.CastSpell && block.card.cardId === this.cardId && block.player === player).length >= this.turnLimit.evalFull(cardCtx).next().value.getJsNum(player)) ||
-			(this.condition !== null && !this.condition.evalFull(cardCtx).next().value.get(player))
+			(this.condition !== null && !this.condition.evalFull(cardCtx).next().value.getJsBool(player))
 		) {
 			return null;
 		}
@@ -184,7 +184,7 @@ export class BaseCard {
 		const scriptTargets = new TargetObjects();
 		const cardCtx = new ScriptContext(this, player, null, evaluatingPlayer, scriptTargets);
 		if ((player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.DeployItem && block.card.cardId === this.cardId && block.player === player).length >= this.turnLimit.evalFull(cardCtx).next().value.getJsNum(player)) ||
-			(this.condition !== null && !this.condition.evalFull(cardCtx).next().value.get(player))
+			(this.condition !== null && !this.condition.evalFull(cardCtx).next().value.getJsBool(player))
 		) {
 			return null;
 		}

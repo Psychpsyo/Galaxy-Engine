@@ -19,7 +19,7 @@ export class BaseAbility {
 	}
 
 	isConditionMet(player, evaluatingPlayer = player) {
-		return this.condition === null || this.condition.evalFull(new ScriptContext(this.card, player, this, evaluatingPlayer)).next().value.get(player);
+		return this.condition === null || this.condition.evalFull(new ScriptContext(this.card, player, this, evaluatingPlayer)).next().value.getJsBool(player);
 	}
 
 	snapshot() {
@@ -108,13 +108,13 @@ export class CastAbility extends Ability {
 	}
 
 	checkTrigger(player) {
-		if (this.triggerPreconditionMet && (this.after === null || this.after.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player))) {
+		if (this.triggerPreconditionMet && (this.after === null || this.after.evalFull(new ScriptContext(this.card, player, this)).next().value.getJsBool(player))) {
 			// no stack means we haven't started executing them yet
 			this.triggerMetOnStacks.push(player.game.currentStack()?.index ?? 0);
 		}
 	}
 	checkTriggerPrecondition(player) {
-		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player);
+		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this)).next().value.getJsBool(player);
 	}
 }
 
@@ -260,18 +260,18 @@ export class TriggerAbility extends Ability {
 
 	checkTrigger(player) {
 		if (this.after === null) return;
-		if (this.triggerPreconditionMet && this.after.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player)) {
+		if (this.triggerPreconditionMet && this.after.evalFull(new ScriptContext(this.card, player, this)).next().value.getJsBool(player)) {
 			// no stack means we haven't started executing them yet
 			this.triggerMetOnStacks.push(player.game.currentStack()?.index ?? 0);
 		}
 	}
 	checkTriggerPrecondition(player) {
-		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player);
+		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this)).next().value.getJsBool(player);
 	}
 
 	checkDuring(player) {
 		if (this.during === null) return;
-		if (!this.during.evalFull(new ScriptContext(this.card, player, this)).next().value.get(player)) {
+		if (!this.during.evalFull(new ScriptContext(this.card, player, this)).next().value.getJsBool(player)) {
 			this.triggerMetOnStacks = [];
 			this.usedDuring = false;
 		} else if (!this.usedDuring && player.game.currentStack()) {

@@ -83,7 +83,7 @@ export class Modifier {
 			if (this.ctx.ability instanceof abilities.StaticAbility) {
 				ast.setImplicit([this.ctx.card], "card");
 				for (const unaffection of object.values.unaffectedBy) {
-					if (unaffection.value === modification.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, this.ctx.player, unaffection.sourceAbility)).next().value.get(this.ctx.player)) {
+					if (unaffection.value === modification.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, this.ctx.player, unaffection.sourceAbility)).next().value.getJsBool(this.ctx.player)) {
 						worksOnObject = false;
 						break;
 					}
@@ -94,7 +94,7 @@ export class Modifier {
 			ast.setImplicit([object], object.cdfScriptType);
 			if (worksOnObject &&
 				(modification instanceof ValueUnaffectedModification || modification instanceof AbilityCancelModification) === toUnaffections &&
-				(modification.condition === null || modification.condition.evalFull(this.ctx).next().value.get(this.ctx.player))
+				(modification.condition === null || modification.condition.evalFull(this.ctx).next().value.getJsBool(this.ctx.player))
 			) {
 				if (modification instanceof ValueUnaffectedModification) {
 					object.values.unaffectedBy.push({
@@ -193,7 +193,7 @@ export class ValueModification extends Modification {
 		}
 		// cards that are unaffected can't have modifications applied
 		for (const unaffection of target.values.unaffectedBy) {
-			if (unaffection.value === this.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, ctx.player, unaffection.sourceAbility)).next().value.get(ctx.player)) {
+			if (unaffection.value === this.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, ctx.player, unaffection.sourceAbility)).next().value.getJsBool(ctx.player)) {
 				return false;
 			}
 		}
