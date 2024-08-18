@@ -420,7 +420,6 @@ function* attackGenerator(attackDeclaration, fight, isCounterattack) {
 
 	if (target === null || attackers.length === 0) return false;
 
-
 	// RULES: Compare the attacker’s Attack to the target’s Defense.
 	let totalAttack = 0;
 	for (const unit of attackers) {

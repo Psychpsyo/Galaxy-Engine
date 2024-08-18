@@ -359,7 +359,7 @@ export class AttackDeclaration {
 				return null;
 			}
 			case 1: {
-				return this.attackers[1];
+				return this.attackers[0];
 			}
 			default: {
 				return this.attackers.find(unit => unit.zone.type == "partner") ?? null;
