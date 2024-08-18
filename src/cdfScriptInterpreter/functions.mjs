@@ -126,9 +126,13 @@ export function initFunctions() {
 			let objectParam = this.getParameter(astNode, "card") ??
 			                  this.getParameter(astNode, "player") ??
 			                  this.getParameter(astNode, "fight");
+			let objectValue = null;
+			if (objectParam) {
+				objectValue = (yield* objectParam.eval(ctx));
+			}
 
-			let objects = objectParam? (yield* objectParam.eval(ctx)).get(ctx.player) : [ctx.game];
-			if (objects.type === "card") {
+			let objects = objectParam? objectValue.get(ctx.player) : [ctx.game];
+			if (objectValue?.type === "card") {
 				objects = objects.map(card => card.current());
 			}
 			for (const target of objects) {
