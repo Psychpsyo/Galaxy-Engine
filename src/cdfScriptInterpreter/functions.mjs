@@ -54,7 +54,7 @@ function getZoneForCard(zoneList, card, ctx) {
 function getSuccessfulActions(step, actionList) {
 	const retVal = [];
 	for (const action of step.actions) {
-		if (!action.cancelled && actionList.includes(action)) {
+		if (!action.isCancelled && actionList.includes(action)) {
 			retVal.push(action);
 		}
 	}

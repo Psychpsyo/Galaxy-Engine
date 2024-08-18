@@ -390,7 +390,7 @@ export function* retireStepGenerator(player, units) {
 
 	let gainedMana = 0;
 	for (const action of discardStep.actions) {
-		if (action instanceof actions.Discard) {
+		if (action instanceof actions.Discard && !action.isCancelled) {
 			gainedMana += action.card.values.current.level;
 		}
 	}
