@@ -403,12 +403,14 @@ export class CardPropertyNode extends AstNode {
 		let cards = (yield* this.cards.eval(ctx)).get(ctx.player);
 		let retVal = cards.map(card => this.accessProperty(card)).flat();
 		if (this.returnType === "bool") {
+			let newVal = false;
 			for (const value of retVal) {
 				if (value === true) {
-					retVal = true;
+					newVal = true;
 					break;
 				}
 			}
+			retVal = newVal;
 		}
 		return new ScriptValue(this.returnType, retVal);
 	}
@@ -930,7 +932,7 @@ export class UnaryNotNode extends AstNode {
 		this.operand = operand;
 	}
 	* eval(ctx) {
-		return new ScriptValue("bool", !(yield* this.operand.eval(ctx)).get(ctx.player)[0]);
+		return new ScriptValue("bool", !(yield* this.operand.eval(ctx)).get(ctx.player));
 	}
 	* evalFull(ctx) {
 		for (const value of this.operand.evalFull(ctx)) {

@@ -1329,6 +1329,8 @@ export class SelectCards extends Action {
 		for (let i = 0; i < this.eligibleCards.length; i++) {
 			if (wasHidden[i]) {
 				this.eligibleCards[i].hideFrom(this.player);
+			} else {
+				this.eligibleCards[i].showTo(this.player);
 			}
 		}
 		for (const card of this.selected) {
