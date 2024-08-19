@@ -293,7 +293,7 @@ export class Place extends Action {
 
 export class Summon extends Action {
 	constructor(player, placeAction, reason, source) {
-		let properties = {
+		const properties = {
 			dueTo: reason,
 			from: new ScriptValue("zone", [placeAction.card.zone]),
 			to: new ScriptValue("zone", [placeAction.zone])
@@ -338,7 +338,7 @@ export class Summon extends Action {
 
 export class Deploy extends Action {
 	constructor(player, card, zone, reason, source) {
-		let properties = {
+		const properties = {
 			dueTo: reason,
 			from: new ScriptValue("zone", [card.zone]),
 			to: new ScriptValue("zone", [zone])
@@ -382,7 +382,7 @@ export class Deploy extends Action {
 
 export class Cast extends Action {
 	constructor(player, card, zone, reason, source) {
-		let properties = {
+		const properties = {
 			dueTo: reason,
 			from: new ScriptValue("zone", [card.zone]),
 			to: new ScriptValue("zone", [zone])

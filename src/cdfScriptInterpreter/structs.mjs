@@ -98,6 +98,8 @@ export class ScriptValue {
 			}
 			default: {
 				// for non-number types this concatenates the two lists.
+				// TODO: maybe limit this to the types where it actually makes sense.
+				//       deduplication also causes weird inconsistencies with COUNT() or SUM() functions and should probably only apply if these are unique values. (like cards or players)
 				const retVal = this.get(player).concat(other.get(player));
 				// de-duplicate identical values
 				for (let i = 0; i < retVal.length - 1; i++) {
