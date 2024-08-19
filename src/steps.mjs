@@ -1,10 +1,10 @@
 
-import {createActionCancelledEvent, createValueChangedEvent, createActionModificationAbilityAppliedEvent} from "./events.mjs";
+import {createActionPreventedEvent, createValueChangedEvent, createActionModificationAbilityAppliedEvent} from "./events.mjs";
 import {ChooseAbilityOrder, ChooseCards, ApplyActionModificationAbility} from "./inputRequests.mjs";
 import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {BaseCard} from "./card.mjs";
-import {recalculateModifiedValuesFor, ActionReplaceModification, ActionModification, ProhibitModification} from "./valueModifiers.mjs";
+import {recalculateModifiedValuesFor, ActionReplaceModification, ActionModification, ProhibitModification, CompletelyUnaffectedModification} from "./valueModifiers.mjs";
 import * as abilities from "./abilities.mjs";
 import * as blocks from "./blocks.mjs";
 import * as phases from "./phases.mjs";
@@ -30,10 +30,10 @@ export class Step {
 	}
 
 	// cancels the given action and any implied actions and returns the actionCancelledEvents for all of them
-	_cancelAction(action) {
+	_cancelAction(action, alsoRemoved = false) {
 		const events = [];
 		for (const cancelled of action.setIsCancelled()) {
-			events.push(createActionCancelledEvent(cancelled));
+			events.push(createActionPreventedEvent(cancelled, alsoRemoved));
 			if (cancelled.costIndex >= 0) {
 				this.costCompletions[cancelled.costIndex] = false;
 			}
@@ -46,29 +46,52 @@ export class Step {
 		let events = [];
 		for (const action of this.actions) {
 			if (action.isCancelled) continue;
-			if (await action.isImpossible()) {
-				events = events.concat(this._cancelAction(action));
-			}
-			if (this.game.values.modifierStack.some(modifier => {
-				for (const modification of modifier.modifications) {
-					if (!(modification instanceof ProhibitModification)) continue;
+			if (await action.isImpossible() ||
 
-					ast.setImplicit([action], "action");
-					if (action.affectedObjects.length > 0) {
-						ast.setImplicit(action.affectedObjects, action.affectedObjects[0].cdfScriptType);
-					}
-					const doesMatch = modification.toProhibit.evalFull(modifier.ctx).next().value.getJsBool();
-					if (action.affectedObjects.length > 0) {
-						ast.clearImplicit(action.affectedObjects[0].cdfScriptType);
-					}
-					ast.clearImplicit("action");
+				this.game.values.modifierStack.some(modifier => {
+					for (const modification of modifier.modifications) {
+						if (!(modification instanceof ProhibitModification)) continue;
 
-					if (doesMatch) return true;
-				}
-				return false;
-			})) {
-				events = events.concat(this._cancelAction(action));
+						ast.setImplicit([action], "action");
+						if (action.affectedObjects.length > 0) {
+							ast.setImplicit(action.affectedObjects, action.affectedObjects[0].cdfScriptType);
+						}
+						const doesMatch = modification.toProhibit.evalFull(modifier.ctx).next().value.getJsBool();
+						if (action.affectedObjects.length > 0) {
+							ast.clearImplicit(action.affectedObjects[0].cdfScriptType);
+						}
+						ast.clearImplicit("action");
+
+						if (doesMatch) return true;
+					}
+					return false;
+				}) ||
+
+				action.affectedObjects.some(object => {
+					for (const modifier of object.values.modifierStack) {
+						for (const modification of modifier.modifications) {
+							if (!(modification instanceof CompletelyUnaffectedModification)) continue;
+							// official cards are only ever unaffected by other cards
+							if (action.properties.by?.type !== "card") continue;
+
+							ast.setImplicit(action.properties.by.get(), "card");
+							const doesMatch = modification.unaffectedBy.evalFull(modifier.ctx).next().value.getJsBool();
+							ast.clearImplicit("card");
+
+							if (doesMatch) return true;
+						}
+					}
+					return false;
+				})
+			) {
+				events = events.concat(this._cancelAction(action, true));
 			}
+		}
+		// after cancelling them all, also remove them from the steps since they are not supposed to be about to happen.
+		// Cancelling is technically not necessary but doesn't really change anything and lets us re-use the code that
+		// figures out that destroys and discards are linked in this case and also takes out the right costs.
+		for (const event of events) {
+			this.actions.splice(this.actions.indexOf(event.action), 1);
 		}
 		return events;
 	}
@@ -285,7 +308,7 @@ export class Step {
 			}
 		}
 		// fully cancelled steps are not successful, they interrupt their block or indicate that paying all costs failed.
-		if (this.actions.every(action => action.isCancelled)) {
+		if (this.actions.every(action => action.isCancelled) || this.actions.length === 0) {
 			this.game.nextStepIndex--;
 			return;
 		}

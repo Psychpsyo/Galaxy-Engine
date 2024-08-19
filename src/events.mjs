@@ -96,11 +96,12 @@ export function createBlockStartedEvent(block) {
 	}
 }
 
-export function createActionCancelledEvent(action) {
+export function createActionPreventedEvent(action, wasRemoved) {
 	return {
 		"nature": "event",
-		"type": "actionCancelled",
-		"action": action
+		"type": "actionPrevented",
+		"action": action,
+		"wasRemoved": wasRemoved
 	}
 }
 

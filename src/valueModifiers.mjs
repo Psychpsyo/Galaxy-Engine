@@ -61,8 +61,8 @@ export class Modifier {
 
 	modify(object, toBaseValues, toUnaffections) {
 		let values = toBaseValues? object.values.base : object.values.current;
-		// cancelled static abilities and re-baking them once they un-cancel
-		if (this.ctx.ability instanceof abilities.StaticAbility && this.ctx.ability.isCancelled) {
+		// re-baking static abilities once they un-cancel
+		if (this.ctx.ability instanceof abilities.StaticAbility) {
 			if (this.ctx.ability.isCancelled) {
 				this._wasStaticCancelled = true;
 				return values;
@@ -72,8 +72,9 @@ export class Modifier {
 				this.modifications = this._bakeModificationsStatic(object);
 			}
 		}
+		// actually applying modifications
 		for (let modification of this.modifications) {
-			if (!(modification instanceof ValueModification)) {
+			if (!(modification instanceof ValueModification || modification instanceof CompletelyUnaffectedModification)) {
 				continue;
 			}
 			let worksOnObject = true;
@@ -91,7 +92,7 @@ export class Modifier {
 			// set implicit card / player
 			ast.setImplicit([object], object.cdfScriptType);
 			if (worksOnObject &&
-				(modification instanceof ValueUnaffectedModification || modification instanceof AbilityCancelModification) === toUnaffections &&
+				(modification instanceof ValueUnaffectedModification || modification instanceof AbilityCancelModification || modification instanceof CompletelyUnaffectedModification) === toUnaffections &&
 				(modification.condition === null || modification.condition.evalFull(this.ctx).next().value.getJsBool(this.ctx.player))
 			) {
 				if (modification instanceof ValueUnaffectedModification) {
@@ -101,6 +102,16 @@ export class Modifier {
 						sourceCard: this.ctx.card,
 						sourceAbility: this.ctx.ability
 					});
+				} else if (modification instanceof CompletelyUnaffectedModification) {
+					// doesn't matter if initial, base or current since the number of properties does not change
+					for (const value in object.values.initial) {
+						object.values.unaffectedBy.push({
+							value: value,
+							by: modification.unaffectedBy,
+							sourceCard: this.ctx.card,
+							sourceAbility: this.ctx.ability
+						});
+					}
 				} else {
 					values = modification.modify(values, this.ctx, toBaseValues);
 				}
@@ -184,17 +195,21 @@ export class ValueModification extends Modification {
 
 	canApplyTo(target, ctx) {
 		// this function is only really concerned with applying non-unit values to units.
-		if (!target instanceof BaseCard) return true;
-		// certain stat-changes can only be applied to units
-		if (this.isUnitSpecific() && !target.values.current.cardTypes.includes("unit")) {
-			return false;
-		}
-		// cards that are unaffected can't have modifications applied
-		for (const unaffection of target.values.unaffectedBy) {
-			if (unaffection.value === this.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, ctx.player, unaffection.sourceAbility)).next().value.getJsBool(ctx.player)) {
+		if (target instanceof BaseCard) {
+			// certain stat-changes can only be applied to units
+			if (this.isUnitSpecific() && !target.values.current.cardTypes.includes("unit")) {
 				return false;
 			}
 		}
+		// objects that are unaffected can't have modifications applied
+		ast.setImplicit([ctx.card], "card");
+		for (const unaffection of target.values.unaffectedBy) {
+			if (unaffection.value === this.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, ctx.player, unaffection.sourceAbility)).next().value.getJsBool(ctx.player)) {
+				ast.clearImplicit("card");
+				return false;
+			}
+		}
+		ast.clearImplicit("card");
 		return true;
 	}
 }
@@ -204,12 +219,6 @@ export class ValueUnaffectedModification extends ValueModification {
 		super(value, toBase, condition);
 		this.unaffectedBy = unaffectedBy;
 	}
-
-	// Note: baking this currently isn't needed by any card.
-	// If it becomes necessary there would need to be a rules
-	// clarification on whether or not the cards something
-	// is unaffected by should be baked at application time
-	// or not.
 }
 
 export class ValueSetModification extends ValueModification {
@@ -274,15 +283,15 @@ export class ValueAppendModification extends ValueModification {
 	}
 
 	bakeStatic(ctx, target) {
-		let valueArray = this.newValues.evalFull(ctx).next().value;
-		if (valueArray.type != "abilityId") return this;
+		if (this.value !== "abilities") return this;
 
+		let valueArray = this.newValues.evalFull(ctx).next().value;
 		const type = valueArray.type;
 		valueArray = valueArray.get(ctx.player).map(val => makeAbility(type === "abilityId"? val : val.id, ctx.game));
 		for (const ability of valueArray) {
 			ability.card = target;
 		}
-		return new ValueAppendModification(this.value, new ast.ValueNode(valueArray, type), this.toBase, this.condition);
+		return new ValueAppendModification(this.value, new ast.ValueNode(valueArray, "ability"), this.toBase, this.condition);
 	}
 }
 
@@ -412,6 +421,13 @@ export class DamageOverrideSetModification extends ValueModification {
 		values.lifeDamageOverrides.set(affectedPlayer, this.newValue.evalFull(ctx).next().value.get(ctx.player));
 
 		return values;
+	}
+}
+
+export class CompletelyUnaffectedModification extends Modification {
+	constructor(unaffectedBy, condition) {
+		super(condition);
+		this.unaffectedBy = unaffectedBy;
 	}
 }
 

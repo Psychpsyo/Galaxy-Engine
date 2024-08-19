@@ -853,11 +853,17 @@ function parseModifier(forStaticAbility = false) {
 	let hasActionModification = false;
 	let hasNonActionModification = false;
 	while (tokens[pos] && tokens[pos].type != "rightBrace") {
-		switch (tokens[pos+1].type) {
+		pos++;
+		switch (tokens[pos].type) {
 			case "cardProperty":
 			case "playerProperty":
 			case "fightProperty": {
 				valueModifications = valueModifications.concat(parseValueModifications());
+				hasNonActionModification = true;
+				break;
+			}
+			case "immunityAssignment": {
+				valueModifications.push(parseCompletelyUnaffectedModification());
 				hasNonActionModification = true;
 				break;
 			}
@@ -872,7 +878,7 @@ function parseModifier(forStaticAbility = false) {
 				break;
 			}
 			case "cancel": {
-				const modificationStartToken = tokens[pos+1];
+				const modificationStartToken = tokens[pos];
 				if (!forStaticAbility) throw new ScriptParserError("Cancel modifiers are not allowed outside of static abilities. (Did you mean cancelAbilities?)", modificationStartToken);
 				valueModifications.push(parseCancelModification());
 				if (hasActionModification) throw new ScriptParserError("A modifier can't have more than one replace or cancel modification.", modificationStartToken, tokens[pos-1]);
@@ -880,14 +886,14 @@ function parseModifier(forStaticAbility = false) {
 				break;
 			}
 			case "replace": {
-				const modificationStartToken = tokens[pos+1];
+				const modificationStartToken = tokens[pos];
 				valueModifications.push(parseReplaceModification());
 				if (hasActionModification) throw new ScriptParserError("A modifier can't have more than one replace or cancel modification.", modificationStartToken, tokens[pos-1]);
 				hasActionModification = true;
 				break;
 			}
 			default: {
-				throw new ScriptParserError("'" + tokens[pos+1].value + "' does not start a valid modifier.", tokens[pos+1]);
+				throw new ScriptParserError("'" + tokens[pos].value + "' does not start a valid modifier.", tokens[pos]);
 			}
 		}
 	}
@@ -898,7 +904,7 @@ function parseModifier(forStaticAbility = false) {
 	return new ast.ModifierNode(valueModifications);
 }
 
-// parses the if <condition> that can follow any of the below modifications
+// parses the if <condition> that can follow any of the below modifications or
 function parseIfCondition() {
 	if (tokens[pos] && tokens[pos].type === "if") {
 		pos++;
@@ -908,7 +914,7 @@ function parseIfCondition() {
 }
 
 function parseReplaceModification() {
-	pos += 2;
+	pos++;
 	const startToken = tokens[pos];
 	const toReplace = parseExpression();
 	if (toReplace.returnType !== "bool") {
@@ -927,7 +933,7 @@ function parseReplaceModification() {
 }
 
 function parseCancelModification() {
-	pos += 2;
+	pos++;
 	const startToken = tokens[pos];
 	const toCancel = parseExpression();
 	if (toCancel.returnType !== "bool") {
@@ -938,13 +944,13 @@ function parseCancelModification() {
 }
 
 function parseAbilityCancelModification() {
-	pos += 2;
+	pos++;
 
 	return new valueModifiers.AbilityCancelModification("abilities", false, parseIfCondition());
 }
 
 function parseProhibitModification() {
-	pos += 2;
+	pos++;
 	const startToken = tokens[pos];
 	const toProhibit = parseExpression();
 	if (toProhibit.returnType !== "bool") {
@@ -954,14 +960,23 @@ function parseProhibitModification() {
 	return new valueModifiers.ProhibitModification(toProhibit, parseIfCondition());
 }
 
+function parseCompletelyUnaffectedModification() {
+	pos++;
+	const rightHandSide = parseExpression();
+
+	// maybe parse 'if' condition
+	const condition = parseIfCondition();
+
+	return new valueModifiers.CompletelyUnaffectedModification(rightHandSide, condition);
+}
+
 // TODO: Make number modifiers work on yourLifeDamage and opponentLifeDamage and figure out if they need to be in this list for that.
 const numberProperties = ["level", "attack", "defense", "attackRights", "manaGainAmount", "standardDrawAmount"];
 function parseValueModifications() {
 	const modificationStartPos = pos;
-	let valueIdentifiers = [];
+	const valueIdentifiers = [];
 	let propertyType = null;
 	do {
-		pos++;
 		if (!["cardProperty", "playerProperty", "fightProperty"].includes(tokens[pos].type)) {
 			throw new ScriptParserError("'" + tokens[pos].value + "' is not a property that can be modified.", tokens[pos]);
 		}
@@ -970,8 +985,9 @@ function parseValueModifications() {
 		}
 		propertyType = tokens[pos].type;
 		valueIdentifiers.push(tokens[pos].value);
-		pos++;
-	} while (tokens[pos].type == "separator");
+		pos += 2;
+	} while (tokens[pos-1].type === "separator");
+	pos--;
 
 	const toBaseValues = [];
 	for (let i = 0; i < valueIdentifiers.length; i++) {
@@ -981,7 +997,7 @@ function parseValueModifications() {
 		} else {
 			toBaseValues.push(false);
 		}
-		if (valueIdentifiers[i] == "name") {
+		if (valueIdentifiers[i] === "name") {
 			valueIdentifiers[i] = "names";
 		}
 	}
@@ -1005,9 +1021,9 @@ function parseValueModifications() {
 	}
 
 	// maybe parse 'if' condition
-	let condition = parseIfCondition();
+	const condition = parseIfCondition();
 
-	let valueModifications = [];
+	const valueModifications = [];
 	for (const [i, valueIdentifier] of valueIdentifiers.entries()) {
 		switch (assignmentType) {
 			case "immunityAssignment": {
