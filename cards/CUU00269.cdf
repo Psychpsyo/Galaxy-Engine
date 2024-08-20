@@ -8,6 +8,7 @@ defense: 100
 
 o: trigger
 mandatory: yes
+condition: thisCard.zone = field
 after: lifeLost(byPlayer: opponent, asCost: yes)
 opponent.may {
 	DISCARD(SELECT(1, [from own.hand]));

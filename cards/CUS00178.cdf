@@ -8,4 +8,4 @@ o: cast
 cost:
 LOSELIFE(100);
 exec:
-APPLY([from field where types = Curse], {attack -= COUNT([from discard where cardType = unit]) * 100}, currentTurn.end);
+APPLY([from field where types != Curse], {attack -= COUNT([from discard where cardType = unit]) * 100}, currentTurn.end);

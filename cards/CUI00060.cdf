@@ -6,7 +6,6 @@ types: Dark, Rock
 
 o: trigger
 mandatory: no
-turnLimit: 1
 during: currentPhase = endPhase
 condition: thisCard.zone = field
 cost:

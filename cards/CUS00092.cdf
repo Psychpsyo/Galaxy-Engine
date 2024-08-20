@@ -14,7 +14,7 @@ PUTCOUNTERS(thisCard, Chaos, 1);
 o: trigger
 mandatory: yes
 during: currentPhase = endPhase
-condition: GETCOUNTERS(thisCard, Chaos) >= 6
+condition: thisCard.zone = field & GETCOUNTERS(thisCard, Chaos) >= 6
 REMOVECOUNTERS(thisCard, Chaos, GETCOUNTERS(thisCard, Chaos));
 $moved = both.MOVE([from own.hand], deck);
 both.DRAW(COUNT($moved));
