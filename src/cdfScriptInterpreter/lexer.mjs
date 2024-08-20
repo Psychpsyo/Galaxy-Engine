@@ -181,6 +181,7 @@ const keywordTokenTypes = {
 	by: "accessorProperty",
 	byPlayer: "accessorProperty",
 	dueTo: "accessorProperty",
+	asCost: "accessorProperty",
 	to: "accessorProperty",
 
 	effect: "dueToReason",

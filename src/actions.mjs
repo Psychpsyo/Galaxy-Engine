@@ -58,10 +58,19 @@ export class Action {
 	constructor(player, properties = {}) {
 		this.player = player;
 		this.step = null; // Is set by the step itself
-		this.costIndex = -1; // If this is positive, it indicates that this action is to be treated as a cost, together with other actions of the same costIndex
+		this._costIndex = -1; // If this is non-negative, it indicates that this action is to be treated as a cost, together with other actions of the same costIndex
 		this.properties = properties; // properties are accessible to cdfScript via action accessors, like retired(byPlayer: you)
 		this.properties.byPlayer = new ScriptValue("player", [player]);
+		this.properties.asCost = new ScriptValue("bool", [false]);
 		this.isCancelled = false; // even cancelled actions stay in the game logs for abilities like that of 'Firewall Golem'
+	}
+
+	get costIndex() {
+		return this._costIndex;
+	}
+	set costIndex(value) {
+		this._costIndex = value;
+		this.properties.asCost = new ScriptValue("bool", [value >= 0]);
 	}
 
 	// Returns the event that represents this action.

@@ -717,7 +717,7 @@ function parseActionAccessor(actionsNode) {
 		pos++;
 	}
 	let node = new ast.ActionAccessorNode(actionsNode, actionType, properties);
-	if (tokens[pos].type == "dotOperator") {
+	if (tokens[pos] && tokens[pos].type === "dotOperator") {
 		pos++;
 		return parseCardDotAccess(node);
 	}
