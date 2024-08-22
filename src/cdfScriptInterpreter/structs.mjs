@@ -160,12 +160,13 @@ export class ScriptContext {
 	constructor(card, player, ability = null, evaluatingPlayer = null, targets = new TargetObjects()) {
 		this.game = player.game; // just for convenience
 		this.card = card; // The card that the portion of script currently resides on
-		this.player = player; // The player executing the script
+		this.player = player; // The player executing the script (= doing what it says)
+		this.youPlayer = card.currentOwner(); // The player that activated the ability, except // TODO: actually make this functional
 		this.evaluatingPlayer = evaluatingPlayer; // The player evaluating the script (cards that that player can't see are hidden from the script if set)
 		this.ability = ability; // The ability that the script belongs to
-		this.targets = targets; // which objects have already been chosen as targets
+		this.targets = targets; // which objects have already been chosen as targets over the course of the ability
 
-		// only used when context is frozen for use in a modifier
+		// only used when context is frozen for use in a modifier (like on 'Mystical Circle')
 		this.variables = {};
 	}
 

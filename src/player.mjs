@@ -80,23 +80,6 @@ export class Player {
 		partner.hiddenFor = [...this.game.players];
 	}
 
-	// returns all cards that aren't currently in deck. (cards that could have available abilities on them.)
-	getActiveCards() {
-		const cards = [this.partnerZone.cards[0]];
-		cards.push(...this.unitZone.cards.filter(card => card !== null));
-		cards.push(...this.spellItemZone.cards.filter(card => card !== null));
-		cards.push(...this.handZone.cards);
-		cards.push(...this.discardPile.cards);
-		cards.push(...this.exileZone.cards);
-		return cards;
-	}
-
-	getAllCards() {
-		const cards = this.getActiveCards();
-		cards.push(...this.deckZone.cards);
-		return cards;
-	}
-
 	next() {
 		return this.game.players[(this.index + 1) % this.game.players.length];
 	}

@@ -13,13 +13,14 @@ let alreadyParsed = {
 	during: {},
 	equipableTo: {},
 	exec: {},
+	forPlayer: {},
 	gameLimit: {},
-	zoneDurationLimit: {},
 	globalTurnLimit: {},
 	modifier: {},
 	trigger: {},
 	triggerPrecondition: {},
-	turnLimit: {}
+	turnLimit: {},
+	zoneDurationLimit: {}
 };
 
 // ability is the information from the .cdf file, parsed into a js object.

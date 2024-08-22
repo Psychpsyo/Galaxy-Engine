@@ -327,13 +327,11 @@ export class Step {
 		// check trigger ability preconditions
 		if (!isPrediction) {
 			if (this.game.currentPhase() instanceof phases.StackPhase) {
-				for (const player of this.game.players) {
-					for (const card of player.getAllCards()) {
-						for (const ability of card.values.current.abilities) {
-							if (ability instanceof abilities.TriggerAbility ||
-								ability instanceof abilities.CastAbility) {
-								ability.checkTriggerPrecondition(player);
-							}
+				for (const card of this.game.getAllCards()) {
+					for (const ability of card.values.current.abilities) {
+						if (ability instanceof abilities.TriggerAbility ||
+							ability instanceof abilities.CastAbility) {
+							ability.checkTriggerPrecondition(card.currentOwner());
 						}
 					}
 				}
@@ -373,13 +371,11 @@ export class Step {
 
 			// check trigger ability conditions
 			if (this.game.currentPhase() instanceof phases.StackPhase) {
-				for (let player of this.game.players) {
-					for (let card of player.getAllCards()) {
-						for (let ability of card.values.current.abilities) {
-							if (ability instanceof abilities.TriggerAbility ||
-								ability instanceof abilities.CastAbility) {
-								ability.checkTrigger(player);
-							}
+				for (let card of this.game.getAllCards()) {
+					for (let ability of card.values.current.abilities) {
+						if (ability instanceof abilities.TriggerAbility ||
+							ability instanceof abilities.CastAbility) {
+							ability.checkTrigger(card.currentOwner());
 						}
 					}
 				}
@@ -501,7 +497,7 @@ export async function* runInterjectedSteps(game, isPrediction) {
 // iterates over all static abilities and activates/deactivates those that need it.
 async function* getStaticAbilityPhasingStep(game) {
 	const modificationActions = []; // the list of Apply/UnapplyStaticAbility actions that this will return as a step.
-	const activeCards = game.players.map(player => player.getActiveCards()).flat();
+	const activeCards = game.getActiveCards();
 	const possibleTargets = activeCards.concat(game.players).concat(game);
 	if (game.currentBlock() instanceof blocks.Fight) {
 		possibleTargets.push(game.currentBlock().fight);

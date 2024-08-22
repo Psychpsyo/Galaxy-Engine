@@ -55,15 +55,17 @@ export function parseScript(tokenList, newEffectId, type, originalCodeString) {
 	switch (type) {
 		case "applyTarget":
 		case "cardCondition":
+		case "cardTurnLimit":
 		case "condition":
-		case "triggerPrecondition":
 		case "during":
 		case "equipableTo":
+		case "forPlayer":
 		case "gameLimit":
-		case "zoneDurationLimit":
 		case "globalTurnLimit":
-		case "cardTurnLimit":
-		case "turnLimit": {
+		case "triggerPrecondition":
+		case "turnLimit":
+		case "zoneDurationLimit": {
+			// TODO: check expression return value type
 			return parseExpression();
 		}
 		case "trigger": {

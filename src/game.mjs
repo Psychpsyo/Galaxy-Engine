@@ -215,7 +215,7 @@ export class Game {
 				generatorOutput = await turnGenerator.next(playerInput);
 			}
 
-			for (const card of currentPlayer.getActiveCards().concat(currentPlayer.next().getActiveCards())) {
+			for (const card of this.getActiveCards()) {
 				card.endOfTurnReset();
 			}
 			currentPlayer = currentPlayer.next();
@@ -308,6 +308,28 @@ export class Game {
 	undoRandom() {
 		this.replayRngPosition--;
 		return this.replay.rngLog.pop();
+	}
+
+	// returns all cards that aren't currently in a deck. (cards that could have available abilities on them.)
+	getActiveCards() {
+		const cards = [];
+		for (const player of this.players) {
+			cards.push(player.partnerZone.cards[0]);
+			cards.push(...player.unitZone.cards.filter(card => card !== null));
+			cards.push(...player.spellItemZone.cards.filter(card => card !== null));
+			cards.push(...player.handZone.cards);
+			cards.push(...player.discardPile.cards);
+			cards.push(...player.exileZone.cards);
+		}
+		return cards;
+	}
+
+	getAllCards() {
+		const cards = this.getActiveCards();
+		for (const player of this.players) {
+			cards.push(...player.deckZone.cards);
+		}
+		return cards;
 	}
 
 	getPhases() {

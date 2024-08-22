@@ -1,6 +1,5 @@
 import * as abilities from "./abilities.mjs";
 import * as blocks from "./blocks.mjs";
-import * as requests from "./inputRequests.mjs";
 import {createBlockCreatedEvent, createBlockCreationAbortedEvent, createStackStartedEvent, createBlockStartedEvent} from "./events.mjs";
 import {runInterjectedSteps} from "./steps.mjs";
 
@@ -16,12 +15,10 @@ export class Stack {
 
 	async* run() {
 		// check non-after based trigger ability triggers (these go during phases or "[when units are] going to attack")
-		for (let player of this.phase.turn.game.players) {
-			for (let card of player.getActiveCards()) {
-				for (let ability of card.values.current.abilities) {
-					if (ability instanceof abilities.TriggerAbility) {
-						ability.checkDuring(player);
-					}
+		for (const card of this.phase.turn.game.getActiveCards()) {
+			for (let ability of card.values.current.abilities) {
+				if (ability instanceof abilities.TriggerAbility) {
+					ability.checkDuring(card.currentOwner());
 				}
 			}
 		}

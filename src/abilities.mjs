@@ -50,6 +50,7 @@ export class BaseAbility {
 export class Ability extends BaseAbility {
 	constructor(ability, game) {
 		super(ability, game);
+		this.forPlayer = interpreter.buildAST("forPlayer", ability.id, ability.forPlayer, game);
 		// cost MUST be parsed first to not miss variable declarations that might be mentioned in exec
 		this.cost =  null;
 		if (ability.cost) {
@@ -63,8 +64,10 @@ export class Ability extends BaseAbility {
 		if (!this.isConditionMet(player, evaluatingPlayer)) {
 			return false;
 		}
+		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
+		if (!this.forPlayer.evalFull(ctx).next().value.get(player).includes(player)) return false;
 		if (this.cost === null) {
-			return this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer));
+			return this.exec.hasAllTargets(ctx);
 		}
 		const stepRunner = new stepGenerators.StepRunner(() => stepGenerators.abilityCostStepGenerator(this, card, player), player.game);
 		stepRunner.isCost = true;
@@ -104,6 +107,7 @@ export class CastAbility extends Ability {
 
 	// does not call super.canActivate() to not perform a redundant and inaccurate cost check during spell casting
 	canActivate(card, player, evaluatingPlayer = player) {
+		if (!this.forPlayer.evalFull(new ScriptContext(card, player, this, evaluatingPlayer)).next().value.get(player).includes(player)) return false;
 		return this.isConditionMet(player, evaluatingPlayer) && (this.after === null || (player.game.currentStack() && this.triggerMetOnStacks.includes(player.game.currentStack().index - 1)));
 	}
 
@@ -125,6 +129,7 @@ export class DeployAbility extends Ability {
 
 	// does not call super.canActivate() to not perform a redundant and inaccurate cost check during item deployment
 	canActivate(card, player, evaluatingPlayer = player) {
+		if (!this.forPlayer.evalFull(new ScriptContext(card, player, this, evaluatingPlayer)).next().value.get(player).includes(player)) return false;
 		return this.isConditionMet(player, evaluatingPlayer);
 	}
 }

@@ -173,8 +173,11 @@ export class FunctionNode extends AstNode {
 	}
 	* eval(ctx) {
 		const players = (yield* this.player.eval(ctx)).get(ctx.player);
+		const oldCtxPlayer = ctx.player;
 		if (players.length == 1) {
-			const value = yield* this.function.run(this, new ScriptContext(ctx.card, players[0], ctx.ability, ctx.evaluatingPlayer, ctx.targets));
+			ctx.player = players[0];
+			const value = yield* this.function.run(this, ctx);
+			ctx.player = oldCtxPlayer;
 			if (!this.function.returnType) return;
 			return value;
 		}
@@ -183,12 +186,14 @@ export class FunctionNode extends AstNode {
 		let valueMap = new Map();
 		let type;
 		for (const player of players) {
-			const value = yield* this.function.run(this, new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer, ctx.targets));
+			ctx.player = player;
+			const value = yield* this.function.run(this, ctx);
 			if (this.function.returnType) {
 				type = value.type;
 				valueMap.set(player, value.get(player));
 			}
 		}
+		ctx.player = oldCtxPlayer;
 
 		if (this.function.returnType) {
 			return new ScriptValue(type, valueMap);
@@ -196,19 +201,17 @@ export class FunctionNode extends AstNode {
 	}
 	* evalFull(ctx) {
 		const players = this.player.evalFull(ctx).next().value.get(ctx.player);
+		const oldCtxPlayer = ctx.player;
 		if (players.length === 1) {
+			ctx.player = players[0];
 			const results =
-				this.function.runFull?.(this, new ScriptContext(ctx.card, players[0], ctx.ability, ctx.evaluatingPlayer, ctx.targets)) ??
-				super.evalFull(new ScriptContext(ctx.card, players[0], ctx.ability, ctx.evaluatingPlayer, ctx.targets));
+				this.function.runFull?.(this, ctx) ??
+				super.evalFull(ctx);
 			for (const output of results) {
-				if (output.type === "tempActions") { // actions need to be executed
-					yield new ScriptValue(
-						this.function.returnType,
-						output.get(ctx.player).filter(val => val !== undefined).flat()
-					);
-				}
 				yield output;
 			}
+			ctx.player = oldCtxPlayer;
+			return;
 		}
 		// otherwise this is a both.FUNCTION() and must create split values, while executing for the turn player first
 		players.unshift(players.splice(players.indexOf(ctx.game.currentTurn().player), 1)[0]);
@@ -217,10 +220,8 @@ export class FunctionNode extends AstNode {
 		for (const list of cartesianProduct(
 			players.map(
 				player => {
-					const oldCtxPlayer = ctx.player;
 					ctx.player = player;
 					const retVal = this.function.runFull?.(this, ctx);
-					ctx.player = oldCtxPlayer;
 					return retVal;
 				}
 			)
@@ -234,16 +235,21 @@ export class FunctionNode extends AstNode {
 			}
 			yield new ScriptValue(this.function.returnType, valueMap);
 		}
+		ctx.player = oldCtxPlayer;
 	}
 	hasAllTargets(ctx) {
-		let players = this.player.evalFull(ctx).next().value.get(ctx.player);
+		const players = this.player.evalFull(ctx).next().value.get(ctx.player);
+		const oldCtxPlayer = ctx.player;
 		for (const player of players) {
-			let context = new ScriptContext(ctx.card, player, ctx.ability, ctx.evaluatingPlayer, ctx.targets);
-			// checks if all child nodes have their targets
-			if (!super.hasAllTargets(context)) return false;
-			// then checks function-specific requirements
-			if (!this.function.hasAllTargets(this, context)) return false;
+			ctx.player = player;
+			if (!super.hasAllTargets(ctx) || // checks if all child nodes have their targets
+			    !this.function.hasAllTargets(this, ctx) // then checks function-specific requirements
+			) {
+				ctx.player = oldCtxPlayer;
+				return false;
+			}
 		}
+		ctx.player = oldCtxPlayer;
 		return true;
 	}
 	getChildNodes() {
@@ -924,14 +930,13 @@ export class PlayerNode extends AstNode {
 		this.playerKeyword = playerKeyword;
 	}
 	* eval(ctx) {
-		const you = ctx.card.currentOwner();
 		switch(this.playerKeyword) {
 			case "you":
-				return new ScriptValue("player", [you]);
+				return new ScriptValue("player", [ctx.youPlayer]);
 			case "opponent":
-				return new ScriptValue("player", [you.next()]);
+				return new ScriptValue("player", [ctx.youPlayer.next()]);
 			case "both":
-				return new ScriptValue("player", [...you.game.players]);
+				return new ScriptValue("player", [...ctx.game.players]);
 			case "own":
 				return new ScriptValue("player", [ctx.player]);
 		}

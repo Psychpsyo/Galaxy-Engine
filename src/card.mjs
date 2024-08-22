@@ -513,6 +513,10 @@ function parseCdfValues(cdf, game) {
 					ability.modifier = parts[1];
 					break;
 				}
+				case "forPlayer": {
+					ability.forPlayer = parts[1];
+					break;
+				}
 				case "|o": { // sub-ability
 					if (!["optional", "fast", "trigger", "static", "part"].includes(parts[1])) {
 						throw new Error("CDF Parser Error: " + parts[1] + " is an invalid sub-ability type.");
@@ -523,6 +527,7 @@ function parseCdfValues(cdf, game) {
 						isSubAbility: true,
 						type: parts[1],
 						cancellable: true,
+						forPlayer: "you",
 						turnLimit: "any",
 						globalTurnLimit: "any",
 						gameLimit: "any",
@@ -619,6 +624,7 @@ function parseCdfValues(cdf, game) {
 					isSubAbility: false,
 					type: parts[1],
 					cancellable: true,
+					forPlayer: "you",
 					turnLimit: "any",
 					globalTurnLimit: "any",
 					gameLimit: "any",

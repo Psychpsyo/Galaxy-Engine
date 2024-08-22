@@ -3,7 +3,7 @@ import {Stack} from "./stacks.mjs";
 import {createStackCreatedEvent} from "./events.mjs";
 import {Step} from "./steps.mjs";
 import {StepRunner, arrayStepGenerator} from "./stepGenerators.mjs";
-import {ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
+import {ScriptValue, ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
 import * as actions from "./actions.mjs";
 import * as requests from "./inputRequests.mjs";
 import * as abilities from "./abilities.mjs";
@@ -77,15 +77,13 @@ export class StackPhase extends Phase {
 			} while (this.currentStack().blocks.length > 0);
 
 			// reset on what stacks trigger abilities were met since we're going back to stack 1.
-			for (let player of this.turn.game.players) {
-				for (let card of player.getActiveCards()) {
-					for (let ability of card.values.current.abilities) {
-						if ((ability instanceof abilities.TriggerAbility ||
-							ability instanceof abilities.CastAbility) &&
-							ability.after
-						) {
-							ability.triggerMetOnStacks = [];
-						}
+			for (let card of this.turn.game.getActiveCards()) {
+				for (let ability of card.values.current.abilities) {
+					if ((ability instanceof abilities.TriggerAbility ||
+						ability instanceof abilities.CastAbility) &&
+						ability.after
+					) {
+						ability.triggerMetOnStacks = [];
 					}
 				}
 			}
@@ -118,7 +116,7 @@ export class StackPhase extends Phase {
 	async getActivatableFastAbilities(stack) {
 		const eligibleAbilities = [];
 		const player = stack.getNextPlayer();
-		for (const card of player.getActiveCards()) {
+		for (const card of stack.phase.turn.game.getActiveCards()) {
 			for (const ability of card.values.current.abilities) {
 				if (ability instanceof abilities.FastAbility && await ability.canActivate(ability.card, player)) {
 					eligibleAbilities.push(ability);
@@ -131,7 +129,7 @@ export class StackPhase extends Phase {
 	async getActivatableTriggerAbilities(stack) {
 		const eligibleAbilities = [];
 		const player = stack.getNextPlayer();
-		for (const card of player.getActiveCards()) {
+		for (const card of stack.phase.turn.game.getActiveCards()) {
 			for (const ability of card.values.current.abilities) {
 				if (ability instanceof abilities.TriggerAbility && await ability.canActivate(ability.card, player)) {
 					eligibleAbilities.push(ability);
@@ -304,7 +302,7 @@ export class MainPhase extends StackPhase {
 
 	async getActivatableOptionalAbilities() {
 		const eligibleAbilities = [];
-		for (const card of this.turn.player.getActiveCards()) {
+		for (const card of this.turn.game.getActiveCards()) {
 			for (const ability of card.values.current.abilities) {
 				if (ability instanceof abilities.OptionalAbility && await ability.canActivate(ability.card, this.turn.player)) {
 					eligibleAbilities.push(ability);
@@ -385,10 +383,11 @@ export class EndPhase extends StackPhase {
 	}
 
 	async triggerAbilitiesMet() {
-		for (const player of this.turn.game.players) {
-			for (const card of player.getActiveCards()) {
-				for (const ability of card.values.current.abilities) {
-					if (ability instanceof abilities.TriggerAbility && await ability.canActivate(card, player)) {
+		for (const card of this.turn.game.getActiveCards()) {
+			for (const ability of card.values.current.abilities) {
+				if (!(ability instanceof abilities.TriggerAbility)) continue;
+				for (const player of ability.forPlayer.evalFull(new ScriptContext(card, card.currentOwner(), ability)).next().value.get(card.currentOwner())) {
+					if (await ability.canActivate(card, player)) {
 						return true;
 					}
 				}

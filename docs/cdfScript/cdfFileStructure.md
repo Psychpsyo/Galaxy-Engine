@@ -246,6 +246,13 @@ Either `yes` or `no`, indicating whether or not activating or applying this abil
 This is required on `trigger` abilities and `static` action modification abilities and forbidden on others.
 
 
+### forPlayer
+A [cdfScript expression](./TODO:) that should evaluate to the players who can activate this ability, like so:  
+`forPlayer: opponent`
+
+If this property is not specified, it defaults to `you`.
+
+
 ### applyTo
 A [cdfScript expression](./TODO:) that should evaluate to the list of all objects that this static ability should apply to:  
 `applyTo: thisCard.equippedUnit`

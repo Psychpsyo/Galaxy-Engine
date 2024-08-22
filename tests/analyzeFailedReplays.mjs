@@ -16,10 +16,8 @@ async function analyzeReplay(filename) {
 	const game = new Game();
 	game.setReplay(replay);
 
-	for (const player of game.players) {
-		for (const card of player.getAllCards()) {
-			cardCount[card.cardId] = (cardCount[card.cardId] ?? 0) + 1;
-		}
+	for (const card of game.getAllCards()) {
+		cardCount[card.cardId] = (cardCount[card.cardId] ?? 0) + 1;
 	}
 }
 
