@@ -434,8 +434,11 @@ export class Cast extends Action {
 }
 
 export class Move extends Action {
-	constructor(player, card, zone, targetIndex) {
-		super(player);
+	constructor(player, card, zone, targetIndex, reason, source) {
+		const properties = {};
+		if (reason) properties.dueTo = reason;
+		if (source) properties.by = source;
+		super(player, properties);
 		this.card = card;
 		this.zone = zone;
 		this.targetIndex = targetIndex;
@@ -490,8 +493,11 @@ export class Move extends Action {
 }
 
 export class Swap extends Action {
-	constructor(player, cardA, cardB, transferEquipments) {
-		super(player);
+	constructor(player, cardA, cardB, transferEquipments, reason, source) {
+		super(player, {
+			dueTo: reason,
+			by: source
+		});
 		this.cardA = cardA;
 		this.cardB = cardB;
 		this.transferEquipments = transferEquipments;
@@ -762,8 +768,11 @@ export class Exile extends Action {
 }
 
 export class ApplyStatChange extends Action {
-	constructor(player, toObject, modifier, until) {
-		super(player);
+	constructor(player, toObject, modifier, until, reason, source) {
+		super(player, {
+			dueTo: reason,
+			by: source
+		});
 		this.toObject = toObject;
 		this.modifier = modifier;
 		this.until = until; // the array that the un-apply action goes into (or null, if it is permanent)
@@ -881,8 +890,11 @@ export class RemoveStatChange extends Action {
 }
 
 export class CancelAttack extends Action {
-	constructor(player) {
-		super(player);
+	constructor(player, reason, source) {
+		super(player, {
+			dueTo: reason,
+			by: source
+		});
 		this.wasCancelled = null;
 	}
 
@@ -913,8 +925,11 @@ export class CancelAttack extends Action {
 }
 
 export class SetAttackTarget extends Action {
-	constructor(player, newTarget) {
-		super(player);
+	constructor(player, newTarget, reason, source) {
+		super(player, {
+			dueTo: reason,
+			by: source
+		});
 		this.newTarget = newTarget;
 		this._oldTarget = null;
 	}
@@ -952,16 +967,20 @@ export class SetAttackTarget extends Action {
 	}
 
 	get affectedObjects() {
-		if (this.step.game.currentAttackDeclaration?.target) {
-			return [this.step.game.currentAttackDeclaration.target];
+		const mainAttacker = this.player.game.currentAttackDeclaration?.mainCard;
+		if (mainAttacker) {
+			return [mainAttacker];
 		}
 		return [];
 	}
 }
 
 export class GiveAttack extends Action {
-	constructor(player, card) {
-		super(player);
+	constructor(player, card, reason, source) {
+		super(player, {
+			dueTo: reason,
+			by: source
+		});
 		this.card = card;
 		this._oldCanAttackAgain = null;
 	}
@@ -1054,9 +1073,7 @@ export class EquipCard extends Action {
 		return !equipTargetStillValid;
 	}
 
-	get affectedObjects() {
-		return [this.equipment];
-	}
+	// no objects are affected since this is not a thing that cards can be immune to
 }
 
 export class Shuffle extends Action {
@@ -1207,8 +1224,11 @@ export class Unreveal extends Action {
 }
 
 export class ChangeCounters extends Action {
-	constructor(player, card, type, amount) {
-		super(player);
+	constructor(player, card, type, amount, reason, source) {
+		super(player, {
+			dueTo: reason,
+			by: source
+		});
 		this.card = card;
 		this.type = type;
 		this.amount = amount;

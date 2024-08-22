@@ -1147,7 +1147,7 @@ export class ActionAccessorNode extends AstNode {
 				}
 				break;
 			}
-			case "chosenTarget": {
+			case "chosenTarget": { // this is only for when a player chooses this card during the attack declaration
 				if (action instanceof actions.EstablishAttackDeclaration) {
 					return [action.attackTarget];
 				}
@@ -1207,7 +1207,7 @@ export class ActionAccessorNode extends AstNode {
 				}
 				break;
 			}
-			case "targeted": {
+			case "targeted": { // this is any time that a card becomes the target of an attack (chosen during declaration or set by card effect)
 				if (action instanceof actions.EstablishAttackDeclaration) {
 					return [action.attackTarget];
 				} else if (action instanceof actions.SetAttackTarget) {

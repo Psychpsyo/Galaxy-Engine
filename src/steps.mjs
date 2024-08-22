@@ -4,7 +4,7 @@ import {ChooseAbilityOrder, ChooseCards, ApplyActionModificationAbility} from ".
 import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {BaseCard} from "./card.mjs";
-import {recalculateModifiedValuesFor, ActionReplaceModification, ActionModification, ProhibitModification, CompletelyUnaffectedModification} from "./valueModifiers.mjs";
+import {recalculateModifiedValuesFor, ActionReplaceModification, ActionModification, ProhibitModification, CompleteUnaffection} from "./valueModifiers.mjs";
 import * as abilities from "./abilities.mjs";
 import * as blocks from "./blocks.mjs";
 import * as phases from "./phases.mjs";
@@ -68,19 +68,20 @@ export class Step {
 				}) ||
 
 				action.affectedObjects.some(object => {
-					for (const modifier of object.values.modifierStack) {
-						for (const modification of modifier.modifications) {
-							if (!(modification instanceof CompletelyUnaffectedModification)) continue;
-							// official cards are only ever unaffected by other cards
-							if (action.properties.by?.type !== "card") continue;
+					// CompleteUnaffections only protect against the effects of cards.
+					if (action.properties.by?.type !== "card") return false;
+					if (!action.properties.dueTo.get().includes("effect")) return false;
 
-							ast.setImplicit(action.properties.by.get(), "card");
-							const doesMatch = modification.unaffectedBy.evalFull(modifier.ctx).next().value.getJsBool();
+					ast.setImplicit(action.properties.by.get(), "card");
+					for (const unaffection of object.values.unaffectedBy) {
+						if (unaffection instanceof CompleteUnaffection &&
+							unaffection.by.evalFull(unaffection.modifier.ctx).next().value.getJsBool(unaffection.modifier.ctx.player)
+						) {
 							ast.clearImplicit("card");
-
-							if (doesMatch) return true;
+							return true;
 						}
 					}
+					ast.clearImplicit("card");
 					return false;
 				})
 			) {

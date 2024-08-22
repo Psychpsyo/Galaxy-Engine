@@ -142,7 +142,9 @@ export function initFunctions() {
 					ctx.player,
 					target,
 					(yield* this.getParameter(astNode, "modifier").eval(ctx)).get(ctx.player).bake(target),
-					until[0].getStepList(ctx.game)
+					until[0].getStepList(ctx.game),
+					new ScriptValue("dueToReason", ["effect"]),
+					new ScriptValue("card", [ctx.card])
 				));
 			}
 			yield applyActions;
@@ -211,7 +213,11 @@ export function initFunctions() {
 		[],
 		null,
 		function*(astNode, ctx) {
-			yield [new actions.CancelAttack(ctx.player)];
+			yield [new actions.CancelAttack(
+				ctx.player,
+				new ScriptValue("dueToReason", ["effect"]),
+				new ScriptValue("card", [ctx.card])
+			)];
 		},
 		alwaysHasTarget,
 		undefined // TODO: Write evalFull
@@ -496,7 +502,12 @@ export function initFunctions() {
 		null,
 		function*(astNode, ctx) {
 			const target = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0];
-			yield [new actions.GiveAttack(ctx.player, target?.current())];
+			yield [new actions.GiveAttack(
+				ctx.player,
+				target?.current(),
+				new ScriptValue("dueToReason", ["effect"]),
+				new ScriptValue("card", [ctx.card])
+			)];
 		},
 		hasCardTarget,
 		undefined // TODO: Write evalFull
@@ -549,7 +560,14 @@ export function initFunctions() {
 				if (potentialDeckPosition) {
 					index = potentialDeckPosition.isTop? -1 : 0;
 				}
-				moveActions.push(new actions.Move(ctx.player, card, zone, index));
+				moveActions.push(new actions.Move(
+					ctx.player,
+					card,
+					zone,
+					index,
+					new ScriptValue("dueToReason", ["effect"]),
+					new ScriptValue("card", [ctx.card])
+				));
 				zoneMoveCards.set(zone, (zoneMoveCards.get(zone) ?? []).concat(card));
 				ast.clearImplicit("card");
 			}
@@ -618,7 +636,14 @@ export function initFunctions() {
 			for (const card of cards) {
 				const type = (yield* this.getParameter(astNode, "counter").eval(ctx)).get(ctx.player)[0];
 				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
-				actionList.push(new actions.ChangeCounters(ctx.player, card, type, amount));
+				actionList.push(new actions.ChangeCounters(
+					ctx.player,
+					card,
+					type,
+					amount,
+					new ScriptValue("dueToReason", ["effect"]),
+					new ScriptValue("card", [ctx.card])
+				));
 			}
 			yield actionList;
 		},
@@ -637,7 +662,14 @@ export function initFunctions() {
 			for (const card of cards) {
 				const type = (yield* this.getParameter(astNode, "counter").eval(ctx)).get(ctx.player)[0];
 				const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
-				actionList.push(new actions.ChangeCounters(ctx.player, card, type, -amount));
+				actionList.push(new actions.ChangeCounters(
+					ctx.player,
+					card,
+					type,
+					-amount,
+					new ScriptValue("dueToReason", ["effect"]),
+					new ScriptValue("card", [ctx.card])
+				));
 			}
 			yield actionList;
 		},
@@ -947,7 +979,9 @@ export function initFunctions() {
 		function*(astNode, ctx) {
 			yield [new actions.SetAttackTarget(
 				ctx.player,
-				(yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0] ?? null
+				(yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player)[0] ?? null,
+				new ScriptValue("dueToReason", ["effect"]),
+				new ScriptValue("card", [ctx.card])
 			)];
 		},
 		hasCardTarget,
@@ -1205,7 +1239,14 @@ defense: ${defense}`;
 			let cardB = (yield* this.getParameter(astNode, "card", 1).eval(ctx)).get(ctx.player)[0];
 			let transferEquipments = (yield* this.getParameter(astNode, "bool").eval(ctx)).getJsBool(ctx.player);
 
-			yield [new actions.Swap(ctx.player, cardA, cardB, transferEquipments)];
+			yield [new actions.Swap(
+				ctx.player,
+				cardA,
+				cardB,
+				transferEquipments,
+				new ScriptValue("dueToReason", ["effect"]),
+				new ScriptValue("card", [ctx.card])
+			)];
 		},
 		function(astNode, ctx) {
 			let hasCardA = false;

@@ -3,7 +3,6 @@ import * as ast from "./cdfScriptInterpreter/astNodes.mjs";
 import * as abilities from "./abilities.mjs";
 import {BaseCard} from "./card.mjs";
 import {makeAbility} from "./cdfScriptInterpreter/interpreter.mjs";
-import {ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
 
 const unitSpecificValues = ["attack", "defense", "attackRights", "canAttack", "canCounterattack"];
 
@@ -52,6 +51,24 @@ export function recalculateModifiedValuesFor(object) {
 	}
 }
 
+class Unaffection {
+	constructor(by, modifier) {
+		this.by = by; // what that value is unaffected by
+		this.modifier = modifier; // the modifier that this came from
+	}
+}
+export class ValueUnaffection extends Unaffection {
+	constructor(value, by, modifier) {
+		super(by, modifier);
+		this.value = value; // the value that is unaffected
+	}
+}
+export class CompleteUnaffection extends Unaffection {
+	constructor(by, sourceCard, sourceAbility) {
+		super(by, sourceCard, sourceAbility);
+	}
+}
+
 export class Modifier {
 	constructor(modifications, ctx) {
 		this.modifications = modifications;
@@ -80,14 +97,9 @@ export class Modifier {
 			let worksOnObject = true;
 			// only static abilities are influenced by unaffections/cancelling when already on a card
 			if (this.ctx.ability instanceof abilities.StaticAbility) {
-				ast.setImplicit([this.ctx.card], "card");
-				for (const unaffection of object.values.unaffectedBy) {
-					if (unaffection.value === modification.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, this.ctx.player, unaffection.sourceAbility)).next().value.getJsBool(this.ctx.player)) {
-						worksOnObject = false;
-						break;
-					}
+				if (!modification.canApplyTo(object, this.ctx)) {
+					worksOnObject = false;
 				}
-				ast.clearImplicit("card");
 			}
 			// set implicit card / player
 			ast.setImplicit([object], object.cdfScriptType);
@@ -96,22 +108,9 @@ export class Modifier {
 				(modification.condition === null || modification.condition.evalFull(this.ctx).next().value.getJsBool(this.ctx.player))
 			) {
 				if (modification instanceof ValueUnaffectedModification) {
-					object.values.unaffectedBy.push({
-						value: modification.value,
-						by: modification.unaffectedBy,
-						sourceCard: this.ctx.card,
-						sourceAbility: this.ctx.ability
-					});
+					object.values.unaffectedBy.push(new ValueUnaffection(modification.value, modification.unaffectedBy, this));
 				} else if (modification instanceof CompletelyUnaffectedModification) {
-					// doesn't matter if initial, base or current since the number of properties does not change
-					for (const value in object.values.initial) {
-						object.values.unaffectedBy.push({
-							value: value,
-							by: modification.unaffectedBy,
-							sourceCard: this.ctx.card,
-							sourceAbility: this.ctx.ability
-						});
-					}
+					object.values.unaffectedBy.push(new CompleteUnaffection(modification.unaffectedBy, this));
 				} else {
 					values = modification.modify(values, this.ctx, toBaseValues);
 				}
@@ -172,6 +171,17 @@ export class Modification {
 	}
 
 	canApplyTo(target, ctx) {
+		ast.setImplicit([ctx.card], "card");
+		for (const unaffection of target.values.unaffectedBy) {
+			if (unaffection instanceof CompleteUnaffection &&
+			    unaffection.by.evalFull(unaffection.modifier.ctx).next().value.getJsBool(unaffection.modifier.ctx.player)
+			) {
+				ast.clearImplicit("card");
+				return false;
+			}
+		}
+		ast.clearImplicit("card");
+
 		return true;
 	}
 	canFullyApplyTo(target, ctx) {
@@ -194,7 +204,6 @@ export class ValueModification extends Modification {
 	}
 
 	canApplyTo(target, ctx) {
-		// this function is only really concerned with applying non-unit values to units.
 		if (target instanceof BaseCard) {
 			// certain stat-changes can only be applied to units
 			if (this.isUnitSpecific() && !target.values.current.cardTypes.includes("unit")) {
@@ -204,7 +213,9 @@ export class ValueModification extends Modification {
 		// objects that are unaffected can't have modifications applied
 		ast.setImplicit([ctx.card], "card");
 		for (const unaffection of target.values.unaffectedBy) {
-			if (unaffection.value === this.value && unaffection.by.evalFull(new ScriptContext(unaffection.sourceCard, ctx.player, unaffection.sourceAbility)).next().value.getJsBool(ctx.player)) {
+			if ((unaffection instanceof CompleteUnaffection || unaffection.value === this.value) &&
+			     unaffection.by.evalFull(unaffection.modifier.ctx).next().value.getJsBool(unaffection.modifier.ctx.player)
+			) {
 				ast.clearImplicit("card");
 				return false;
 			}
@@ -218,6 +229,17 @@ export class ValueUnaffectedModification extends ValueModification {
 	constructor(value, unaffectedBy, toBase, condition) {
 		super(value, toBase, condition);
 		this.unaffectedBy = unaffectedBy;
+	}
+
+	// specifically don't check value unaffections since making a value unaffected is not affecting the value
+	canApplyTo(target, ctx) {
+		if (target instanceof BaseCard) {
+			// certain stats only exist for units
+			if (this.isUnitSpecific() && !target.values.current.cardTypes.includes("unit")) {
+				return false;
+			}
+		}
+		return super.canApplyTo(target, ctx);
 	}
 }
 
@@ -384,25 +406,22 @@ export class AbilityCancelModification extends ValueModification {
 	}
 
 	canApplyTo(target, ctx) {
-		if (!super.canApplyTo(target, ctx)) return false;
-
-		let validAbilities = 0;
+		let hasValidAbility = false;
 		for (const ability of target.values.current.abilities) {
 			if (ability.cancellable && !ability.isCancelled) {
-				validAbilities++;
+				hasValidAbility = true;
+				break;
 			}
 		}
-		return validAbilities > 0;
+		return hasValidAbility && super.canApplyTo(target, ctx);
 	}
 	canFullyApplyTo(target, ctx) {
-		if (!this.canApplyTo(target, ctx)) return false;
-
-		for (const ability of target.values.current.abilities.evalFull(ctx).next().value.get(ctx.player)) {
+		for (const ability of target.values.current.abilities) {
 			if (!ability.cancellable || ability.isCancelled) {
 				return false;
 			}
 		}
-		return true;
+		return super.canFullyApplyTo(target, ctx);
 	}
 }
 
