@@ -178,10 +178,11 @@ const keywordTokenTypes = {
 	manaGained: "actionAccessor",
 	manaLost: "actionAccessor",
 
+	asCost: "accessorProperty",
 	by: "accessorProperty",
+	byDestroy: "accessorProperty",
 	byPlayer: "accessorProperty",
 	dueTo: "accessorProperty",
-	asCost: "accessorProperty",
 	to: "accessorProperty",
 
 	effect: "dueToReason",

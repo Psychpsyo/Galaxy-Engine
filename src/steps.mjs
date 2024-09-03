@@ -295,6 +295,7 @@ export class Step {
 
 		if (this.costCompletions.length > 0) {
 			// empty costs count as successful completion
+			// TODO: Figure out and elaborate on why this should be the case (cause I think it's wrong)
 			if (this.actions.length === 0 && this.costCompletions.includes(true)) {
 				this.successful = true;
 				return;
@@ -314,16 +315,6 @@ export class Step {
 			return;
 		}
 
-		// sometimes actions prompt certain other actions to be performed at the same time
-		// TODO: These need to be checked for legality and substitution just like the original actions
-		let followupActions = this.actions;
-		do {
-			followupActions = this.getFollowupActions(followupActions);
-			for (const action of followupActions) {
-				this.actions.push(action);
-			}
-		} while (followupActions.length > 0);
-
 		// check trigger ability preconditions
 		if (!isPrediction) {
 			if (this.game.currentPhase() instanceof phases.StackPhase) {
@@ -340,14 +331,23 @@ export class Step {
 
 		// run actions and collect events
 		let events = [];
-		for (const action of this.actions) {
-			if (action.isCancelled) continue;
+		let nextActions = this.actions;
+		do {
+			for (const action of nextActions) {
+				if (action.isCancelled) continue;
 
-			const event = await (yield* action.run(isPrediction));
-			if (event) {
-				events.push(event);
+				const event = await (yield* action.run(isPrediction));
+				if (event) {
+					events.push(event);
+				}
 			}
-		}
+
+			// TODO: These need to be checked for legality and substitution just like the original actions
+			nextActions = this.getFollowupActions(nextActions);
+			for (const action of nextActions) {
+				this.actions.push(action);
+			}
+		} while (nextActions.length > 0);
 
 		if (events.length > 0) {
 			yield events;

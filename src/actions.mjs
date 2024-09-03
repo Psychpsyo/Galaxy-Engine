@@ -631,7 +631,8 @@ export class Discard extends Action {
 		let properties = {
 			dueTo: reason,
 			from: new ScriptValue("zone", [card.zone]),
-			to: new ScriptValue("zone", [card.owner.discardPile])
+			to: new ScriptValue("zone", [card.owner.discardPile]),
+			byDestroy: new ScriptValue("bool", [false])
 		};
 		if (source) { // source only exists if discarded by card effect
 			properties.by = source;
@@ -678,6 +679,7 @@ export class Destroy extends Action {
 	constructor(discard) {
 		super(discard.player, discard.properties);
 		this.discard = discard;
+		this.discard.properties.byDestroy = new ScriptValue("bool", [true]);
 	}
 
 	async* run(isPrediction) {
