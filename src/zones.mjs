@@ -116,8 +116,7 @@ export class HandZone extends Zone {
 	}
 
 	get defaultHiddenFor() {
-		// TODO: this will need changes for multiplayer
-		return [this.player.next()];
+		return this.player.game.players.filter(p => p !== this.player);
 	}
 }
 

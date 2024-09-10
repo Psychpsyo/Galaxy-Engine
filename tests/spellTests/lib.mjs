@@ -1,9 +1,4 @@
-// Running this file will simulate some number of entirely random games where two bots
-// make choices entirely at random, using randomly thrown-together decks.
-// Use this to stress-test the rules engine and discover niche bugs that cause crashes.
-// Note:
-// This does nothing to validate the correctness of the rules engine or the cards.
-// It can only be used to discover situations that cause errors to be thrown.
+// Exports the runTest() function that is used to run a named spell test
 
 import {writeFileSync, promises as fs} from "fs";
 import {Game} from "../../src/game.mjs";
