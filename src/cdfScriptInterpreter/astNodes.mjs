@@ -895,7 +895,7 @@ export class UnaryMinusNode extends AstNode {
 		this.operand = operand;
 	}
 	* eval(ctx) {
-		return new ScriptValue("number", (yield* this.operand.eval(ctx).get(ctx.player)).map(value => -value));
+		return new ScriptValue("number", (yield* this.operand.eval(ctx)).get(ctx.player).map(value => -value));
 	}
 	* evalFull(ctx) {
 		for (const values of this.operand.evalFull(ctx)) {

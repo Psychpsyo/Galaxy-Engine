@@ -14,3 +14,4 @@ try {
 } then {
 	opponent.WINGAME();
 };
+WINGAME();

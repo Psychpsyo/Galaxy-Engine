@@ -1,7 +1,7 @@
 LOSELIFE(100);
 if (you.life != 900) {
 	opponent.WINGAME();
-}
+};
 
 try {
 	LOSELIFE(100);
@@ -20,3 +20,4 @@ try {
 } then {
 	opponent.WINGAME();
 };
+WINGAME();

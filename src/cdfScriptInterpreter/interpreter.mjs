@@ -23,6 +23,14 @@ let alreadyParsed = {
 	zoneDurationLimit: {}
 };
 
+// resets the above datastructures, invalidating any old results from parsing card abilities
+export function clearAbilityCache() {
+	registeredAbilities = [];
+	for (const key in alreadyParsed) {
+		alreadyParsed[key] = {};
+	}
+}
+
 // ability is the information from the .cdf file, parsed into a js object.
 export function registerAbility(ability) {
 	registeredAbilities[ability.id] = ability;

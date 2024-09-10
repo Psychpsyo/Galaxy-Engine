@@ -4,4 +4,4 @@ try {
 	opponent.WINGAME();
 } else {
 	WINGAME();
-}
+};

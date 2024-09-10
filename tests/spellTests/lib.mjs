@@ -42,9 +42,9 @@ export async function runTest(testName) {
 	game.config.lowerDeckLimit = 1;
 	game.config.startingHandSize = 1;
 	game.rng = new SpellTestRandom();
-
-	game.players[0].setDeck([
-		spellTestUnit,
+	try {
+		game.players[0].setDeck([
+			spellTestUnit,
 `id: CUS00000
 cardType: standardSpell
 name: CUS00000
@@ -55,8 +55,12 @@ o: cast
 condition: currentPhase = you.mainPhase
 ${await fs.readFile("./tests/spellTests/scripts/" + testName + ".cdf", "utf8")}
 opponent.WINGAME();` // default failure
-	]);
-	game.players[1].setDeck([spellTestUnit, spellTestUnit]); // has two cards to not lose to an empty deck instantly
+		]);
+		game.players[1].setDeck([spellTestUnit, spellTestUnit]); // has two cards to not lose to an empty deck instantly
+	} catch (e) {
+		console.log(`Spell Test '${testName}' produced a rules engine error during deck loading: ${e.message}`);
+		return;
+	}
 
 	// first card is the only guaranteed unit
 	game.players[0].setPartner(0);

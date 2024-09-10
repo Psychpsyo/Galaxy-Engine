@@ -35,10 +35,10 @@ export class Player {
 			throw new deckErrors.DeckFormatError();
 		}
 		if (cdfList.length < this.game.config.lowerDeckLimit) {
-			throw new deckErrors.DeckSizeError("Deck has not enough cards", false);
+			throw new deckErrors.DeckSizeError(`A deck must have at least ${this.game.config.lowerDeckLimit} cards`, false);
 		}
 		if (cdfList.length > this.game.config.upperDeckLimit) {
-			throw new deckErrors.DeckSizeError("Deck has too many cards", true);
+			throw new deckErrors.DeckSizeError(`A deck must have at most ${this.game.config.upperDeckLimit} cards`, true);
 		}
 		const cardList = [];
 		const cardAmounts = {};
