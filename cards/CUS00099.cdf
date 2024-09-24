@@ -3,6 +3,7 @@ cardType: standardSpell
 name: CUS00099
 level: 0
 types:
+deckLimit: 1
 
 o: cast
 cost:

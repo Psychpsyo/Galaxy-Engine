@@ -3,6 +3,7 @@ cardType: standardSpell
 name: CUS00034
 level: 1
 types: Electric, Light
+deckLimit: 1
 
 o: cast
 condition: COUNT([from you.field where types = Electric]) > 0
