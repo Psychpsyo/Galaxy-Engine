@@ -172,9 +172,9 @@ export class ScriptContext {
 		this.variables = {};
 	}
 
-	// returns a new context, which is a copy of this one, except that it has captured the current variables in the ability
-	// currently only used for modifiers (mainly in the APPLY function)
-	freeze() {
+	// returns a new context, which is a copy of this one, except that it has captured the current variables in the ability.
+	// currently only used for modifiers (mainly in the APPLY function, in case they have backreferences)
+	freezeContext() {
 		const ctx = new ScriptContext(this.card, this.player, this.ability, this.evaluatingPlayer);
 		for (const [key, value] of Object.entries(this.ability?.scriptVariables ?? {})) {
 			ctx.variables[key] = new ScriptValue(value.type, value.get(this.player));

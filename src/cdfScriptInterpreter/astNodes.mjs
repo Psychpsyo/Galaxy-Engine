@@ -1263,7 +1263,7 @@ export class ModifierNode extends AstNode {
 		this.modifications = modifications;
 	}
 	* eval(ctx) {
-		return new ScriptValue("modifier", new Modifier(this.modifications, ctx.freeze()));
+		return new ScriptValue("modifier", new Modifier(this.modifications, ctx.freezeContext()));
 	}
 }
 
