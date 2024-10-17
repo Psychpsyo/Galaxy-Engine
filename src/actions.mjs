@@ -55,10 +55,10 @@ function getObjectCurrent(object) {
 
 // Base class for any action in the game.
 export class Action {
+	#costIndex = -1; // If this is non-negative, it indicates that this action is to be treated as a cost, together with other actions of the same costIndex
 	constructor(player, properties = {}) {
 		this.player = player;
 		this.step = null; // Is set by the step itself
-		this._costIndex = -1; // If this is non-negative, it indicates that this action is to be treated as a cost, together with other actions of the same costIndex
 		this.properties = properties; // properties are accessible to cdfScript via action accessors, like retired(byPlayer: you)
 		this.properties.byPlayer = new ScriptValue("player", [player]);
 		this.properties.asCost = new ScriptValue("bool", [false]);
@@ -66,10 +66,10 @@ export class Action {
 	}
 
 	get costIndex() {
-		return this._costIndex;
+		return this.#costIndex;
 	}
 	set costIndex(value) {
-		this._costIndex = value;
+		this.#costIndex = value;
 		this.properties.asCost = new ScriptValue("bool", [value >= 0]);
 	}
 
@@ -167,14 +167,14 @@ export class LoseMana extends Action {
 }
 
 export class LoseLife extends Action {
+	#oldAmount = null;
 	constructor(player, amount) {
 		super(player);
 		this.amount = amount;
-		this._oldAmount = null;
 	}
 
 	async* run(isPrediction) {
-		this._oldAmount = this.player.life;
+		this.#oldAmount = this.player.life;
 		this.player.life = Math.max(this.player.life - this.amount, 0);
 		if (this.player.life === 0) {
 			this.player.next().victoryConditions.push("lifeZero");
@@ -186,7 +186,7 @@ export class LoseLife extends Action {
 		if (this.player.life === 0) {
 			this.player.next().victoryConditions.pop();
 		}
-		this.player.life = this._oldAmount;
+		this.player.life = this.#oldAmount;
 		return events.createLifeChangedEvent(this.player);
 	}
 
@@ -301,6 +301,7 @@ export class Place extends Action {
 }
 
 export class Summon extends Action {
+	#placeAction;
 	constructor(player, placeAction, reason, source) {
 		const properties = {
 			dueTo: reason,
@@ -311,27 +312,27 @@ export class Summon extends Action {
 			properties.by = source;
 		}
 		super(player, properties);
-		this._placeAction = placeAction;
+		this.#placeAction = placeAction;
 		this.card = placeAction.card.current();
 	}
 
 	async* run(isPrediction) {
 		const card = this.card.current();
 		this.card = this.card.snapshot();
-		let summonEvent = events.createCardSummonedEvent(this.player, this.card, this._placeAction.zone, this._placeAction.targetIndex);
-		this._placeAction.zone.add(card, this._placeAction.targetIndex);
-		this._placeAction.card.globalId = card.globalId;
+		let summonEvent = events.createCardSummonedEvent(this.player, this.card, this.#placeAction.zone, this.#placeAction.targetIndex);
+		this.#placeAction.zone.add(card, this.#placeAction.targetIndex);
+		this.#placeAction.card.globalId = card.globalId;
 		this.card.globalId = card.globalId;
 		return summonEvent;
 	}
 
 	undo(isPrediction) {
-		this.zone.remove(this.card.current(), this._placeAction.targetIndex);
+		this.zone.remove(this.card.current(), this.#placeAction.targetIndex);
 	}
 
 	async isImpossible() {
 		if (this.card.current() === null) return true;
-		let slotCard = this._placeAction.zone.get(this._placeAction.targetIndex);
+		let slotCard = this.#placeAction.zone.get(this.#placeAction.targetIndex);
 		return slotCard != null && slotCard != this.card.current();
 	}
 
@@ -865,11 +866,11 @@ export class ApplyStatChange extends Action {
 	}
 }
 export class RemoveStatChange extends Action {
+	#index = -1;
 	constructor(player, object, modifier) {
 		super(player);
 		this.object = object;
 		this.modifier = modifier;
-		this._index = -1;
 	}
 
 	async* run(isPrediction) {
@@ -877,14 +878,14 @@ export class RemoveStatChange extends Action {
 		if (this.object instanceof BaseCard) {
 			this.object = this.object.snapshot();
 		}
-		this._index = currentObject.values.modifierStack.indexOf(this.modifier);
-		currentObject.values.modifierStack.splice(this._index, 1);
+		this.#index = currentObject.values.modifierStack.indexOf(this.modifier);
+		currentObject.values.modifierStack.splice(this.#index, 1);
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
 	undo(isPrediction) {
 		const currentObject = getObjectCurrent(this.object);
-		currentObject.values.modifierStack.splice(this._index, 0, this.modifier);
+		currentObject.values.modifierStack.splice(this.#index, 0, this.modifier);
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
@@ -927,22 +928,22 @@ export class CancelAttack extends Action {
 }
 
 export class SetAttackTarget extends Action {
+	#oldTarget = null;
 	constructor(player, newTarget, reason, source) {
 		super(player, {
 			dueTo: reason,
 			by: source
 		});
 		this.newTarget = newTarget;
-		this._oldTarget = null;
 	}
 
 	async* run(isPrediction) {
 		this.newTarget = this.newTarget.snapshot();
 		if (this.step.game.currentAttackDeclaration) {
-			this._oldTarget = this.step.game.currentAttackDeclaration.target;
+			this.#oldTarget = this.step.game.currentAttackDeclaration.target;
 			this.step.game.currentAttackDeclaration.target = this.newTarget.current();
-			if (this._oldTarget) {
-				this._oldTarget.isAttackTarget = false;
+			if (this.#oldTarget) {
+				this.#oldTarget.isAttackTarget = false;
 			}
 			this.newTarget.current().isAttackTarget = true;
 		}
@@ -950,10 +951,10 @@ export class SetAttackTarget extends Action {
 
 	undo(isPrediction) {
 		if (this.step.game.currentAttackDeclaration) {
-			this.step.game.currentAttackDeclaration.target = this._oldTarget;
+			this.step.game.currentAttackDeclaration.target = this.#oldTarget;
 			this.newTarget.current().isAttackTarget = false;
-			if (this._oldTarget) {
-				this._oldTarget.isAttackTarget = true;
+			if (this.#oldTarget) {
+				this.#oldTarget.isAttackTarget = true;
 			}
 		}
 	}
@@ -978,22 +979,22 @@ export class SetAttackTarget extends Action {
 }
 
 export class GiveAttack extends Action {
+	#oldCanAttackAgain = null;
 	constructor(player, card, reason, source) {
 		super(player, {
 			dueTo: reason,
 			by: source
 		});
 		this.card = card;
-		this._oldCanAttackAgain = null;
 	}
 
 	async* run(isPrediction) {
-		this._oldCanAttackAgain = this.card.canAttackAgain;
+		this.#oldCanAttackAgain = this.card.canAttackAgain;
 		this.card.canAttackAgain = true;
 	}
 
 	undo(isPrediction) {
-		this.card.canAttackAgain = this._oldCanAttackAgain;
+		this.card.canAttackAgain = this.#oldCanAttackAgain;
 	}
 
 	async isImpossible() {
@@ -1014,10 +1015,10 @@ export class GiveAttack extends Action {
 }
 
 export class SelectEquipableUnit extends Action {
+	#oldEquipTarget = null;
 	constructor(player, spellItem) {
 		super(player);
 		this.spellItem = spellItem;
-		this._oldEquipTarget = null;
 	}
 
 	async* run(isPrediction) {
@@ -1027,7 +1028,7 @@ export class SelectEquipableUnit extends Action {
 		// This does not matter since the target availability checker doesn't validate targets for the equip action.
 		const currentBlock = this.player.game.currentBlock();
 		if (currentBlock) {
-			this._oldEquipTarget = currentBlock.equipTarget;
+			this.#oldEquipTarget = currentBlock.equipTarget;
 			currentBlock.equipTarget = (await selectionRequest.extractResponseValue(response))[0];
 		}
 	}
@@ -1035,7 +1036,7 @@ export class SelectEquipableUnit extends Action {
 	undo(isPrediction) {
 		const currentBlock = this.player.game.currentBlock();
 		if (currentBlock) {
-			currentBlock.equipTarget = this._oldEquipTarget;
+			currentBlock.equipTarget = this.#oldEquipTarget;
 		}
 	}
 
@@ -1191,21 +1192,21 @@ export class Reveal extends Action {
 	}
 }
 export class Unreveal extends Action {
+	#oldHiddenState = null;
 	constructor(player, card) {
 		super(player);
 		this.card = card;
-		this._oldHiddenState = null;
 	}
 
 	async* run(isPrediction) {
-		this._oldHiddenState = this.card.current().hiddenFor;
+		this.#oldHiddenState = this.card.current().hiddenFor;
 		this.card = this.card.snapshot();
 		this.card.current().hiddenFor = this.card.current().zone.defaultHiddenFor;
 		return events.createCardUnrevealedEvent(this.card.current().hiddenFor, this.card);
 	}
 
 	undo(isPrediction) {
-		this.card.current().hiddenFor = this._oldHiddenState;
+		this.card.current().hiddenFor = this.#oldHiddenState;
 	}
 
 	async isImpossible() {
@@ -1226,6 +1227,7 @@ export class Unreveal extends Action {
 }
 
 export class ChangeCounters extends Action {
+	#oldAmount = null;
 	constructor(player, card, type, amount, reason, source) {
 		super(player, {
 			dueTo: reason,
@@ -1234,7 +1236,6 @@ export class ChangeCounters extends Action {
 		this.card = card;
 		this.type = type;
 		this.amount = amount;
-		this._oldAmount = null;
 	}
 
 	async* run(isPrediction) {
@@ -1243,13 +1244,13 @@ export class ChangeCounters extends Action {
 		if (!card.counters[this.type]) {
 			card.counters[this.type] = 0;
 		}
-		this._oldAmount = card.counters[this.type];
+		this.#oldAmount = card.counters[this.type];
 		card.counters[this.type] += this.amount;
 		return events.createCountersChangedEvent(this.card, this.type);
 	}
 
 	undo(isPrediction) {
-		this.card.current().counters[this.type] = this._oldAmount;
+		this.card.current().counters[this.type] = this.#oldAmount;
 	}
 
 	async isImpossible() {
@@ -1269,11 +1270,11 @@ export class ChangeCounters extends Action {
 }
 
 export class ApplyStaticAbility extends Action {
+	#hadStaticAbilityBefore = null;
 	constructor(player, toObject, modifier) {
 		super(player);
 		this.toObject = toObject;
 		this.modifier = modifier;
-		this._hadStaticAbilityBefore = null;
 	}
 
 	async* run(isPrediction) {
@@ -1282,7 +1283,7 @@ export class ApplyStaticAbility extends Action {
 			this.toObject = this.toObject.snapshot();
 		}
 		currentObject.values.modifierStack.push(this.modifier);
-		this._hadStaticAbilityBefore = currentObject.values.modifiedByStaticAbility;
+		this.#hadStaticAbilityBefore = currentObject.values.modifiedByStaticAbility;
 		currentObject.values.modifiedByStaticAbility = true;
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
@@ -1290,20 +1291,19 @@ export class ApplyStaticAbility extends Action {
 	undo(isPrediction) {
 		const currentObject = getObjectCurrent(this.toObject);
 		currentObject.values.modifierStack.pop();
-		currentObject.values.modifiedByStaticAbility = this._hadStaticAbilityBefore;
+		currentObject.values.modifiedByStaticAbility = this.#hadStaticAbilityBefore;
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
 	// doesn't affect any objects since the unaffection from static abilities has special handling.
 }
 export class UnapplyStaticAbility extends Action {
+	#modifierIndex = -1;
+	#removed = null;
 	constructor(player, object, ability) {
 		super(player);
 		this.object = object;
 		this.ability = ability;
-
-		this._modifierIndex = -1;
-		this._removed = null;
 	}
 
 	async* run(isPrediction) {
@@ -1311,15 +1311,15 @@ export class UnapplyStaticAbility extends Action {
 		if (this.object instanceof BaseCard) {
 			this.object = this.object.snapshot();
 		}
-		this._modifierIndex = currentObject.values.modifierStack.findIndex(modifier => modifier.ctx.ability === this.ability);
-		this._removed = currentObject.values.modifierStack.splice(this._modifierIndex, 1)[0];
+		this.#modifierIndex = currentObject.values.modifierStack.findIndex(modifier => modifier.ctx.ability === this.ability);
+		this.#removed = currentObject.values.modifierStack.splice(this.#modifierIndex, 1)[0];
 		currentObject.values.modifiedByStaticAbility = currentObject.values.modifierStack.some(modifier => modifier.ctx.ability instanceof StaticAbility);
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}
 
 	undo(isPrediction) {
 		const currentObject = getObjectCurrent(this.object);
-		currentObject.values.modifierStack.splice(this._modifierIndex, 0, this._removed);
+		currentObject.values.modifierStack.splice(this.#modifierIndex, 0, this.#removed);
 		currentObject.values.modifiedByStaticAbility = true;
 		this.player.game.registerPendingValueChangeFor(currentObject);
 	}

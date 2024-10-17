@@ -30,7 +30,7 @@ export class Step {
 	}
 
 	// cancels the given action and any implied actions and returns the actionCancelledEvents for all of them
-	_cancelAction(action, alsoRemoved = false) {
+	#cancelAction(action, alsoRemoved = false) {
 		const events = [];
 		for (const cancelled of action.setIsCancelled()) {
 			events.push(createActionPreventedEvent(cancelled, alsoRemoved));
@@ -42,7 +42,7 @@ export class Step {
 	}
 
 	// returns a list of actionCancelled events and sets impossible actions to cancelled
-	async _cancelImpossibleActions() {
+	async #cancelImpossibleActions() {
 		let events = [];
 		for (const action of this.actions) {
 			if (action.isCancelled) continue;
@@ -85,7 +85,7 @@ export class Step {
 					return false;
 				})
 			) {
-				events = events.concat(this._cancelAction(action, true));
+				events = events.concat(this.#cancelAction(action, true));
 			}
 		}
 		// after cancelling them all, also remove them from the steps since they are not supposed to be about to happen.
@@ -98,7 +98,7 @@ export class Step {
 	}
 
 	// applies static abilities like that on 'Substitution Doll' or 'Norma, of the Sandstorm'
-	async *_handleModificationAbilities() {
+	async *#handleModificationAbilities() {
 		// gather abilities
 		const applicableAbilities = new Map();
 		const targets = new Map(); // cards that modification abilities will apply to
@@ -237,7 +237,7 @@ export class Step {
 						if (modifier.modifications[0] instanceof ActionReplaceModification) {
 							actions.replaceActionInList(this.actions, this.actions[i], replacements);
 						} else { // cancel ability instead
-							yield this._cancelAction(this.actions[i]);
+							yield this.#cancelAction(this.actions[i]);
 						}
 						ability.successfulApplication();
 						this.staticAbilitiesApplied.push({ability: ability, player: ability.card.currentOwner()});
@@ -285,13 +285,13 @@ export class Step {
 		}
 
 		// cancel impossible actions
-		const cancelEvents = await this._cancelImpossibleActions();
+		const cancelEvents = await this.#cancelImpossibleActions();
 		if (cancelEvents.length > 0) {
 			yield cancelEvents;
 		}
 
 		// apply static substitution abilities to the rest
-		yield* this._handleModificationAbilities();
+		yield* this.#handleModificationAbilities();
 
 		if (this.costCompletions.length > 0) {
 			// empty costs count as successful completion

@@ -1,19 +1,21 @@
 import {BaseCard} from "../card.mjs";
 
 export class ScriptValue {
+	#isSplit;
+	#value;
 	constructor(type, value) {
 		this.type = type;
-		this._isSplit = value instanceof Map;
-		this._value = value;
+		this.#isSplit = value instanceof Map;
+		this.#value = value;
 	}
 
 	// Returns the given player's version of this value.
 	get(player) {
-		if (this._isSplit) {
+		if (this.#isSplit) {
 			if (!player) throw new Error("Cannot read a split variable without providing a player!");
-			return this._value.get(player);
+			return this.#value.get(player);
 		}
-		return this._value;
+		return this.#value;
 	}
 
 	// Returns this value as a single number.

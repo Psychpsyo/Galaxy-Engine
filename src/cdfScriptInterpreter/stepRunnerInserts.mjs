@@ -35,7 +35,7 @@ export class OptionalEffectSectionInsert extends StepRunnerInsert {
 		const optionTree = new stepGenerators.OptionTreeNode(this.ctx.game, this.mainRunner, () => true);
 
 		if (!(await optionTree.isValid())) {
-			yield* this._tryRunElseBlock(isPrediction);
+			yield* this.#tryRunElseBlock(isPrediction);
 			return;
 		};
 
@@ -43,7 +43,7 @@ export class OptionalEffectSectionInsert extends StepRunnerInsert {
 		if (this.player) {
 			const optionalRequest = new requests.DoOptionalEffectSection(this.player, this.ctx.ability, this.mainBlock);
 			if (!await optionalRequest.extractResponseValue(yield [optionalRequest])) {
-				yield* this._tryRunElseBlock(isPrediction);
+				yield* this.#tryRunElseBlock(isPrediction);
 				return;
 			};
 		}
@@ -61,7 +61,7 @@ export class OptionalEffectSectionInsert extends StepRunnerInsert {
 		yield* this.thenRunner.run(isPrediction);
 	}
 
-	async* _tryRunElseBlock(isPrediction) {
+	async* #tryRunElseBlock(isPrediction) {
 		if (!this.elseBlock) return;
 		this.elseRunner = new stepGenerators.StepRunner(() => stepGenerators.abilityFractionStepGenerator(this.elseBlock, this.ctx), this.ctx.game);
 		yield* this.elseRunner.run(isPrediction);

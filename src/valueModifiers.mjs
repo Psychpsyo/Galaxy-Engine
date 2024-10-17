@@ -70,10 +70,10 @@ export class CompleteUnaffection extends Unaffection {
 }
 
 export class Modifier {
+	#wasStaticCancelled = false;
 	constructor(modifications, ctx) {
 		this.modifications = modifications;
 		this.ctx = ctx;
-		this._wasStaticCancelled = false;
 	}
 
 	modify(object, toBaseValues, toUnaffections) {
@@ -81,12 +81,12 @@ export class Modifier {
 		// re-baking static abilities once they un-cancel
 		if (this.ctx.ability instanceof abilities.StaticAbility) {
 			if (this.ctx.ability.isCancelled) {
-				this._wasStaticCancelled = true;
+				this.#wasStaticCancelled = true;
 				return values;
-			} else if (this._wasStaticCancelled) {
+			} else if (this.#wasStaticCancelled) {
 				// static ability became un-cancelled => re-bake modifications
-				this._wasStaticCancelled = false;
-				this.modifications = this._bakeModificationsStatic(object);
+				this.#wasStaticCancelled = false;
+				this.modifications = this.#bakeModificationsStatic(object);
 			}
 		}
 		// actually applying modifications
@@ -141,10 +141,10 @@ export class Modifier {
 	}
 
 	bakeStatic(target) {
-		return new Modifier(this._bakeModificationsStatic(target), this.ctx);
+		return new Modifier(this.#bakeModificationsStatic(target), this.ctx);
 	}
 
-	_bakeModificationsStatic(target) {
+	#bakeModificationsStatic(target) {
 		ast.setImplicit([target], target.cdfScriptType);
 		const bakedModifications = this.modifications.map(modification => modification.bakeStatic(this.ctx, target)).filter(modification => modification !== null);
 		ast.clearImplicit(target.cdfScriptType);

@@ -298,6 +298,8 @@ export class Card extends BaseCard {
 // a card with all its values frozen so it can be held in internal logs of what Actions happened in a Step.
 // these are also used in many actions undo() functions as a state to restore a card to.
 export class SnapshotCard extends BaseCard {
+	#actualGlobalId;
+	#actualCard;
 	constructor(card, equippedToSnapshot, equipmentSnapshot) {
 		super(card.owner, card.cardId, card.isToken, card.values.clone(), card.deckLimit, card.equipableTo, card.turnLimit, card.condition);
 		this.isRemovedToken = card.isRemovedToken;
@@ -331,8 +333,8 @@ export class SnapshotCard extends BaseCard {
 		this.hiddenFor = [...card.hiddenFor];
 		this.globalId = card.globalId;
 
-		this._actualGlobalId = card.globalId; // not to be changed by other things, this is what a card will be restored to, not what the snapshot counts as.
-		this._actualCard = card; // will not be cleared by card moving and is only for restoring a card on undo
+		this.#actualGlobalId = card.globalId; // not to be changed by other things, this is what a card will be restored to, not what the snapshot counts as.
+		this.#actualCard = card; // will not be cleared by card moving and is only for restoring a card on undo
 	}
 
 	// makes a snapshot of this card.
@@ -343,60 +345,60 @@ export class SnapshotCard extends BaseCard {
 	// restores this snapshot to the card it is a snapshot of.
 	// Note: Do not use this SnapshotCard after restoring!
 	restore() {
-		this._actualCard.isRemovedToken = this.isRemovedToken;
+		this.#actualCard.isRemovedToken = this.isRemovedToken;
 
 		// tokens might need to be restored back to non-existance
 		if (this.zone === null && this.placedTo === null) {
-			this._actualCard.zone.remove(this._actualCard);
+			this.#actualCard.zone.remove(this.#actualCard);
 			return;
 		}
-		this.zone?.add(this._actualCard, this.index, false);
-		this.placedTo?.place(this._actualCard, this.index);
-		if (this._actualCard.globalId != this._actualGlobalId) {
-			this._actualCard.undoInvalidateSnapshots();
+		this.zone?.add(this.#actualCard, this.index, false);
+		this.placedTo?.place(this.#actualCard, this.index);
+		if (this.#actualCard.globalId != this.#actualGlobalId) {
+			this.#actualCard.undoInvalidateSnapshots();
 		}
-		this._actualCard.lastFieldSidePlayer = this.lastFieldSidePlayer;
+		this.#actualCard.lastFieldSidePlayer = this.lastFieldSidePlayer;
 
-		this._actualCard.hiddenFor = [...this.hiddenFor];
+		this.#actualCard.hiddenFor = [...this.hiddenFor];
 
-		this._actualCard.values = this.values;
+		this.#actualCard.values = this.values;
 		// restoring snapshotted abilities and fixing up their card references
 		for (const ability of this.values.getAllAbilities()) {
-			ability.card = this._actualCard;
+			ability.card = this.#actualCard;
 			this.owner.game.currentAbilities.set(ability.globalId, ability);
 		}
 
-		this._actualCard.equippedTo = this.equippedTo?._actualCard ?? null;
-		if (this.equippedTo && !this._actualCard.equippedTo.equipments.includes(this._actualCard)) {
-			this._actualCard.equippedTo.equipments.push(this._actualCard);
+		this.#actualCard.equippedTo = this.equippedTo?.#actualCard ?? null;
+		if (this.equippedTo && !this.#actualCard.equippedTo.equipments.includes(this.#actualCard)) {
+			this.#actualCard.equippedTo.equipments.push(this.#actualCard);
 		}
-		this._actualCard.equipments = this.equipments.map(equipment => equipment._actualCard);
-		for (const equipment of this._actualCard.equipments) {
-			equipment.equippedTo = this._actualCard;
+		this.#actualCard.equipments = this.equipments.map(equipment => equipment.#actualCard);
+		for (const equipment of this.#actualCard.equipments) {
+			equipment.equippedTo = this.#actualCard;
 		}
 
 		for (const [counter, amount] of Object.entries(this.counters)) {
-			this._actualCard.counters[counter] = amount;
+			this.#actualCard.counters[counter] = amount;
 		}
-		this._actualCard.attacksMadeThisTurn = this.attacksMadeThisTurn;
-		this._actualCard.canAttackAgain = this.canAttackAgain;
-		this._actualCard.isAttackTarget = this.isAttackTarget;
-		this._actualCard.isAttacking = this.isAttacking;
+		this.#actualCard.attacksMadeThisTurn = this.attacksMadeThisTurn;
+		this.#actualCard.canAttackAgain = this.canAttackAgain;
+		this.#actualCard.isAttackTarget = this.isAttackTarget;
+		this.#actualCard.isAttacking = this.isAttacking;
 		if (this.isAttackTarget) {
-			this.owner.game.currentAttackDeclaration.target = this._actualCard;
+			this.owner.game.currentAttackDeclaration.target = this.#actualCard;
 		}
 		if (this.isAttacking) {
-			if (this.owner.game.currentAttackDeclaration.attackers.indexOf(this._actualCard) == -1) {
-				this.owner.game.currentAttackDeclaration.attackers.push(this._actualCard);
+			if (this.owner.game.currentAttackDeclaration.attackers.indexOf(this.#actualCard) == -1) {
+				this.owner.game.currentAttackDeclaration.attackers.push(this.#actualCard);
 			}
 		}
-		this._actualCard.inRetire = this.inRetire;
-		if (this.inRetire && !this.inRetire.units.includes(this._actualCard)) {
-			this.inRetire.units.push(this._actualCard);
+		this.#actualCard.inRetire = this.inRetire;
+		if (this.inRetire && !this.inRetire.units.includes(this.#actualCard)) {
+			this.inRetire.units.push(this.#actualCard);
 		}
-		this._actualCard.inAttackDeclarationBlock = this.inAttackDeclarationBlock;
-		if (this.inAttackDeclarationBlock && !this.inAttackDeclarationBlock.attackers.includes(this._actualCard)) {
-			this.inAttackDeclarationBlock.attackers.push(this._actualCard);
+		this.#actualCard.inAttackDeclarationBlock = this.inAttackDeclarationBlock;
+		if (this.inAttackDeclarationBlock && !this.inAttackDeclarationBlock.attackers.includes(this.#actualCard)) {
+			this.inAttackDeclarationBlock.attackers.push(this.#actualCard);
 		}
 	}
 }
