@@ -150,8 +150,8 @@ export class Game {
 		const deckShuffledEvents = [];
 		await currentPlayer.deckZone.shuffle();
 		await currentPlayer.next().deckZone.shuffle();
-		deckShuffledEvents.push(createDeckShuffledEvent(currentPlayer));
-		deckShuffledEvents.push(createDeckShuffledEvent(currentPlayer.next()));
+		deckShuffledEvents.push(createDeckShuffledEvent(currentPlayer.deckZone));
+		deckShuffledEvents.push(createDeckShuffledEvent(currentPlayer.next().deckZone));
 		yield deckShuffledEvents;
 
 		// RULES: Randomly decide the first player and the second player.

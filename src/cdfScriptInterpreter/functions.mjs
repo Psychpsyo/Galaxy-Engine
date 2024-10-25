@@ -1270,7 +1270,7 @@ defense: ${defense}`;
 		undefined // TODO: Write evalFull
 	),
 
-	// Swaps two cards with eachother
+	// The player looks at a card.
 	VIEW: new ScriptFunction(
 		["card"],
 		[null],
@@ -1287,7 +1287,7 @@ defense: ${defense}`;
 		}
 	),
 
-	// Swaps two cards with eachother
+	// The player wins the game
 	WINGAME: new ScriptFunction(
 		[],
 		[],

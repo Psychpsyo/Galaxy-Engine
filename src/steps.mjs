@@ -98,7 +98,7 @@ export class Step {
 	}
 
 	// applies static abilities like that on 'Substitution Doll' or 'Norma, of the Sandstorm'
-	async *#handleModificationAbilities() {
+	async* #handleModificationAbilities() {
 		// gather abilities
 		const applicableAbilities = new Map();
 		const targets = new Map(); // cards that modification abilities will apply to

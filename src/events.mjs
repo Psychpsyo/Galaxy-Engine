@@ -1,10 +1,10 @@
 // event definitions to be passed out of the engine as they happen
 
-export function createDeckShuffledEvent(player) {
+export function createDeckShuffledEvent(deck) {
 	return {
 		nature: "event",
 		type: "deckShuffled",
-		player: player
+		deck: deck
 	}
 }
 
