@@ -7,7 +7,7 @@ if (Fire + Water != Fire) {
 if (COUNT(Fire + Water) != 2) {
 	opponent.WINGAME();
 };
-if (COUNT(Fire + Fire) != 1) {
+if (COUNT(Fire + Fire) != 2) {
 	opponent.WINGAME();
 };
 WINGAME();

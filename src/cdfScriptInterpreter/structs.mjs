@@ -1,5 +1,9 @@
 import {BaseCard} from "../card.mjs";
 
+// types which are treated as sets (forbidding duplicate values)
+// TODO: re-evaluate if this is necessary / what the implications are
+const setTypes = ["card", "player"];
+
 export class ScriptValue {
 	#isSplit;
 	#value;
@@ -103,12 +107,14 @@ export class ScriptValue {
 				// TODO: maybe limit this to the types where it actually makes sense.
 				//       deduplication also causes weird inconsistencies with COUNT() or SUM() functions and should probably only apply if these are unique values. (like cards or players)
 				const retVal = this.get(player).concat(other.get(player));
-				// de-duplicate identical values
-				for (let i = 0; i < retVal.length - 1; i++) {
-					for (let j = i + 1; j < retVal.length; j++) {
-						if (equalityCompare(retVal[i], retVal[j], player.game)) {
-							retVal.splice(j, 1);
-							j--;
+				// de-duplicate identical values if this type is a set.
+				if (setTypes.includes(this.type)) {
+					for (let i = 0; i < retVal.length - 1; i++) {
+						for (let j = i + 1; j < retVal.length; j++) {
+							if (equalityCompare(retVal[i], retVal[j], player.game)) {
+								retVal.splice(j, 1);
+								j--;
+							}
 						}
 					}
 				}
@@ -132,7 +138,11 @@ export class ScriptValue {
 				const retVal = [];
 				const otherValues = other.get(player);
 				for (const element of this.get(player)) {
-					if (!otherValues.some(elem => equalityCompare(elem, element, player.game))) {
+					if (otherValues.some(elem => equalityCompare(elem, element, player.game))) {
+						if (!setTypes.includes(this.type)) {
+							otherValues.splice(otherValues.findIndex(elem => equalityCompare(elem, element, player.game)), 1);
+						}
+					} else {
 						retVal.push(element);
 					}
 				}
