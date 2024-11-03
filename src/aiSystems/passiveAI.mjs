@@ -1,4 +1,4 @@
-import {AI} from "./baseAI.mjs";
+import AI from "./baseAI.mjs";
 
 // AI system that does nothing except if it absolutely has to,
 // kinda like myself sometimes... haha

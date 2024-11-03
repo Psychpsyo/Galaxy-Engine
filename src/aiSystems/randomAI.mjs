@@ -1,4 +1,4 @@
-import {AI} from "./baseAI.mjs";
+import AI from "./baseAI.mjs";
 
 // an AI that just picks random options at any possible time.
 // NOT RECOMMENDED FOR ACTUAL GAMES, because:
