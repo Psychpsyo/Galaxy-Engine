@@ -219,7 +219,7 @@ export class Fight extends Block {
 }
 
 export class AbilityActivation extends Block {
-	constructor(stack, player, ability) {
+	constructor(stack, player, ability, costOptionTree) {
 		// By the time this block executes, the snapshot might not be able to resolve to a card anymore
 		// This is good because any references to "this card" should be invalid by then.
 		const card = ability.card.snapshot();
@@ -234,6 +234,8 @@ export class AbilityActivation extends Block {
 				player.game
 			)
 		);
+		costOptionTree.setRunner(this.costStepRunner);
+		this.costStepRunner.optionTree = costOptionTree;
 		this.card = card;
 		this.ability = ability;
 	}

@@ -60,19 +60,16 @@ export class Ability extends BaseAbility {
 		this.scriptVariables = {};
 	}
 
-	async canActivate(card, player, evaluatingPlayer = player) {
+	async getActivatabilityCostOptionTree(card, player, evaluatingPlayer = player) {
 		if (!this.isConditionMet(player, evaluatingPlayer)) {
-			return false;
+			return null;
 		}
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
-		if (!this.forPlayer.evalFull(ctx).next().value.get(player).includes(player)) return false;
-		if (this.cost === null) {
-			return this.exec.hasAllTargets(ctx);
-		}
+		if (!this.forPlayer.evalFull(ctx).next().value.get(player).includes(player)) return null;
+
 		const stepRunner = new stepGenerators.StepRunner(() => stepGenerators.abilityCostStepGenerator(this, card, player), player.game);
 		stepRunner.isCost = true;
-		const costOptionTree = new stepGenerators.OptionTreeNode(player.game, stepRunner, () => this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)));
-		return costOptionTree.isValid();
+		return new stepGenerators.OptionTreeNode(player.game, stepRunner, () => this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)));
 	}
 
 	* runCost(card, player) {
@@ -105,7 +102,7 @@ export class CastAbility extends Ability {
 		this.triggerPreconditionMet = false;
 	}
 
-	// does not call super.canActivate() to not perform a redundant and inaccurate cost check during spell casting
+	// does not use getActivatabilityCostOptionTree as that behavior is rolled into the relevant function on spell cards
 	canActivate(card, player, evaluatingPlayer = player) {
 		if (!this.forPlayer.evalFull(new ScriptContext(card, player, this, evaluatingPlayer)).next().value.get(player).includes(player)) return false;
 		return this.isConditionMet(player, evaluatingPlayer) && (this.after === null || (player.game.currentStack() && this.triggerMetOnStacks.includes(player.game.currentStack().index - 1)));
@@ -127,7 +124,7 @@ export class DeployAbility extends Ability {
 		super(ability, game);
 	}
 
-	// does not call super.canActivate() to not perform a redundant and inaccurate cost check during item deployment
+	// does not use getActivatabilityCostOptionTree as that behavior is rolled into the relevant function on item cards
 	canActivate(card, player, evaluatingPlayer = player) {
 		if (!this.forPlayer.evalFull(new ScriptContext(card, player, this, evaluatingPlayer)).next().value.get(player).includes(player)) return false;
 		return this.isConditionMet(player, evaluatingPlayer);
@@ -145,22 +142,22 @@ export class OptionalAbility extends Ability {
 		this.zoneActivationCount = 0;
 	}
 
-	async canActivate(card, player, evaluatingPlayer = player) {
+	async getActivatabilityCostOptionTree(card, player, evaluatingPlayer = player) {
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
-		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
+		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return null;
 
 		const gameLimit = this.gameLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (gameLimit !== Infinity && player.game.getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= gameLimit)
-			return false;
+			return null;
 
 		if (this.zoneActivationCount >= this.zoneDurationLimit.evalFull(ctx).next().value.getJsNum(player))
-			return false;
+			return null;
 
 		const globalTurnLimit = this.globalTurnLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (globalTurnLimit !== Infinity && player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= globalTurnLimit)
-			return false;
+			return null;
 
-		return super.canActivate(card, player, evaluatingPlayer);
+		return super.getActivatabilityCostOptionTree(card, player, evaluatingPlayer);
 	}
 
 	successfulActivation() {
@@ -186,22 +183,22 @@ export class FastAbility extends Ability {
 		this.zoneActivationCount = 0;
 	}
 
-	async canActivate(card, player, evaluatingPlayer = player) {
+	async getActivatabilityCostOptionTree(card, player, evaluatingPlayer = player) {
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
-		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
+		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return null;
 
 		let gameLimit = this.gameLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (gameLimit !== Infinity && player.game.getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= gameLimit)
-			return false;
+			return null;
 
 		if (this.zoneActivationCount >= this.zoneDurationLimit.evalFull(ctx).next().value.getJsNum(player))
-			return false;
+			return null;
 
 		let globalTurnLimit = this.globalTurnLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (globalTurnLimit !== Infinity && player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= globalTurnLimit)
-			return false;
+			return null;
 
-		return super.canActivate(card, player, evaluatingPlayer);
+		return super.getActivatabilityCostOptionTree(card, player, evaluatingPlayer);
 	}
 
 	successfulActivation() {
@@ -243,24 +240,24 @@ export class TriggerAbility extends Ability {
 		this.zoneActivationCount = 0;
 	}
 
-	async canActivate(card, player, evaluatingPlayer = player) {
-		if (!this.triggerMetOnStacks.includes((player.game.currentStack()?.index ?? 0) - 1)) return false;
+	async getActivatabilityCostOptionTree(card, player, evaluatingPlayer = player) {
+		if (!this.triggerMetOnStacks.includes((player.game.currentStack()?.index ?? 0) - 1)) return null;
 
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
-		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
+		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return null;
 
 		let gameLimit = this.gameLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (gameLimit !== Infinity && player.game.getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= gameLimit)
-			return false;
+			return null;
 
 		if (this.zoneActivationCount >= this.zoneDurationLimit.evalFull(ctx).next().value.getJsNum(player))
-			return false;
+			return null;
 
 		let globalTurnLimit = this.globalTurnLimit.evalFull(ctx).next().value.getJsNum(player);
 		if (globalTurnLimit !== Infinity && player.game.currentTurn().getBlocks().filter(block => block instanceof blocks.AbilityActivation && block.ability.id === this.id && block.player === player).length >= globalTurnLimit)
-			return false;
+			return null;
 
-		return super.canActivate(card, player, evaluatingPlayer);
+		return super.getActivatabilityCostOptionTree(card, player, evaluatingPlayer);
 	}
 
 	checkTrigger(player) {

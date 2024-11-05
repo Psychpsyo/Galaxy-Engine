@@ -260,34 +260,67 @@ export class Draw extends Action {
 	}
 }
 
-// places a card on the field without moving it there yet.
-export class Place extends Action {
-	constructor(player, card, zone) {
+export class LiftCardOutOfCurrentZone extends Action {
+	constructor(player, card) {
 		super(player);
 		this.card = card;
-		this.zone = zone;
+	}
+
+	async* run(isPrediction) {
+		const card = this.card.current();
+		this.card = this.card.snapshot();
+		card.zone?.remove(card);
+		return events.createCardLiftedOutOfCurrentZoneEvent(this.player, this.card);
+	}
+
+	undo(isPrediction) {
+		this.card.restore();
+	}
+
+	async isImpossible() {
+		return this.card.current() === null;
+	}
+
+	isIdenticalTo(other) {
+		if (this.constructor !== other.constructor) return false;
+		return this.card.current() === other.card.current();
+	}
+
+	get affectedObjects() {
+		return [this.card];
+	}
+}
+
+// places a card on the field without moving it there yet.
+export class Place extends Action {
+	constructor(player, card, toZone) {
+		super(player);
+		this.card = card;
+		// store the from zone here since, by the time this actually gets run, the card will have been lifted from that zone.
+		this.fromZone = card.zone;
+		this.targetZone = toZone;
 		this.targetIndex = null;
 	}
 
 	async* run(isPrediction) {
-		this.targetIndex = await (yield* queryZoneSlot(this.player, this.zone));
+		this.targetIndex = await (yield* queryZoneSlot(this.player, this.targetZone));
 		const card = this.card.current();
 		this.card = this.card.snapshot();
-		this.zone.place(card, this.targetIndex);
-		return events.createCardPlacedEvent(this.player, this.card, this.zone, this.targetIndex);
+		this.targetZone.place(card, this.targetIndex);
+		return events.createCardPlacedEvent(this.player, this.card, this.targetZone, this.targetIndex);
 	}
 
 	undo(isPrediction) {
-		this.zone.placed[this.targetIndex] = null;
+		this.targetZone.placed[this.targetIndex] = null;
 		this.card.restore();
 		return events.createUndoCardsMovedEvent([
-			{fromZone: this.zone, fromIndex: this.targetIndex, toZone: this.card.zone, toIndex: this.card.index}
+			{fromZone: this.targetZone, fromIndex: this.targetIndex, toZone: this.card.zone, toIndex: this.card.index}
 		]);
 	}
 
 	async isImpossible() {
 		if (this.card.current() === null) return true;
-		return getAvailableZoneSlots(this.zone).length < this.step.actions.filter(action => action instanceof Place).length;
+		return getAvailableZoneSlots(this.targetZone).length < this.step.actions.filter(action => action instanceof Place).length;
 	}
 
 	isIdenticalTo(other) {
@@ -305,8 +338,8 @@ export class Summon extends Action {
 	constructor(player, placeAction, reason, source) {
 		const properties = {
 			dueTo: reason,
-			from: new ScriptValue("zone", [placeAction.card.zone]),
-			to: new ScriptValue("zone", [placeAction.zone])
+			from: new ScriptValue("zone", [placeAction.fromZone]),
+			to: new ScriptValue("zone", [placeAction.targetZone])
 		};
 		if (source) { // standard summons have no source
 			properties.by = source;
@@ -319,8 +352,8 @@ export class Summon extends Action {
 	async* run(isPrediction) {
 		const card = this.card.current();
 		this.card = this.card.snapshot();
-		let summonEvent = events.createCardSummonedEvent(this.player, this.card, this.#placeAction.zone, this.#placeAction.targetIndex);
-		this.#placeAction.zone.add(card, this.#placeAction.targetIndex);
+		let summonEvent = events.createCardSummonedEvent(this.player, this.card, this.#placeAction.targetZone, this.#placeAction.targetIndex);
+		this.#placeAction.targetZone.add(card, this.#placeAction.targetIndex);
 		this.#placeAction.card.globalId = card.globalId;
 		this.card.globalId = card.globalId;
 		return summonEvent;
@@ -332,7 +365,7 @@ export class Summon extends Action {
 
 	async isImpossible() {
 		if (this.card.current() === null) return true;
-		let slotCard = this.#placeAction.zone.get(this.#placeAction.targetIndex);
+		let slotCard = this.#placeAction.targetZone.get(this.#placeAction.targetIndex);
 		return slotCard != null && slotCard != this.card.current();
 	}
 

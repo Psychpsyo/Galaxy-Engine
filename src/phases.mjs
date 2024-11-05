@@ -94,8 +94,8 @@ export class StackPhase extends Phase {
 		return [
 			new requests.Pass(stack.getNextPlayer()),
 			new requests.CastSpell(stack.getNextPlayer(), ...(await this.getCastableSpells(stack))),
-			new requests.ActivateTriggerAbility(stack.getNextPlayer(), await this.getActivatableTriggerAbilities(stack)),
-			new requests.ActivateFastAbility(stack.getNextPlayer(), await this.getActivatableFastAbilities(stack))
+			new requests.ActivateTriggerAbility(stack.getNextPlayer(), ...(await this.getActivatableTriggerAbilities(stack))),
+			new requests.ActivateFastAbility(stack.getNextPlayer(), ...(await this.getActivatableFastAbilities(stack)))
 		];
 	}
 
@@ -115,28 +115,38 @@ export class StackPhase extends Phase {
 
 	async getActivatableFastAbilities(stack) {
 		const eligibleAbilities = [];
+		const costOptionTrees = [];
 		const player = stack.getNextPlayer();
 		for (const card of stack.phase.turn.game.getActiveCards()) {
 			for (const ability of card.values.current.abilities) {
-				if (ability instanceof abilities.FastAbility && await ability.canActivate(ability.card, player)) {
-					eligibleAbilities.push(ability);
+				if (ability instanceof abilities.FastAbility) {
+					const costOptionTree = await ability.getActivatabilityCostOptionTree(ability.card, player);
+					if (await costOptionTree?.isValid()) { // no tree = precondition failed = invalid
+						eligibleAbilities.push(ability);
+						costOptionTrees.push(costOptionTree);
+					}
 				}
 			}
 		}
-		return eligibleAbilities;
+		return [eligibleAbilities, costOptionTrees];
 	}
 
 	async getActivatableTriggerAbilities(stack) {
 		const eligibleAbilities = [];
+		const costOptionTrees = [];
 		const player = stack.getNextPlayer();
 		for (const card of stack.phase.turn.game.getActiveCards()) {
 			for (const ability of card.values.current.abilities) {
-				if (ability instanceof abilities.TriggerAbility && await ability.canActivate(ability.card, player)) {
-					eligibleAbilities.push(ability);
+				if (ability instanceof abilities.TriggerAbility) {
+					const costOptionTree = await ability.getActivatabilityCostOptionTree(ability.card, player);
+					if (await costOptionTree?.isValid()) { // no tree = precondition failed = invalid
+						eligibleAbilities.push(ability);
+						costOptionTrees.push(costOptionTree);
+					}
 				}
 			}
 		}
-		return eligibleAbilities;
+		return [eligibleAbilities, costOptionTrees];
 	}
 
 	getBlocks() {
@@ -295,21 +305,26 @@ export class MainPhase extends StackPhase {
 			}
 
 			// optional abilities
-			options.push(new requests.ActivateOptionalAbility(this.turn.player, await this.getActivatableOptionalAbilities()));
+			options.push(new requests.ActivateOptionalAbility(this.turn.player, ...(await this.getActivatableOptionalAbilities())));
 		}
 		return getHighestPriorityOptions(options);
 	}
 
 	async getActivatableOptionalAbilities() {
 		const eligibleAbilities = [];
+		const costOptionTrees = [];
 		for (const card of this.turn.game.getActiveCards()) {
 			for (const ability of card.values.current.abilities) {
-				if (ability instanceof abilities.OptionalAbility && await ability.canActivate(ability.card, this.turn.player)) {
-					eligibleAbilities.push(ability);
+				if (ability instanceof abilities.OptionalAbility) {
+					const costOptionTree = await ability.getActivatabilityCostOptionTree(ability.card, this.turn.player);
+					if (await costOptionTree?.isValid()) { // no tree = precondition failed = invalid
+						eligibleAbilities.push(ability);
+						costOptionTrees.push(costOptionTree);
+					}
 				}
 			}
 		}
-		return eligibleAbilities;
+		return [eligibleAbilities, costOptionTrees];
 	}
 
 	async getSummonableUnits() {
@@ -387,7 +402,7 @@ export class EndPhase extends StackPhase {
 			for (const ability of card.values.current.abilities) {
 				if (!(ability instanceof abilities.TriggerAbility)) continue;
 				for (const player of ability.forPlayer.evalFull(new ScriptContext(card, card.currentOwner(), ability)).next().value.get(card.currentOwner())) {
-					if (await ability.canActivate(card, player)) {
+					if ((await ability.getActivatabilityCostOptionTree(ability.card, player))?.isValid()) {
 						return true;
 					}
 				}

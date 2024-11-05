@@ -81,7 +81,12 @@ export class Stack {
 				case "activateOptionalAbility":
 				case "activateFastAbility":
 				case "activateTriggerAbility": {
-					nextBlock = new blocks.AbilityActivation(this, this.getNextPlayer(), responseValue.current());
+					nextBlock = new blocks.AbilityActivation(
+						this,
+						this.getNextPlayer(),
+						responseValue.current(),
+						request._costOptionTrees[request.eligibleAbilities.indexOf(responseValue)]
+					);
 					break;
 				}
 			}

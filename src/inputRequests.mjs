@@ -604,9 +604,10 @@ export class DoRetire extends InputRequest {
 }
 
 export class ActivateOptionalAbility extends InputRequest {
-	constructor(player, eligibleAbilities) {
+	constructor(player, eligibleAbilities, costOptionTrees) {
 		super(player, "activateOptionalAbility");
 		this.eligibleAbilities = eligibleAbilities;
+		this._costOptionTrees = costOptionTrees;
 	}
 
 	async extractResponseValue(response) {
@@ -634,9 +635,10 @@ export class ActivateOptionalAbility extends InputRequest {
 }
 
 export class ActivateFastAbility extends InputRequest {
-	constructor(player, eligibleAbilities) {
+	constructor(player, eligibleAbilities, costOptionTrees) {
 		super(player, "activateFastAbility");
 		this.eligibleAbilities = eligibleAbilities;
+		this._costOptionTrees = costOptionTrees;
 	}
 
 	async extractResponseValue(response) {
@@ -664,9 +666,10 @@ export class ActivateFastAbility extends InputRequest {
 }
 
 export class ActivateTriggerAbility extends InputRequest {
-	constructor(player, eligibleAbilities) {
+	constructor(player, eligibleAbilities, costOptionTrees) {
 		super(player, "activateTriggerAbility");
 		this.eligibleAbilities = eligibleAbilities;
+		this._costOptionTrees = costOptionTrees;
 	}
 
 	async extractResponseValue(response) {

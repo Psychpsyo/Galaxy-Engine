@@ -114,6 +114,8 @@ export class BaseCard {
 				break;
 			}
 		}
+		// Lifting the card out of the hand needs to be the last part of its cost so that the validity checker for its exec does not have access to it during its effect
+		generators.push(stepGenerators.arrayStepGenerator([[new actions.LiftCardOutOfCurrentZone(player, this)]]));
 		return stepGenerators.combinedStepGenerator(generators);
 	}
 	getDeploymentCost(player, scriptTargets) {
@@ -135,6 +137,8 @@ export class BaseCard {
 				break;
 			}
 		}
+		// Lifting the card out of the hand needs to be the last part of its cost so that the validity checker for its exec does not have access to it during its effect
+		generators.push(stepGenerators.arrayStepGenerator([[new actions.LiftCardOutOfCurrentZone(player, this)]]));
 		return stepGenerators.combinedStepGenerator(generators);
 	}
 
