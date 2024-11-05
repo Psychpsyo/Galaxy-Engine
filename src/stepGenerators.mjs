@@ -9,15 +9,16 @@ import * as actions from "./actions.mjs";
 import * as requests from "./inputRequests.mjs";
 
 export class StepRunner {
+	#history = []; // contains both steps and inserts that were run
 	constructor(generatorFunction, game) {
 		this.generatorFunction = generatorFunction;
 		this.game = game;
 		this.optionTree = null; // this is used to determine which options that a player could pick are actually valid
 		this.isCost = false;
-		this.history = []; // contains both steps and inserts that were run
 	}
 
 	// wrapper around runAndIgnoreOptionTree() that walks the option tree as we progress through the generator
+	// (this one does not ignore the option tree)
 	async* run(isPrediction = false) {
 		const runGenerator = this.runAndIgnoreOptionTree(isPrediction);
 		let events = await runGenerator.next();
@@ -49,9 +50,9 @@ export class StepRunner {
 	async* runAndIgnoreOptionTree(isPrediction = false) {
 		const interjected = await (yield* runInterjectedSteps(this.game, isPrediction));
 		if (interjected) {
-			this.history.push(interjected);
-			while (this.history.at(-1).followupStep) {
-				this.history.push(this.history.at(-1).followupStep);
+			this.#history.push(interjected);
+			while (this.#history.at(-1).followupStep) {
+				this.#history.push(this.#history.at(-1).followupStep);
 			}
 		}
 
@@ -67,10 +68,10 @@ export class StepRunner {
 					action.costIndex = 0;
 				}
 			}
-			this.history.push(step);
+			this.#history.push(step);
 			yield* step.run(isPrediction);
-			while (this.history.at(-1).followupStep) {
-				this.history.push(this.history.at(-1).followupStep);
+			while (this.#history.at(-1).followupStep) {
+				this.#history.push(this.#history.at(-1).followupStep);
 			}
 			if (!step.successful && this.isCost) {
 				return false;
@@ -86,7 +87,7 @@ export class StepRunner {
 		while (!generatorOutput.done) {
 			if (generatorOutput.value instanceof StepRunnerInsert) {
 				yield* generatorOutput.value.run(isPrediction);
-				this.history.push(generatorOutput.value);
+				this.#history.push(generatorOutput.value);
 				generatorOutput = stepGenerator.next();
 				continue;
 			}
@@ -102,13 +103,13 @@ export class StepRunner {
 	}
 
 	* undo(isPrediction = false) {
-		while (this.history.length > 0) {
-			yield* this.history.pop().undo(isPrediction);
+		while (this.#history.length > 0) {
+			yield* this.#history.pop().undo(isPrediction);
 		}
 	}
 
 	getSteps() {
-		return this.history.map(histElem => {
+		return this.#history.map(histElem => {
 			if (histElem instanceof Step) return histElem;
 			// else it's an insert
 			return histElem.getSteps();
@@ -178,6 +179,7 @@ export class OptionTreeNode {
 					this.#isValid = false;
 					break;
 				}
+
 			} while (!events.done && !(events.value[0] instanceof requests.InputRequest));
 		} else { // we are at the end, do not try and go further
 			this.#isValid = this.endOfTreeCheck();
