@@ -62,14 +62,13 @@ function getSuccessfulActions(step, actionList) {
 }
 
 class ScriptFunction {
-	// finalizeRetVal is used to 'post-process' the returned actions after they have been merged for players and executed.
-	// It is only called for functions that return tempAction
 	constructor(parameterTypes = [], defaultValues = [], returnType, func, hasAllTargets, funcFull) {
 		this.parameterTypes = parameterTypes;
 		this.defaultValues = defaultValues;
 		this.returnType = returnType;
 		this.run = func.bind(this);
 		this.hasAllTargets = hasAllTargets.bind(this);
+		// this should retun all the possible return values of this function
 		this.runFull = funcFull?.bind(this);
 	}
 
@@ -1138,7 +1137,9 @@ export function initFunctions() {
 			return new ScriptValue("card", getSuccessfulActions(summonStep, summons).map(action => action.card));
 		},
 		hasCardTarget,
-		undefined // TODO: Write evalFull
+		function*(astNode, ctx) {
+			yield* this.getParameter(astNode, "card").evalFull(ctx);
+		}
 	),
 
 	// summons some number of the specified tokens to the given zone
