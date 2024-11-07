@@ -1121,7 +1121,7 @@ export class Shuffle extends Action {
 		// during predictions, anything that needs randomness must be avoided since randomness can require cooperation by the opponent
 		if (isPrediction) return;
 		await this.player.deckZone.shuffle();
-		return events.createDeckShuffledEvent(this.player);
+		return events.createDeckShuffledEvent(this.player.deckZone);
 	}
 
 	undo(isPrediction) {
