@@ -157,8 +157,15 @@ export function createCardsDrawnEvent(player, cards) {
 export function createCardLiftedOutOfCurrentZoneEvent(player, card) {
 	return {
 		"nature": "event",
-		"type": "cardLiftedOutOfHand",
+		"type": "cardLiftedOutOfCurrentZone",
 		"player": player,
+		"card": card
+	}
+}
+export function createUndoCardLiftedOutOfCurrentZoneEvent(card) {
+	return {
+		"nature": "event",
+		"type": "undoCardLiftedOutOfCurrentZone",
 		"card": card
 	}
 }

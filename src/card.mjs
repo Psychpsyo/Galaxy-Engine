@@ -164,15 +164,15 @@ export class BaseCard {
 			return null;
 		}
 
-		const currentZone = this.zone; // Can't discard a spell for its own cost
-		let endOfTreeCheck = () => this.zone === currentZone && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
+		// the card must be out of any zone which can only happen if the LiftCardOutOfCurrentZone action of the cost was able to lift it from the zone it was supposed to be cast from.
+		let endOfTreeCheck = () => this.zone === null && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
 		// find cast ability
 		for (const ability of this.values.current.abilities) {
 			if (ability instanceof abilities.CastAbility) {
 				if (!ability.canActivate(this, player, evaluatingPlayer)) {
 					return null;
 				}
-				endOfTreeCheck = () => ability.exec.hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer, scriptTargets)) && this.zone === currentZone && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
+				endOfTreeCheck = () => ability.exec.hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer, scriptTargets)) && this.zone === null && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
 			}
 		}
 
@@ -193,15 +193,15 @@ export class BaseCard {
 			return null;
 		}
 
-		const currentZone = this.zone; // Can't discard an item for its own cost
-		let endOfTreeCheck = () => this.zone === currentZone && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
+		// the card must be out of any zone which can only happen if the LiftCardOutOfCurrentZone action of the cost was able to lift it from the zone it was supposed to be cast from.
+		let endOfTreeCheck = () => this.zone === null && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
 		// find deploy ability
 		for (const ability of this.values.current.abilities) {
 			if (ability instanceof abilities.DeployAbility) {
 				if (!ability.canActivate(this, player, evaluatingPlayer)) {
 					return null;
 				}
-				endOfTreeCheck = () => ability.exec.hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer, scriptTargets)) && this.zone === currentZone && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
+				endOfTreeCheck = () => ability.exec.hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer, scriptTargets)) && this.zone === null && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
 			}
 		}
 
@@ -351,13 +351,13 @@ export class SnapshotCard extends BaseCard {
 	restore() {
 		this.#actualCard.isRemovedToken = this.isRemovedToken;
 
-		// tokens might need to be restored back to non-existance
+		// some cards just need to be removed from their zone back into nowhere.
 		if (this.zone === null && this.placedTo === null) {
-			this.#actualCard.zone.remove(this.#actualCard);
-			return;
+			this.#actualCard.zone?.remove(this.#actualCard);
+		} else {
+			this.zone?.add(this.#actualCard, this.index, false);
+			this.placedTo?.place(this.#actualCard, this.index);
 		}
-		this.zone?.add(this.#actualCard, this.index, false);
-		this.placedTo?.place(this.#actualCard, this.index);
 		if (this.#actualCard.globalId != this.#actualGlobalId) {
 			this.#actualCard.undoInvalidateSnapshots();
 		}

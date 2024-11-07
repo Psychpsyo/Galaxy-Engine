@@ -261,33 +261,37 @@ export class Draw extends Action {
 }
 
 export class LiftCardOutOfCurrentZone extends Action {
+	#card;
+	#zone;
 	constructor(player, card) {
 		super(player);
-		this.card = card;
+		this.#card = card;
+		this.#zone = card.zone;
 	}
 
 	async* run(isPrediction) {
-		const card = this.card.current();
-		this.card = this.card.snapshot();
+		const card = this.#card.current();
+		this.#card = this.#card.snapshot();
 		card.zone?.remove(card);
-		return events.createCardLiftedOutOfCurrentZoneEvent(this.player, this.card);
+		return events.createCardLiftedOutOfCurrentZoneEvent(this.player, this.#card);
 	}
 
 	undo(isPrediction) {
-		this.card.restore();
+		this.#card.restore();
+		return events.createUndoCardLiftedOutOfCurrentZoneEvent(this.#card.current());
 	}
 
 	async isImpossible() {
-		return this.card.current() === null;
+		return this.#card.current() === null || this.#card.zone !== this.#zone;
 	}
 
 	isIdenticalTo(other) {
 		if (this.constructor !== other.constructor) return false;
-		return this.card.current() === other.card.current();
+		return this.#card.current() === other.#card.current();
 	}
 
 	get affectedObjects() {
-		return [this.card];
+		return [this.#card];
 	}
 }
 

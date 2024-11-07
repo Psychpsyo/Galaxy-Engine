@@ -6,11 +6,11 @@ import {promises as fs} from "fs";
 import {Game} from "../../src/game.mjs";
 import {InputRequest} from "../../src/inputRequests.mjs";
 
-const testDir = import.meta.dirname + "/invalid"
+const testDir = import.meta.dirname
 const promises = [];
 
-async function evaluateReplay(filename) {
-	const replay = JSON.parse(await fs.readFile(`${testDir}/${filename}`, "utf8"));
+async function evaluateReplay(filename, shouldError) {
+	const replay = JSON.parse(await fs.readFile(`${testDir}/${shouldError? "invalid" : "valid"}/${filename}`, "utf8"));
 	const game = new Game();
 	game.setReplay(replay);
 
@@ -21,19 +21,26 @@ async function evaluateReplay(filename) {
 				break;
 			}
 		}
-		fs.unlink(`${testDir}/${filename}`);
 	} catch(e) {
-		if (e.message !== replay.extra.expectedError) {
-			console.log(`Test replay ${filename} threw the wrong error.\nThrown:   ${e.message}\nExpected: ${replay.extra.expectedError}`);
+		if (shouldError) {
+			if (e.message !== replay.extra.expectedError) {
+				console.log(`Invalid test replay ${filename} threw the wrong error.\nThrown:   ${e.message}\nExpected: ${replay.extra.expectedError}`);
+			}
+		} else {
+			console.log(`Valid test replay ${filename} errored when it shouldn't have: ${e.message}`);
 		}
 		return;
 	}
-	console.log(`Test replay ${filename} did not error when it should have.`);
+	if (shouldError) {
+		console.log(`Invalid test replay ${filename} did not error when it should have.`);
+	}
 }
 
-for (const file of await fs.readdir(testDir)) {
-	if (!file.endsWith(".replay")) continue;
-	promises.push(evaluateReplay(file));
+for (const file of await fs.readdir(`${testDir}/valid`)) {
+	promises.push(evaluateReplay(file, false));
+}
+for (const file of await fs.readdir(`${testDir}/invalid`)) {
+	promises.push(evaluateReplay(file, true));
 }
 
 await Promise.all(promises);
