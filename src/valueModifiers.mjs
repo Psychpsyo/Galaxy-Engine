@@ -257,11 +257,21 @@ export class ValueSetModification extends ValueModification {
 	}
 
 	bake(ctx, target) {
-		let valueArray = this.newValue.evalFull(ctx).next().value.get(ctx.player);
+		let valueArray = this.newValue.evalFull(ctx).next().value;
+		let type = valueArray.type;
+		valueArray = valueArray.get(ctx.player);
 		if (valueArray.length == 0) {
 			return null;
 		}
-		return new ValueSetModification(this.value, new ast.ValueNode(valueArray, this.newValue.returnType), this.toBase, this.condition);
+		// construct ability instances now
+		if (this.value === "abilities") {
+			valueArray = valueArray.map(val => makeAbility(type === "abilityId"? val : val.id, ctx.game));
+			for (const ability of valueArray) {
+				ability.card = target;
+			}
+			type = "ability";
+		}
+		return new ValueSetModification(this.value, new ast.ValueNode(valueArray, type), this.toBase, this.condition);
 	}
 }
 
@@ -289,7 +299,7 @@ export class ValueAppendModification extends ValueModification {
 
 	bake(ctx, target) {
 		let valueArray = this.newValues.evalFull(ctx).next().value;
-		const type = valueArray.type;
+		let type = valueArray.type;
 		valueArray = valueArray.get(ctx.player);
 		if (valueArray.length == 0) {
 			return null;
@@ -300,6 +310,7 @@ export class ValueAppendModification extends ValueModification {
 			for (const ability of valueArray) {
 				ability.card = target;
 			}
+			type = "ability";
 		}
 		return new ValueAppendModification(this.value, new ast.ValueNode(valueArray, type), this.toBase, this.condition);
 	}
@@ -309,7 +320,7 @@ export class ValueAppendModification extends ValueModification {
 
 		let valueArray = this.newValues.evalFull(ctx).next().value;
 		const type = valueArray.type;
-		valueArray = valueArray.get(ctx.player).map(val => makeAbility(type === "abilityId"? val : val.id, ctx.game));
+		valueArray = valueArray.get(ctx.player).map(val => makeAbility(this.newValues.returnType === "abilityId"? val : val.id, ctx.game));
 		for (const ability of valueArray) {
 			ability.card = target;
 		}

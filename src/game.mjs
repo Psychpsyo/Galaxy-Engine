@@ -252,6 +252,9 @@ export class Game {
 	// Loads a replay. The replay doesn't need to be complete.
 	setReplay(replay) {
 		if (replay.config) {
+			if (replay.config.upperDeckLimit === null) {
+				replay.config.upperDeckLimit = Infinity;
+			}
 			this.config = replay.config;
 			this.replay.config = replay.config;
 		}
