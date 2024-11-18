@@ -6,6 +6,7 @@ import {BaseCard} from "./card.mjs";
 import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {StaticAbility} from "./abilities.mjs";
+import {UndoActionQueueEntry} from "./steps.mjs";
 
 // helper functions
 
@@ -487,10 +488,10 @@ export class Move extends Action {
 		const card = this.card.current();
 		this.card = this.card.snapshot();
 		if (this.targetIndex === null) {
-			if (this.zone instanceof zones.DeckZone) {
-				this.insertedIndex = this.zone.cards.length;
-			} else {
+			if ((this.zone instanceof zones.FieldZone) && this.zone.size > 1) {
 				this.insertedIndex = await (yield* queryZoneSlot(this.player, this.zone));
+			} else {
+				this.insertedIndex = this.zone.cards.length;
 			}
 		} else if (this.targetIndex === -1) {
 			this.insertedIndex = this.zone.cards.length;
@@ -777,7 +778,7 @@ export class Exile extends Action {
 		this.card.owner.exileZone.add(this.card.current(), this.card.owner.exileZone.cards.length);
 		this.card.globalId = card.globalId;
 		if (this.until) {
-			this.until.push([new Move(this.player, this.card.current(), this.card.zone, null)]);
+			this.step.undoActionQueue.push(new UndoActionQueueEntry([new Move(this.player, this.card.current(), this.card.zone, null)], this.until));
 		}
 		return event;
 	}
@@ -835,7 +836,7 @@ export class ApplyStatChange extends Action {
 		currentObject.values.modifierStack.push(this.modifier);
 		this.player.game.registerPendingValueChangeFor(currentObject);
 		if (this.until) {
-			this.until.push([new RemoveStatChange(this.player, currentObject, this.modifier)]);
+			this.step.undoActionQueue.push(new UndoActionQueueEntry([new RemoveStatChange(this.player, currentObject, this.modifier)], this.until));
 		}
 	}
 
@@ -1203,7 +1204,7 @@ export class Reveal extends Action {
 				break;
 			}
 			default: { // until some specified time
-				this.until.push([new Unreveal(this.player, this.card.current())]);
+				this.step.undoActionQueue.push(new UndoActionQueueEntry([new Unreveal(this.player, this.card.current())], this.until));
 			}
 		}
 		return events.createCardRevealedEvent(this.player, this.card, this.until === false);

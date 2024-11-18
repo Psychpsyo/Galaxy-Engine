@@ -12,21 +12,36 @@ import * as actions from "./actions.mjs";
 import * as zones from "./zones.mjs";
 import * as ast from "./cdfScriptInterpreter/astNodes.mjs";
 
+export class UndoActionQueueEntry {
+	actions;
+	timestep;
+	constructor(actions, timestep) {
+		this.actions = actions;
+		this.timestep = timestep;
+	}
+}
+
 // Represents a single instance in time where multiple actions take place at once.
 export class Step {
+	game;
+	index;
+	actions;
+	costCompletions = [];
+	successful = false;
+	followupStep = null;
+	// The static action modification abilities that were applied during this step.
+	// This needs to be tracked for those that can only be activated once per game.
+	staticAbilitiesApplied = [];
+	// A list of undo action queue objects, with an 'actions' and a 'timestep' property.
+	// This is necessary for when multiple Actions in this step queue an undo action, to recombine them into being simultaneous.
+	// An example of a card that does this is 'Spacetime Passage'.
+	undoActionQueue = [];
 	constructor(game, actionList) {
 		this.game = game;
-		this.index = 0;
 		this.actions = actionList;
 		for (const action of this.actions) {
 			action.step = this;
 		}
-		this.costCompletions = [];
-		this.successful = false;
-		this.followupStep = null;
-		// The static action modification abilities that were applied during this step.
-		// This needs to be tracked for those that can only be activated once per game.
-		this.staticAbilitiesApplied = [];
 	}
 
 	// cancels the given action and any implied actions and returns the actionCancelledEvents for all of them
@@ -351,6 +366,21 @@ export class Step {
 
 		if (events.length > 0) {
 			yield events;
+		}
+
+		if (!isPrediction) {
+			// consolidate and queue up any undo actions
+			const undoActionMap = new Map();
+			for (const undoQueueEntry of this.undoActionQueue) {
+				const consolidated = undoActionMap.get(undoQueueEntry.timestep) ?? [];
+				undoActionMap.set(
+					undoQueueEntry.timestep,
+					consolidated.concat(undoQueueEntry.actions)
+				);
+			}
+			for (const [timestep, actions] of undoActionMap) {
+				timestep.push(actions);
+			}
 		}
 
 		this.successful = true;
