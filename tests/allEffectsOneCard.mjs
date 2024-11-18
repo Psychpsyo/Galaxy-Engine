@@ -76,7 +76,6 @@ try {
 				throw new Error();
 			}
 		}
-		writeFileSync(`./errorReplays/allEffectsOnOneCard.replay`, JSON.stringify(game.replay));
 	} catch (e) {
 		if (!(e instanceof NoMoreAbilitiesError)) {
 			game.replay.extra.crashReason = e.stack;
