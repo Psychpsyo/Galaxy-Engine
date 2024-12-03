@@ -14,4 +14,4 @@ GAINLIFE(50);
 o: trigger
 mandatory: no
 after: destroyed = thisCard
-MOVE(SELECT(1, [from deck where types = Light & cardType = continuousItem]), hand);
+MOVE(SELECT(1, [from you.deck where types = Light & cardType = continuousItem]), hand);
