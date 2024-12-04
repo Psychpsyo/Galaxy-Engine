@@ -57,11 +57,10 @@ export class StackPhase extends Phase {
 	async* run() {
 		// we need to check this because the end phase repeats itself (it calls run() in a loop)
 		if (!this.ranStartSteps) {
-			const startStepRunner = new StepRunner(
-				() => arrayStepGenerator(this.turn.actionLists[this.types[0]]),
-				this.turn.game
-			);
-			await (yield* startStepRunner.run());
+			for (const stepGenerator of this.turn.actionLists[this.types[0]]) {
+				const stepRunner = new StepRunner(() => stepGenerator, this.turn.game);
+				await (yield* stepRunner.run());
+			}
 			// TODO: Were we actually supposed to run steps that got queued during this?
 			this.ranStartSteps = true;
 		}
@@ -138,6 +137,8 @@ export class StackPhase extends Phase {
 		for (const card of stack.phase.turn.game.getActiveCards()) {
 			for (const ability of card.values.current.abilities) {
 				if (ability instanceof abilities.TriggerAbility) {
+					// whether or not it is currently the right stack for the trigger ability to activate is not part of it's activation conditions so gets checked here instead of inside the function
+					if (!ability.triggerMetOnStacks.includes(stack.index - 1)) continue;
 					const costOptionTree = await ability.getActivatabilityCostOptionTree(ability.card, player);
 					if (await costOptionTree?.isValid()) { // no tree = precondition failed = invalid
 						eligibleAbilities.push(ability);
@@ -387,11 +388,10 @@ export class EndPhase extends StackPhase {
 			yield* super.run();
 			this.notInStack = true;
 
-			const stepRunner = new StepRunner(
-				() => arrayStepGenerator(this.turn.actionLists.end),
-				this.turn.game
-			);
-			await (yield* stepRunner.run());
+			for (const stepGenerator of this.turn.actionLists.end) {
+				const stepRunner = new StepRunner(() => stepGenerator, this.turn.game);
+				await (yield* stepRunner.run());
+			}
 			this.turn.actionLists.end = []; // needs to clear this so they don't re-run
 			// TODO: Were we actually supposed to run steps that got queued during this?
 		} while (await this.triggerAbilitiesMet());

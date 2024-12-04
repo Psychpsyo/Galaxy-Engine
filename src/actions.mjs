@@ -7,6 +7,7 @@ import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {StaticAbility} from "./abilities.mjs";
 import {UndoActionQueueEntry} from "./steps.mjs";
+import { abilityFractionStepGenerator } from "./stepGenerators.mjs";
 
 // helper functions
 
@@ -1262,6 +1263,32 @@ export class Unreveal extends Action {
 
 	// no objects are affected since cards cannot be immune to a stat change expiring
 	// TODO: clarify if this actually applies to unrevealing cards
+}
+
+export class QueueAbilityFraction extends Action {
+	#timeIndicator;
+	#astNode;
+	#ctx;
+	constructor(player, timeIndicator, astNode, ctx) {
+		super(player);
+		this.#timeIndicator = timeIndicator;
+		this.#astNode = astNode;
+		this.#ctx = ctx;
+	}
+
+	async* run(isPrediction) {
+		if (!isPrediction) {
+			this.#timeIndicator.push(abilityFractionStepGenerator(this.#astNode, this.#ctx));
+		}
+	}
+
+	undo(isPrediction) {
+		if (!isPrediction) {
+			this.#timeIndicator.pop();
+		}
+	}
+
+	// this cannot be impossible and it doesn't affect any objects, since this is really just implementation bookkeeping
 }
 
 export class ChangeCounters extends Action {

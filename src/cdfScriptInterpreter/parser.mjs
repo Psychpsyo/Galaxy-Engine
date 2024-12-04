@@ -114,6 +114,9 @@ function parseLine() {
 		case "try": {
 			return new ast.LineNode(parseOptionalSection(null), null);
 		}
+		case "at": {
+			return new ast.LineNode(parseAtStatement(), null);
+		}
 		case "variable": {
 			if (tokens[pos+1].type === "equals") {
 				variableName = tokens[pos].value;
@@ -570,6 +573,25 @@ function parseOptionalSection(playerNode) {
 	}
 	return new ast.OptionalSectionNode(playerNode, mainBlock, thenBlock, elseBlock);
 }
+function parseAtStatement() {
+	const atToken = tokens[pos];
+	pos++;
+	if (tokens[pos]?.type !== "leftParen") {
+		throw new ScriptParserError("Expected parenthesized expression after 'at'.", tokens[pos-1]);
+	}
+	const timeIndicatorStart = tokens[pos];
+	pos++;
+	const timeIndicator = parseExpression();
+	if (tokens[pos]?.type !== "rightParen") {
+		throw new ScriptParserError("Expected a ')' at the end of this expression." + (tokens[pos]? ` Found '${tokens[pos].value}' instead.` : ""), timeIndicatorStart, tokens[pos] ?? tokens.at(-1));
+	}
+	if (timeIndicator.returnType !== "timeIndicator") {
+		throw new ScriptParserError(`An at-statement needs a time indicator. This evaluates to a value of type '${timeIndicator.returnType}' instead.`, timeIndicatorStart, tokens[pos]);
+	}
+	pos++;
+	const mainBlock = parseLineBlock(atToken);
+	return new ast.AtNode(timeIndicator, mainBlock);
+}
 
 function parseTurnDotAccess(turnNode) {
 	switch (tokens[pos].type) {
@@ -578,10 +600,10 @@ function parseTurnDotAccess(turnNode) {
 		}
 		case "end": {
 			pos++;
-			return new ast.UntilEndOfTurnNode(turnNode);
+			return new ast.EndOfTurnNode(turnNode);
 		}
 		case "phaseType": {
-			const node = new ast.UntilPhaseNode(turnNode, tokens[pos].value);
+			const node = new ast.StartOfPhaseNode(turnNode, tokens[pos].value);
 			pos++;
 			return node;
 		}

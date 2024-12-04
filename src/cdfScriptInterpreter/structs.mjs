@@ -219,15 +219,15 @@ export class DeckPosition {
 	}
 }
 
-export class UntilIndicator {
+export class TimeIndicator {
 	constructor(type, turn = null, phaseType = null) {
 		this.type = type; // "forever", "endOfTurn", "phase"
 		this.turn = turn;
 		this.phaseType = phaseType;
 	}
 
-	// gets the list that an 'undo' step needs to be put into for actions that can be applied until a certain point or, in case of 'forever', returns null
-	getStepList(game) {
+	// gets the list that an action needs to be put into for it to happen at this point in time
+	getGeneratorList(game) {
 		switch (this.type) {
 			case "forever": {
 				return null;

@@ -5,7 +5,7 @@ import * as blocks from "../blocks.mjs";
 import * as stepRunnerInserts from "./stepRunnerInserts.mjs";
 import {BaseCard} from "../card.mjs";
 import {Modifier} from "../valueModifiers.mjs";
-import {ScriptValue, ScriptContext, DeckPosition, SomeOrMore, UntilIndicator, TurnValue} from "./structs.mjs";
+import {ScriptValue, DeckPosition, SomeOrMore, TimeIndicator, TurnValue} from "./structs.mjs";
 import {functions, initFunctions} from "./functions.mjs";
 import {cartesianProduct} from "../math.mjs";
 
@@ -1269,10 +1269,10 @@ export class ModifierNode extends AstNode {
 
 export class ForeverNode extends AstNode {
 	constructor() {
-		super("untilIndicator");
+		super("timeIndicator");
 	}
 	* eval(ctx) {
-		return new ScriptValue("untilIndicator", [new UntilIndicator("forever")]);
+		return new ScriptValue("timeIndicator", [new TimeIndicator("forever")]);
 	}
 }
 // returns the earliest of the provided turns
@@ -1288,31 +1288,31 @@ function earliest(turns, game) {
 	}
 	return earliest;
 }
-export class UntilEndOfTurnNode extends AstNode {
+export class EndOfTurnNode extends AstNode {
 	constructor(turnNode) {
-		super("untilIndicator");
+		super("timeIndicator");
 		this.turnNode = turnNode;
 	}
 	* eval(ctx) {
 		return new ScriptValue(
-			"untilIndicator",
-			[new UntilIndicator(
+			"timeIndicator",
+			[new TimeIndicator(
 				"endOfTurn",
 				earliest((yield* this.turnNode.eval(ctx)).get(ctx.player), ctx.game)
 			)]
 		);
 	}
 }
-export class UntilPhaseNode extends AstNode {
+export class StartOfPhaseNode extends AstNode {
 	constructor(turnNode, phaseType) {
-		super("untilIndicator");
+		super("timeIndicator");
 		this.turnNode = turnNode;
 		this.phaseType = phaseType;
 	}
 	* eval(ctx) {
 		return new ScriptValue(
-			"untilIndicator",
-			[new UntilIndicator(
+			"timeIndicator",
+			[new TimeIndicator(
 				"phase",
 				earliest((yield* this.turnNode.eval(ctx)).get(ctx.player), ctx.game),
 				this.phaseType
@@ -1372,6 +1372,25 @@ export class IfNode extends AstNode {
 		const children = [this.condition, this.mainBlock];
 		if (this.elseBlock) children.push(this.elseBlock);
 		return children;
+	}
+}
+
+export class AtNode extends AstNode {
+	constructor(timeIndicator, block) {
+		super(null);
+		this.timeIndicator = timeIndicator;
+		this.block = block;
+	}
+	* eval(ctx) {
+		const timeIndicator = (yield* this.timeIndicator.eval(ctx)).get(ctx.player)[0].getGeneratorList(ctx.game);
+		yield [new actions.QueueAbilityFraction(ctx.player, timeIndicator, this.block, ctx)];
+	}
+	hasAllTargets(ctx) {
+		if (!this.timeIndicator.hasAllTargets(ctx)) return false;
+		return this.block.hasAllTargets(ctx);
+	}
+	getChildNodes() {
+		return [this.timeIndicator, this.block];
 	}
 }
 

@@ -5,6 +5,7 @@ import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {BaseCard} from "./card.mjs";
 import {recalculateModifiedValuesFor, ActionReplaceModification, ActionModification, ProhibitModification, CompleteUnaffection} from "./valueModifiers.mjs";
+import {arrayStepGenerator} from "./stepGenerators.mjs";
 import * as abilities from "./abilities.mjs";
 import * as blocks from "./blocks.mjs";
 import * as phases from "./phases.mjs";
@@ -379,7 +380,7 @@ export class Step {
 				);
 			}
 			for (const [timestep, actions] of undoActionMap) {
-				timestep.push(actions);
+				timestep.push(arrayStepGenerator([actions]));
 			}
 		}
 
@@ -420,6 +421,18 @@ export class Step {
 		if (!this.successful) {
 			return;
 		}
+
+		if (!isPrediction) {
+			// un-queue all the undo actions that might have been queued up by this
+			const poppedFrom = [];
+			for (const undoQueueEntry of this.undoActionQueue) {
+				if (poppedFrom.includes(undoQueueEntry.timestep)) continue;
+				// else
+				undoQueueEntry.timestep.pop();
+				poppedFrom.push(undoQueueEntry.timestep);
+			}
+		}
+
 		let events = [];
 		for (let i = this.actions.length - 1; i >= 0; i--) {
 			const event = this.actions[i].undo(isPrediction);

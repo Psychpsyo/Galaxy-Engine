@@ -241,7 +241,9 @@ export class TriggerAbility extends Ability {
 	}
 
 	async getActivatabilityCostOptionTree(card, player, evaluatingPlayer = player) {
-		if (!this.triggerMetOnStacks.includes((player.game.currentStack()?.index ?? 0) - 1)) return null;
+		// This is only interested in if the trigger has been met at all, not if it is currently the right time to activate this.
+		// Like this, activatability can be checked, even if we are not on the right stack yet, which is necessary at end of turn.
+		if (this.triggerMetOnStacks.length === 0) return null;
 
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
 		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return null;

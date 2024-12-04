@@ -116,11 +116,11 @@ export function initFunctions() {
 {
 	// Applies a modification to a card
 	APPLY: new ScriptFunction(
-		["card", "player", "fight", "modifier", "untilIndicator"],
+		["card", "player", "fight", "modifier", "timeIndicator"],
 		[null, null, null, null, new ast.ForeverNode()],
 		null,
 		function*(astNode, ctx) {
-			let until = (yield* this.getParameter(astNode, "untilIndicator").eval(ctx)).get(ctx.player);
+			let until = (yield* this.getParameter(astNode, "timeIndicator").eval(ctx)).get(ctx.player);
 			let applyActions = [];
 			let objectParam = this.getParameter(astNode, "card") ??
 			                  this.getParameter(astNode, "player") ??
@@ -141,7 +141,7 @@ export function initFunctions() {
 					ctx.player,
 					target,
 					(yield* this.getParameter(astNode, "modifier").eval(ctx)).get(ctx.player).bake(target),
-					until[0].getStepList(ctx.game),
+					until[0].getGeneratorList(ctx.game),
 					new ScriptValue("dueToReason", ["effect"]),
 					new ScriptValue("card", [ctx.card])
 				));
@@ -418,12 +418,12 @@ export function initFunctions() {
 
 	// Exiles the passed-in cards
 	EXILE: new ScriptFunction(
-		["card", "untilIndicator"],
+		["card", "timeIndicator"],
 		[null, new ast.ForeverNode()],
 		"card",
 		function*(astNode, ctx) {
 			const cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current());
-			const until = (yield* this.getParameter(astNode, "untilIndicator").eval(ctx)).get(ctx.player)[0].getStepList(ctx.game);
+			const until = (yield* this.getParameter(astNode, "timeIndicator").eval(ctx)).get(ctx.player)[0].getGeneratorList(ctx.game);
 			const exileActions = cards.map(card => new actions.Exile(
 				ctx.player,
 				card.current(),
@@ -678,12 +678,12 @@ export function initFunctions() {
 
 	// Makes the executing player reveal the given card
 	REVEAL: new ScriptFunction(
-		["card", "untilIndicator"],
+		["card", "timeIndicator"],
 		[null, null],
 		"card",
 		function*(astNode, ctx) {
-			const untilParameter = this.getParameter(astNode, "untilIndicator");
-			const until = untilParameter? (yield* untilParameter.eval(ctx)).get(ctx.player)[0].getStepList(ctx.game) : false;
+			const untilParameter = this.getParameter(astNode, "timeIndicator");
+			const until = untilParameter? (yield* untilParameter.eval(ctx)).get(ctx.player)[0].getGeneratorList(ctx.game) : false;
 			const revealActions = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).map(card => new actions.Reveal(ctx.player, card, until));
 			const step = yield [...revealActions];
 			return new ScriptValue("card", getSuccessfulActions(step, revealActions).map(action => action.card));

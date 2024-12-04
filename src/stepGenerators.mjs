@@ -330,7 +330,7 @@ export function* abilityStepGenerator(ability, card, player) {
 	return true;
 }
 
-// runs a part of an ability, intended for things that need OptionTree limiting during an effect
+// runs a part of an ability, used mostly for things that need OptionTree limiting during an effect
 export function* abilityFractionStepGenerator(astNode, ctx) {
 	let stepGenerator = astNode.eval(ctx);
 	let yieldValue;
