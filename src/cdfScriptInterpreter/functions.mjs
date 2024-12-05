@@ -339,17 +339,24 @@ export function initFunctions() {
 		"bool",
 		function*(astNode, ctx) {
 			let list = (yield* this.getParameter(astNode, "*").eval(ctx)).get(ctx.player);
-			if (list.length === 1) {
-				return new ScriptValue("bool", [true]);
-			}
-			for (let i = 0; i < list.length - 1; i++) {
-				for (let j = i + 1; j < list.length; j++) {
-					if (equalityCompare(list[i], list[j])) {
-						return new ScriptValue("bool", [false]);
+			switch (list.length) {
+				case 0: { // nothing is not different from itself
+					return new ScriptValue("bool", [false]);
+				}
+				case 1: {
+					return new ScriptValue("bool", [true]);
+				}
+				default: {
+					for (let i = 0; i < list.length - 1; i++) {
+						for (let j = i + 1; j < list.length; j++) {
+							if (equalityCompare(list[i], list[j])) {
+								return new ScriptValue("bool", [false]);
+							}
+						}
 					}
+					return new ScriptValue("bool", [true]);
 				}
 			}
-			return new ScriptValue("bool", [true]);
 		},
 		alwaysHasTarget,
 		undefined // TODO: Write evalFull
