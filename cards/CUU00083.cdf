@@ -10,7 +10,7 @@ o: trigger
 mandatory: yes
 condition: thisCard.zone = field
 after: COUNT([from destroyed(dueTo: fight, by: thisCard) where cardType = unit]) > 0
-DISCARD?(opponent.DECKTOP?(2));
+DISCARD?(DECKTOP?(opponent, 2));
 
 o: optional
 turnLimit: 1

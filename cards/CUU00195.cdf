@@ -14,7 +14,7 @@ modifier: {attack += COUNT([from exile]) * 100}
 o: trigger
 mandatory: yes
 after: COUNT([from destroyed(dueTo: fight, by: thisCard) where cardType = unit]) > 0
-EXILE?(opponent.DECKTOP?(5));
+EXILE?(DECKTOP?(opponent, 5));
 
 o: trigger
 mandatory: no

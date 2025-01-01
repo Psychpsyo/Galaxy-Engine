@@ -5,4 +5,4 @@ level: 0
 types: Fire
 
 o: cast
-DISCARD?(opponent.DECKTOP?(2));
+DISCARD?(DECKTOP?(opponent, 2));

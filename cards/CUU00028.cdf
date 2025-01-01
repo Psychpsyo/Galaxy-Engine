@@ -9,4 +9,4 @@ defense: 100
 o: optional
 turnLimit: 1
 condition: thisCard.zone = field & currentTurn.summoned != thisCard
-DISCARD?(opponent.DECKTOP?(COUNT([from you.field where types = Fire & cardType = unit])));
+DISCARD?(DECKTOP?(opponent, COUNT([from you.field where types = Fire & cardType = unit])));

@@ -25,4 +25,4 @@ condition: thisCard.zone = field
 cost:
 DISCARD(SELECT(1, [from you.hand]));
 exec:
-DISCARD?(opponent.DECKTOP?(2));
+DISCARD?(DECKTOP?(opponent, 2));

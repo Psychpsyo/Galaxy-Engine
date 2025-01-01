@@ -12,4 +12,4 @@ modifier: {attack += 400}
 o: trigger
 mandatory: yes
 after: COUNT([from destroyed(dueTo: fight, by: [from thisCard.equippedUnit where types = Fire]) where cardType = unit]) > 0
-DISCARD?(opponent.DECKTOP?(2));
+DISCARD?(DECKTOP?(opponent, 2));
