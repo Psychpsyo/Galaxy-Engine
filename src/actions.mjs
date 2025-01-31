@@ -1265,7 +1265,7 @@ export class Unreveal extends Action {
 	// TODO: clarify if this actually applies to unrevealing cards
 }
 
-export class QueueAbilityFraction extends Action {
+export class QueueAbilityFragment extends Action {
 	#timeIndicator;
 	#astNode;
 	#ctx;
@@ -1278,7 +1278,7 @@ export class QueueAbilityFraction extends Action {
 
 	async* run(isPrediction) {
 		if (!isPrediction) {
-			this.#timeIndicator.push(abilityFractionStepGenerator(this.#astNode, this.#ctx));
+			this.#timeIndicator.push(abilityFractionStepGenerator(this.#astNode, this.#ctx.freezeContext()));
 		}
 	}
 

@@ -1383,7 +1383,7 @@ export class AtNode extends AstNode {
 	}
 	* eval(ctx) {
 		const timeIndicator = (yield* this.timeIndicator.eval(ctx)).get(ctx.player)[0].getGeneratorList(ctx.game);
-		yield [new actions.QueueAbilityFraction(ctx.player, timeIndicator, this.block, ctx)];
+		yield [new actions.QueueAbilityFragment(ctx.player, timeIndicator, this.block, ctx)];
 	}
 	hasAllTargets(ctx) {
 		if (!this.timeIndicator.hasAllTargets(ctx)) return false;
