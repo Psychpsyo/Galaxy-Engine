@@ -185,6 +185,40 @@ export class ChooseType extends InputRequest {
 	}
 }
 
+export class ChooseCardName extends InputRequest {
+	constructor(player, effect, cardNames) {
+		super(player, "chooseCardName");
+		this.effect = effect;
+		this.from = cardNames;
+	}
+
+	async extractResponseValue(response) {
+		await super.extractResponseValue(response);
+
+		return this.from[response.value];
+	}
+
+	async validate(response) {
+		const superValid = await super.validate(response);
+		if (superValid !== "") return superValid;
+
+		if (typeof response.value != "number") {
+			return "Supplied an incorrect response value. Expected 'number' but got '" + (typeof response.value) + "' instead."
+		}
+
+		if (response.value < 0 || response.value >= this.from.length) {
+			return `Chose an invalid type index: ${response.value} (had to choose from ${this.from.length} card names)`;
+		}
+		return "";
+	}
+
+	*generateResponses() {
+		for (let i = 0; i < this.from.length; i++) {
+			yield i;
+		}
+	}
+}
+
 export class ChooseDeckSide extends InputRequest {
 	constructor(player, effect, deckOwner) {
 		super(player, "chooseDeckSide");

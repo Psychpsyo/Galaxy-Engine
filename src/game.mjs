@@ -63,6 +63,9 @@ export const baseCounters = [
 	"Weakness",
 	"Wrath"
 ];
+export const baseUnitNames = Array.from(Array(294).keys()).map(i => `U${(i+1).toString().padStart(5, "0")}`);
+export const baseSpellNames = Array.from(Array(255).keys()).map(i => `S${(i+1).toString().padStart(5, "0")}`);
+export const baseItemNames = Array.from(Array(121).keys()).map(i => `I${(i+1).toString().padStart(5, "0")}`);
 
 export const novelTypes = [
 	"Ninja",
@@ -100,8 +103,10 @@ export class Game {
 
 		this.rng = new CURandom(); // the random number source for this game
 		this.config = {
-			allTypes: baseTypes,          // all types that the game is aware of. This may be extended by custom types to allow for custom cards.
-			allCounters: baseCounters,    // all counters that the game is aware of. This may be extended by custom counters to allow for custom cards.
+			// These aren't currently needed and should always be optional, so not set here.
+			// extraTypes: [],             // extra types that this game is aware of for purposes of custom cards.
+			// extraCounters: [],          // extra counters that this game is aware of for purposes of custom cards.
+
 			startingPlayerChooses: false, // whether or not the randomly selected starting player gets to choose the actual starting player
 			useOldManaRule: false,        // makes it so that all players gain mana at the start of the first player's turn
 			validateCardAmounts: true,    // whether or not deck card counts should be validated
@@ -109,6 +114,11 @@ export class Game {
 			upperDeckLimit: 50,           // the maximum number of cards a deck can have
 			startingHandSize: 5           // how many hand cards each player draws at the beginning of the game
 		}
+		this.allTypes = baseTypes;
+		this.allCounters = baseCounters;
+		this.allUnitNames = baseUnitNames;
+		this.allSpellNames = baseSpellNames;
+		this.allItemNames = baseItemNames;
 
 		this.replay = {
 			config: this.config,
@@ -257,6 +267,8 @@ export class Game {
 			}
 			this.config = replay.config;
 			this.replay.config = replay.config;
+			this.allTypes = baseTypes.concat(replay.config.extraTypes ?? []);
+			this.allCounters = baseCounters.concat(replay.config.extraCounters ?? []);
 		}
 		if (replay.players) {
 			for (let i = 0; i < replay.players; i++) {

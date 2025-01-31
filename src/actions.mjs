@@ -1558,6 +1558,32 @@ export class SelectType extends Action {
 	}
 }
 
+export class SelectCardName extends Action {
+	constructor(player, eligibleCardNames, abilityId) {
+		super(player);
+
+		this.selectionRequest = new requests.ChooseCardName(
+			player,
+			abilityId,
+			eligibleCardNames
+		);
+
+		this.selected = null;
+	}
+
+	async* run(isPrediction) {
+		const response = yield [this.selectionRequest];
+		this.selected = (await this.selectionRequest.extractResponseValue(response));
+
+		return events.createCardNameSelectedEvent(this.player, this.selected);
+	}
+
+	async isImpossible() {
+		const responses = this.selectionRequest.generateValidResponses();
+		return (await responses.next()).done;
+	}
+}
+
 export class OrderCards extends Action {
 	constructor(player, toOrder, abilityId) {
 		super(player);

@@ -679,7 +679,41 @@ export class AllTypesNode extends AstNode {
 		super("type");
 	}
 	* eval(ctx) {
-		return new ScriptValue("type", ctx.game.config.allTypes);
+		return new ScriptValue("type", ctx.game.allTypes);
+	}
+}
+
+export class AllUnitNamesNode extends AstNode {
+	constructor() {
+		super("cardId");
+	}
+	* eval(ctx) {
+		return new ScriptValue("cardId", ctx.game.allUnitNames);
+	}
+}
+export class AllSpellNamesNode extends AstNode {
+	constructor() {
+		super("cardId");
+	}
+	* eval(ctx) {
+		return new ScriptValue("cardId", ctx.game.allSpellNames);
+	}
+}
+export class AllItemNamesNode extends AstNode {
+	constructor() {
+		super("cardId");
+	}
+	* eval(ctx) {
+		return new ScriptValue("cardId", ctx.game.allItemNames);
+	}
+}
+
+export class AllCardNamesNode extends AstNode {
+	constructor() {
+		super("cardId");
+	}
+	* eval(ctx) {
+		return new ScriptValue("cardId", ctx.game.allUnitNames.concat(ctx.game.allSpellNames).concat(ctx.game.allItemNames));
 	}
 }
 

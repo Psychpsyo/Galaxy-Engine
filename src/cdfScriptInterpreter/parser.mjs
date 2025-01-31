@@ -336,6 +336,22 @@ function parseValue() {
 			pos++;
 			return new ast.AllTypesNode();
 		}
+		case "allCardNames": {
+			pos++;
+			return new ast.AllCardNamesNode();
+		}
+		case "allUnitNames": {
+			pos++;
+			return new ast.AllUnitNamesNode();
+		}
+		case "allSpellNames": {
+			pos++;
+			return new ast.AllSpellNamesNode();
+		}
+		case "allItemNames": {
+			pos++;
+			return new ast.AllItemNamesNode();
+		}
 		case "minus": {
 			pos++;
 			return new ast.UnaryMinusNode(parseValue());

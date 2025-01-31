@@ -28,6 +28,10 @@ const keywordTokenTypes = {
 
 	any: "anyAmount",
 	allTypes: "allTypes",
+	allCardNames: "allCardNames",
+	allUnitNames: "allUnitNames",
+	allSpellNames: "allSpellNames",
+	allItemNames: "allItemNames",
 
 	yes: "bool",
 	no: "bool",
@@ -147,6 +151,7 @@ const keywordTokenTypes = {
 	SAME: "function",
 	SELECT: "function",
 	SELECTABILITY: "function",
+	SELECTCARDNAME: "function",
 	SELECTDECKSIDE: "function",
 	SELECTPLAYER: "function",
 	SELECTTYPE: "function",
@@ -419,9 +424,9 @@ export function tokenize(code, effectId, game) {
 							// this is a card ID
 							tokens.push(new ScriptToken("cardId", code.substring(pos, pos + wordLength), line, pos - lineStart));
 						}
-					} else if (game.config.allTypes.includes(word)) {
+					} else if (game.allTypes.includes(word)) {
 						tokens.push(new ScriptToken("type", word, line, pos - lineStart));
-					} else if (game.config.allCounters.includes(word)) {
+					} else if (game.allCounters.includes(word)) {
 						tokens.push(new ScriptToken("counter", word, line, pos - lineStart));
 					} else {
 						throw new ScriptLexerError("Found unknown word '" + word + "' while tokenizing.", code, effectId, line, pos - lineStart, pos - lineStart + wordLength);

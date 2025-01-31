@@ -894,6 +894,37 @@ export function initFunctions() {
 	),
 
 	// Makes the executing player choose a type
+	SELECTCARDNAME: new ScriptFunction(
+		["cardId"],
+		[new ast.AllCardNamesNode()],
+		"cardId",
+		function*(astNode, ctx) {
+			const selectAction = new actions.SelectCardName(
+				ctx.player,
+				(yield* this.getParameter(astNode, "cardId").eval(ctx)).get(ctx.player),
+				ctx.ability.id
+			);
+
+			yield [selectAction];
+			return new ScriptValue("cardId", [selectAction.selected]);
+		},
+		function(astNode, ctx) {
+			// Use the full eval to see if there is any valid choices for the player.
+			return !this.runFull(astNode, ctx).next().done;
+		},
+		function*(astNode, ctx) {
+			const alreadyYielded = [];
+			for (const cardNames of this.getParameter(astNode, "cardId").evalFull(ctx)) {
+				for (const name of cardNames.get(ctx.player)) {
+					if (alreadyYielded.includes(name)) continue;
+					yield new ScriptValue("cardId", [name]);
+					alreadyYielded.push(name);
+				}
+			}
+		}
+	),
+
+	// Makes the executing player choose a type
 	SELECTDECKSIDE: new ScriptFunction(
 		["player"],
 		[null],

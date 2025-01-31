@@ -382,6 +382,15 @@ export function createTypeSelectedEvent(player, chosenType) {
 	}
 }
 
+export function createCardNameSelectedEvent(player, chosenCardName) {
+	return {
+		"nature": "event",
+		"type": "cardNameSelected",
+		"player": player,
+		"chosenCardName": chosenCardName
+	}
+}
+
 export function createAbilitySelectedEvent(player, chosenAbility) {
 	return {
 		"nature": "event",
