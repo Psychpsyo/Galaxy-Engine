@@ -555,7 +555,7 @@ async function* getStaticAbilityPhasingStep(game) {
 			if (!(modifier.ctx.ability instanceof abilities.StaticAbility)) continue;
 
 			// has this ability been removed from its card?
-			if (!modifier.ctx.card.values.current.abilities.includes(modifier.ctx.ability)) {
+			if (!modifier.ctx.card.values.current.abilities.some(ability => ability.globalId === modifier.ctx.ability.globalId)) {
 				modificationActions.push(new actions.UnapplyStaticAbility(
 					modifier.ctx.card.currentOwner(), // have these be owned by the player that owns the card with the ability.
 					target,
