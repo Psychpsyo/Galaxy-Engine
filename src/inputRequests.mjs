@@ -80,9 +80,9 @@ export class ChooseCards extends InputRequest {
 		} else if (response.value.length != this.from.length) {
 			return "Chose invalid amount of cards.";
 		}
-		for (let cardIndex of response.value) {
+		for (const cardIndex of response.value) {
 			if (cardIndex < 0 || cardIndex >= this.from.length) {
-				return "Chose an invalid card index: " + cardIndex;
+				return `Chose an invalid card index: ${cardIndex} (had to choose from ${this.from.length} cards)`;
 			}
 		}
 		const cards = response.value.map(cardIndex => this.from[cardIndex]);
@@ -173,7 +173,7 @@ export class ChooseType extends InputRequest {
 		}
 
 		if (response.value < 0 || response.value >= this.from.length) {
-			return "Chose an invalid type index: " + response.value;
+			return `Chose an invalid type index: ${response.value} (had to choose from ${this.from.length} types)`;
 		}
 		return "";
 	}
@@ -232,7 +232,7 @@ export class ChooseAbility extends InputRequest {
 		if (superValid !== "") return superValid;
 
 		if (response.value < 0 || response.value >= this.from.length) {
-			return "Chose an invalid ability index: " + response.value;
+			return `Chose an invalid ability index: ${response.value} (had to choose from ${this.from.length} abilities)`;
 		}
 		return "";
 	}
@@ -578,7 +578,7 @@ export class DoRetire extends InputRequest {
 
 		for (const cardIndex of response.value) {
 			if (cardIndex < 0 || cardIndex >= this.eligibleUnits.length) {
-				return "Chose an invalid unit retire index: " + cardIndex;
+				return `Chose an invalid unit retire index: ${cardIndex} (had to choose from ${this.from.length} units)`;
 			}
 		}
 
