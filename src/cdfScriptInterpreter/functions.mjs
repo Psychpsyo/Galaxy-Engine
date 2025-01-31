@@ -1036,7 +1036,7 @@ export function initFunctions() {
 	),
 
 	// Summons the given cards and applies the given modifier to the summoning process.
-	// If a modifier is given, the bool refers to whether or not it is mandatory, otherwise it indicates whether or not the cost needs to be paid at all.
+	// If a modifier is given, the bool refers to whether or not it is mandatory, otherwise it indicates whether or not the mana cost needs to be paid at all.
 	SUMMON: new ScriptFunction(
 		["card", "zone", "modifier", "bool"],
 		[null, new ast.ZoneNode("unitZone", new ast.PlayerNode("you")), null, new ast.ValueNode([true], "bool")],

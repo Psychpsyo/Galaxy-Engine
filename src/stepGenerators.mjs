@@ -78,6 +78,7 @@ export class StepRunner {
 			}
 			step = await (yield* this.getNextStep(generator, step, isPrediction));
 		}
+		// step should be a boolean by now
 		return step;
 	}
 
