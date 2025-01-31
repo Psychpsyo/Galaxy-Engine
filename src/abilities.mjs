@@ -23,7 +23,9 @@ export class BaseAbility {
 	}
 
 	snapshot() {
-		return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+		const snapshot = Object.assign(Object.create(Object.getPrototypeOf(this)), this);
+		snapshot.originalAbilityObject = this;
+		return snapshot;
 	}
 	// always returns the current version of an ability (attached to a non-snapshot card) or null if that doesn't exist.
 	current() {

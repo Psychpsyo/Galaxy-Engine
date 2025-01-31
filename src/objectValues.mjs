@@ -18,16 +18,27 @@ export class ObjectValues {
 		newValues.modifierStack = [...this.modifierStack];
 		newValues.unaffectedBy = [...this.unaffectedBy];
 		newValues.modifiedByStaticAbility = this.modifiedByStaticAbility;
+		return newValues;
+	}
 
-		// cloning abilities if this is for a card
+	// snapshot and unsnapshot are only used for snapshotting cards and restoring those snapshots
+	snapshot() {
+		const clone = this.clone();
+
 		if (this.initial instanceof CardValues) {
 			const abilities = this.getAllAbilities();
 			const abilitySnapshots = abilities.map(ability => ability.snapshot());
-			newValues.initial.abilities = newValues.initial.abilities.map(ability => abilitySnapshots[abilities.indexOf(ability)]);
-			newValues.base.abilities = newValues.base.abilities.map(ability => abilitySnapshots[abilities.indexOf(ability)]);
-			newValues.current.abilities = newValues.current.abilities.map(ability => abilitySnapshots[abilities.indexOf(ability)]);
+			clone.initial.abilities = clone.initial.abilities.map(ability => abilitySnapshots[abilities.indexOf(ability)]);
+			clone.base.abilities = clone.base.abilities.map(ability => abilitySnapshots[abilities.indexOf(ability)]);
+			clone.current.abilities = clone.current.abilities.map(ability => abilitySnapshots[abilities.indexOf(ability)]);
 		}
-		return newValues;
+		return clone;
+	}
+	unsnapshot() {
+		this.initial.abilities = this.initial.abilities.map(ability => ability.originalAbilityObject);
+		this.base.abilities = this.base.abilities.map(ability => ability.originalAbilityObject);
+		this.current.abilities = this.current.abilities.map(ability => ability.originalAbilityObject);
+		return this;
 	}
 
 	// returns an array of all (initial, base and current) abilities without duplicates

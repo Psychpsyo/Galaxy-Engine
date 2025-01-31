@@ -306,7 +306,7 @@ export class SnapshotCard extends BaseCard {
 	#actualGlobalId;
 	#actualCard;
 	constructor(card, equippedToSnapshot, equipmentSnapshot) {
-		super(card.owner, card.cardId, card.isToken, card.values.clone(), card.deckLimit, card.equipableTo, card.turnLimit, card.condition);
+		super(card.owner, card.cardId, card.isToken, card.values.snapshot(), card.deckLimit, card.equipableTo, card.turnLimit, card.condition);
 		this.isRemovedToken = card.isRemovedToken;
 
 		if (equippedToSnapshot) {
@@ -366,12 +366,7 @@ export class SnapshotCard extends BaseCard {
 
 		this.#actualCard.hiddenFor = [...this.hiddenFor];
 
-		this.#actualCard.values = this.values;
-		// restoring snapshotted abilities and fixing up their card references
-		for (const ability of this.values.getAllAbilities()) {
-			ability.card = this.#actualCard;
-			this.owner.game.currentAbilities.set(ability.globalId, ability);
-		}
+		this.#actualCard.values = this.values.unsnapshot();
 
 		this.#actualCard.equippedTo = this.equippedTo?.#actualCard ?? null;
 		if (this.equippedTo && !this.#actualCard.equippedTo.equipments.includes(this.#actualCard)) {
