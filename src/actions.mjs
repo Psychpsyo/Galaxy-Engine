@@ -311,7 +311,7 @@ export class Place extends Action {
 	async* run(isPrediction) {
 		this.targetIndex = await (yield* queryZoneSlot(this.player, this.targetZone));
 		const card = this.card.current();
-		this.card = this.card.snapshot();
+		this.card = card.snapshot();
 		this.targetZone.place(card, this.targetIndex);
 		return events.createCardPlacedEvent(this.player, this.card, this.targetZone, this.targetIndex);
 	}
@@ -357,7 +357,7 @@ export class Summon extends Action {
 
 	async* run(isPrediction) {
 		const card = this.card.current();
-		this.card = this.card.snapshot();
+		this.card = card.snapshot();
 		let summonEvent = events.createCardSummonedEvent(this.player, this.card, this.#placeAction.targetZone, this.#placeAction.targetIndex);
 		this.#placeAction.targetZone.add(card, this.#placeAction.targetIndex);
 		this.#placeAction.card.globalId = card.globalId;
@@ -487,7 +487,7 @@ export class Move extends Action {
 
 	async* run(isPrediction) {
 		const card = this.card.current();
-		this.card = this.card.snapshot();
+		this.card = card.snapshot();
 		if (this.targetIndex === null) {
 			if ((this.zone instanceof zones.FieldZone) && this.zone.size > 1) {
 				this.insertedIndex = await (yield* queryZoneSlot(this.player, this.zone));
@@ -683,7 +683,7 @@ export class Discard extends Action {
 
 	async* run(isPrediction) {
 		const card = this.card.current();
-		this.card = this.card.snapshot();
+		this.card = card.snapshot();
 		let event = events.createCardDiscardedEvent(this.card, this.card.owner.discardPile);
 		this.card.owner.discardPile.add(this.card.current(), this.card.owner.discardPile.cards.length);
 		this.card.globalId = card.globalId;
@@ -774,7 +774,7 @@ export class Exile extends Action {
 
 	async* run(isPrediction) {
 		const card = this.card.current();
-		this.card = this.card.snapshot();
+		this.card = card.snapshot();
 		let event = events.createCardExiledEvent(this.card, this.card.owner.exileZone);
 		this.card.owner.exileZone.add(this.card.current(), this.card.owner.exileZone.cards.length);
 		this.card.globalId = card.globalId;
@@ -1170,7 +1170,7 @@ export class View extends Action {
 	async* run(isPrediction) {
 		let wasHidden = this.card.hiddenFor.includes(this.player);
 		this.card.showTo(this.player);
-		this.card = this.card.snapshot();
+		this.card = this.card.current().snapshot();
 		if (wasHidden) {
 			this.card.current().hideFrom(this.player);
 		}
@@ -1239,7 +1239,7 @@ export class Unreveal extends Action {
 
 	async* run(isPrediction) {
 		this.#oldHiddenState = this.card.current().hiddenFor;
-		this.card = this.card.snapshot();
+		this.card = this.card.current().snapshot();
 		this.card.current().hiddenFor = this.card.current().zone.defaultHiddenFor;
 		return events.createCardUnrevealedEvent(this.card.current().hiddenFor, this.card);
 	}
@@ -1305,7 +1305,7 @@ export class ChangeCounters extends Action {
 
 	async* run(isPrediction) {
 		const card = this.card.current();
-		this.card = this.card.snapshot();
+		this.card = card.snapshot();
 		if (!card.counters[this.type]) {
 			card.counters[this.type] = 0;
 		}
