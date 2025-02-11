@@ -61,6 +61,84 @@ function getSuccessfulActions(step, actionList) {
 	return retVal;
 }
 
+function* doSummonProcess(ctx, cards, zone, modifier, boolParam) {
+	const costs = [];
+	const placeActions = [];
+	for (let i = 0; i < cards.length; i++) {
+		if (cards[i].current() === null) {
+			continue;
+		}
+		const placeCost = new actions.Place(ctx.player, cards[i], zone);
+		placeCost.costIndex = i;
+		costs.push(placeCost);
+		placeActions.push(placeCost);
+
+		if (modifier || boolParam) {
+			const costActions = cards[i].getSummoningCost(ctx.player);
+			// TODO: Figure out if this needs to account for multi-action costs and how to handle those.
+			for (const actionList of costActions) {
+				for (const action of actionList) {
+					action.costIndex = i;
+					costs.push(action);
+				}
+			}
+
+			// Apply cost modifications
+			// only replacements are valid SUMMON() / SUMMONTOKENS() cost modifications
+			// cancels could also be made to work but they seem unneccessary due to how the bool parameter works
+			if (modifier?.modifications[0] instanceof ActionReplaceModification) {
+				for (const action of costs) {
+					// can this modification be applied to this cost action?
+					ast.setImplicit([action], "action");
+					const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).getJsBool();
+					ast.clearImplicit("action");
+					if (!doesMatch) continue;
+
+					// gather replacements
+					let replacements;
+					ast.setImplicit([action], "action");
+					for (const output of modifier.modifications[0].replacement.eval(modifier.ctx)) {
+						if (output[0] instanceof actions.Action) {
+							replacements = output;
+							break;
+						}
+						yield output;
+					}
+					ast.clearImplicit("action");
+
+					// ask player if they want to apply optional modification
+					if (!boolParam) {
+						// TODO: modify this to fit here
+						//const request = new ApplyActionModificationAbility(ability.card.currentOwner(), ability, target);
+						//const response = yield [request];
+						//response.value = request.extractResponseValues(response);
+						//if (!response.value) continue;
+					}
+
+					// apply the modification, then stop iterating
+					actions.replaceActionInList(costs, action, replacements);
+					break;
+				}
+			}
+		}
+	}
+
+	const costStep = yield costs;
+	const summons = [];
+	for (let i = 0; i < costStep.costCompletions.length; i++) {
+		if (costStep.costCompletions[i]) {
+			summons.push(new actions.Summon(
+				ctx.player,
+				placeActions[i],
+				new ScriptValue("dueToReason", ["effect"]),
+				new ScriptValue("card", [ctx.card])
+			));
+		}
+	}
+	const summonStep = yield [...summons];
+	return new ScriptValue("card", getSuccessfulActions(summonStep, summons).map(action => action.card));
+}
+
 class ScriptFunction {
 	constructor(parameterTypes = [], defaultValues = [], returnType, func, hasAllTargets, funcFull) {
 		this.parameterTypes = parameterTypes;
@@ -1096,83 +1174,7 @@ export function initFunctions() {
 				cards = selectionRequest.extractResponseValues(response);
 			}
 
-			const costs = [];
-			const placeActions = [];
-
-
-			for (let i = 0; i < cards.length; i++) {
-				if (cards[i].current() === null) {
-					continue;
-				}
-				const placeCost = new actions.Place(ctx.player, cards[i], zone);
-				placeCost.costIndex = i;
-				costs.push(placeCost);
-				placeActions.push(placeCost);
-
-				if (modifier || boolParam) {
-					const costActions = cards[i].getSummoningCost(ctx.player);
-					// TODO: Figure out if this needs to account for multi-action costs and how to handle those.
-					for (const actionList of costActions) {
-						for (const action of actionList) {
-							action.costIndex = i;
-							costs.push(action);
-						}
-					}
-
-					// Apply cost modifications
-					// only replacements are valid SUMMON() cost modifications
-					// cancels could also be made to work but they seem unneccessary due to how the bool parameter works
-					if (modifier?.modifications[0] instanceof ActionReplaceModification) {
-						for (const action of costs) {
-							// can this modification be applied to this cost action?
-							ast.setImplicit([action], "action");
-							const doesMatch = (yield* modifier.modifications[0].toModify.eval(modifier.ctx)).getJsBool();
-							ast.clearImplicit("action");
-							if (!doesMatch) continue;
-
-							// gather replacements
-							let replacements;
-							ast.setImplicit([action], "action");
-							for (const output of modifier.modifications[0].replacement.eval(modifier.ctx)) {
-								if (output[0] instanceof actions.Action) {
-									replacements = output;
-									break;
-								}
-								yield output;
-							}
-							ast.clearImplicit("action");
-
-							// ask player if they want to apply optional modification
-							if (!boolParam) {
-								// TODO: modify this to fit here
-								//const request = new ApplyActionModificationAbility(ability.card.currentOwner(), ability, target);
-								//const response = yield [request];
-								//response.value = request.extractResponseValues(response);
-								//if (!response.value) continue;
-							}
-
-							// apply the modification, then stop iterating
-							actions.replaceActionInList(costs, action, replacements);
-							break;
-						}
-					}
-				}
-			}
-
-			const costStep = yield costs;
-			const summons = [];
-			for (let i = 0; i < costStep.costCompletions.length; i++) {
-				if (costStep.costCompletions[i]) {
-					summons.push(new actions.Summon(
-						ctx.player,
-						placeActions[i],
-						new ScriptValue("dueToReason", ["effect"]),
-						new ScriptValue("card", [ctx.card])
-					));
-				}
-			}
-			const summonStep = yield [...summons];
-			return new ScriptValue("card", getSuccessfulActions(summonStep, summons).map(action => action.card));
+			return yield* doSummonProcess(ctx, cards, zone, modifier, boolParam);
 		},
 		hasCardTarget,
 		function*(astNode, ctx) {
@@ -1181,9 +1183,10 @@ export function initFunctions() {
 	),
 
 	// summons some number of the specified tokens to the given zone
+	// The zone, modifier and bool parameters are the same as on the SUMMON function
 	SUMMONTOKENS: new ScriptFunction(
-		["number", "cardId", "number", "type", "number", "number", "abilityId", "zone"],
-		[null, null, null, null, null, null, new ast.ValueNode([], "abilityId"), new ast.ZoneNode("unitZone", new ast.PlayerNode("you"))],
+		["number", "cardId", "number", "type", "number", "number", "abilityId", "zone", "modifier", "bool"],
+		[null, null, null, null, null, null, new ast.ValueNode([], "abilityId"), new ast.ZoneNode("unitZone", new ast.PlayerNode("you")), null, new ast.ValueNode([true], "bool")],
 		"card",
 		function*(astNode, ctx) {
 			const amounts = (yield* this.getParameter(astNode, "number", 0).eval(ctx)).get(ctx.player);
@@ -1195,6 +1198,8 @@ export function initFunctions() {
 			const abilities = (yield* this.getParameter(astNode, "abilityId", 0).eval(ctx)).get(ctx.player);
 
 			const zone = (yield* this.getParameter(astNode, "zone").eval(ctx)).get(ctx.player).find(zone => zone.type === "unit");
+			const modifier = this.getParameter(astNode, "modifier")? (yield* this.getParameter(astNode, "modifier").eval(ctx)).get(ctx.player) : null;
+			const boolParam = (yield* this.getParameter(astNode, "bool").eval(ctx)).getJsBool(ctx.player);
 
 			// get how many tokens to summon
 			let amount;
@@ -1231,38 +1236,7 @@ defense: ${defense}`;
 				cards.push(new Card(ctx.player, tokenCdf));
 			}
 
-			// TODO: unify all this with the one from the SUMMON function once that gets more in-depth
-			const costs = [];
-			const placeActions = [];
-			for (let i = 0; i < cards.length; i++) {
-				const placeCost = new actions.Place(ctx.player, cards[i], zone);
-				placeCost.costIndex = i;
-				costs.push(placeCost);
-				placeActions.push(placeCost);
-
-				const costActions = cards[i].getSummoningCost(ctx.player);
-				// TODO: Figure out if this needs to account for multi-action costs and how to handle those.
-				for (const actionList of costActions) {
-					for (const action of actionList) {
-						action.costIndex = i;
-						costs.push(action);
-					}
-				}
-			}
-			const costStep = yield costs;
-			const summons = [];
-			for (let i = 0; i < costStep.costCompletions.length; i++) {
-				if (costStep.costCompletions[i]) {
-					summons.push(new actions.Summon(
-						ctx.player,
-						placeActions[i],
-						new ScriptValue("dueToReason", ["effect"]),
-						new ScriptValue("card", [ctx.card])
-					));
-				}
-			}
-			const summonStep = yield [...summons];
-			return new ScriptValue("card", getSuccessfulActions(summonStep, summons).map(action => action.card));
+			return yield* doSummonProcess(ctx, cards, zone, modifier, boolParam);
 		},
 		alwaysHasTarget,
 		undefined // TODO: Write evalFull
