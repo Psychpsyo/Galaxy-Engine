@@ -247,7 +247,7 @@ export function createCardsSwappedEvent(player, cardA, cardB, equipmentsTransfer
 export function createUndoCardsSwappedEvent(cardA, cardB) {
 	return {
 		"nature": "event",
-		"type": "undoCardsMoved",
+		"type": "undoCardsSwapped",
 		"cardA": cardA,
 		"cardB": cardB
 	}
