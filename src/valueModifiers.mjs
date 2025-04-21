@@ -260,7 +260,7 @@ export class ValueSetModification extends ValueModification {
 		let valueArray = this.newValue.evalFull(ctx).next().value;
 		let type = valueArray.type;
 		valueArray = valueArray.get(ctx.player);
-		if (valueArray.length == 0) {
+		if (valueArray.length === 0) {
 			return null;
 		}
 		// construct ability instances now
@@ -301,7 +301,7 @@ export class ValueAppendModification extends ValueModification {
 		let valueArray = this.newValues.evalFull(ctx).next().value;
 		let type = valueArray.type;
 		valueArray = valueArray.get(ctx.player);
-		if (valueArray.length == 0) {
+		if (valueArray.length === 0) {
 			return null;
 		}
 		// construct ability instances now
@@ -344,7 +344,7 @@ export class NumericChangeModification extends ValueModification {
 
 	bake(ctx, target) {
 		const valueArray = this.amount.evalFull(ctx).next().value.get(ctx.player);
-		if (valueArray.length == 0) {
+		if (valueArray.length === 0) {
 			return null;
 		}
 		return new NumericChangeModification(this.value, new ast.ValueNode(valueArray, this.amount.returnType), this.toBase, this.condition);
@@ -372,7 +372,7 @@ export class NumericDivideModification extends ValueModification {
 
 	bake(ctx, target) {
 		const valueArray = this.byAmount.evalFull(ctx).next().value.get(ctx.player);
-		if (valueArray.length == 0) {
+		if (valueArray.length === 0) {
 			return null;
 		}
 		return new NumericDivideModification(this.value, new ast.ValueNode(valueArray, this.byAmount.returnType), this.toBase, this.condition);
