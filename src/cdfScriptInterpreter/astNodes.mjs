@@ -8,6 +8,7 @@ import {Modifier} from "../valueModifiers.mjs";
 import {ScriptValue, DeckPosition, SomeOrMore, TimeIndicator, TurnValue} from "./structs.mjs";
 import {functions, initFunctions} from "./functions.mjs";
 import {cartesianProduct} from "../math.mjs";
+import {capturedVariables} from "./parser.mjs";
 
 // these are the only types of which implicits currently get set and read.
 const implicit = {
@@ -627,11 +628,34 @@ export class VariableNode extends AstNode {
 		this.name = name;
 	}
 	* eval(ctx) {
+		// context variables take precedence in case they are frozen
 		let variable = ctx.variables[this.name] ?? ctx.ability?.scriptVariables[this.name];
+		if (capturedVariables[ctx.ability.id]?.includes(this.name)) {
+			variable = variable.at(-2); // -1 since we are interested in the captured variables from last stack
+		}
 		if (variable === undefined) {
 			throw new Error(`Tried to access unitialized variable '${this.name}'.`);
 		}
 		return new ScriptValue(variable.type, variable.get(ctx.player));
+	}
+}
+
+export class VariableCapture extends AstNode {
+	constructor(name, innerExpression) {
+		super(innerExpression.returnType);
+		this.name = name;
+		this.innerExpression = innerExpression;
+	}
+
+	* eval(ctx) {
+		const retVal = (yield* this.innerExpression.eval(ctx));
+		// TODO: Ideally this, and also all the operator nodes, should work for split values.
+		const capturedVariable = ctx.ability.scriptVariables[this.name];
+		capturedVariable[capturedVariable.length - 1] = new ScriptValue(
+			this.returnType,
+			capturedVariable.at(-1).plus(retVal, ctx.player)
+		);
+		return retVal;
 	}
 }
 

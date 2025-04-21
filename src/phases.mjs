@@ -71,11 +71,23 @@ export class StackPhase extends Phase {
 			do {
 				currentStackIndex++;
 				this.stacks.push(new Stack(this, currentStackIndex));
+
+				// before the stack begins, we need to initialize the captured variables for every card
+				for (let card of this.turn.game.getActiveCards()) {
+					for (let ability of card.values.current.abilities) {
+						if ((ability instanceof abilities.TriggerAbility ||
+							ability instanceof abilities.CastAbility) &&
+							ability.after
+						) {
+							ability.initCapturedVariables();
+						}
+					}
+				}
 				yield [createStackCreatedEvent(this.currentStack())];
 				yield* this.currentStack().run();
 			} while (this.currentStack().blocks.length > 0);
 
-			// reset on what stacks trigger abilities were met since we're going back to stack 1.
+			// Eeset on what stacks ability triggers were met and the associated captured variables since we're going back to stack 1.
 			for (let card of this.turn.game.getActiveCards()) {
 				for (let ability of card.values.current.abilities) {
 					if ((ability instanceof abilities.TriggerAbility ||
@@ -83,6 +95,7 @@ export class StackPhase extends Phase {
 						ability.after
 					) {
 						ability.triggerMetOnStacks = [];
+						ability.resetCapturedVariables();
 					}
 				}
 			}

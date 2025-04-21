@@ -15,7 +15,7 @@ Such expressions are made up of
 The following is an index of all language features in cdfScript, linking to their explanations:
 - [Operators](./TODO:)
 - [Functions](./TODO:)
-- [Variables](./TODO:)
+- [Variables](./variables.md)
 - [Types](./TODO:)
 - [Objects](./TODO:)
 - [Control Flow](./controlFlow.md)

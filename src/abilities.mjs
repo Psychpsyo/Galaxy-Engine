@@ -1,7 +1,8 @@
 import * as interpreter from "./cdfScriptInterpreter/interpreter.mjs";
 import * as blocks from "./blocks.mjs";
 import * as stepGenerators from "./stepGenerators.mjs";
-import {ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
+import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
+import {capturedVariables, variableTypes} from "./cdfScriptInterpreter/parser.mjs";
 
 export class BaseAbility {
 	constructor(ability, game) {
@@ -86,20 +87,42 @@ export class Ability extends BaseAbility {
 
 	successfulActivation() {}
 
+	// prepares the captured variables of this ability for a new stack
+	initCapturedVariables() {
+		for (const name of capturedVariables[this.id] ?? []) {
+			this.scriptVariables[name] ??= [];
+			const type = variableTypes[this.id][name];
+			if (type === "number") {
+				this.scriptVariables[name].push(new ScriptValue(type, 0));
+			} else {
+				this.scriptVariables[name].push(new ScriptValue(type, []));
+			}
+		}
+	}
+	// resets the captured variables of this ability for stack 1
+	resetCapturedVariables() {
+		for (const name of capturedVariables[this.id] ?? []) {
+			this.scriptVariables[name] = [];
+		}
+	}
+
 	// TODO: Override snapshot() to properly snapshot scriptVariables since it does not create a deep copy.
 }
 
 export class CastAbility extends Ability {
 	constructor(ability, game) {
-		super(ability, game);
-		this.after = null;
+		let after = null;
 		if (ability.after) {
-			this.after = interpreter.buildAST("trigger", ability.id, ability.after, game);
+			after = interpreter.buildAST("trigger", ability.id, ability.after, game);
 		}
-		this.afterPrecondition = null;
+		let afterPrecondition = null;
 		if (ability.afterPrecondition) {
-			this.afterPrecondition = interpreter.buildAST("triggerPrecondition", ability.id, ability.afterPrecondition, game);
+			afterPrecondition = interpreter.buildAST("triggerPrecondition", ability.id, ability.afterPrecondition, game);
 		}
+		// super() gets called this late so that the trigger and precondition get parsed before the cost/exec, since those may reference back to variable captures in these.
+		super(ability, game);
+		this.after = after;
+		this.afterPrecondition = afterPrecondition;
 		this.triggerMetOnStacks = [];
 		this.triggerPreconditionMet = false;
 	}
@@ -217,6 +240,15 @@ export class FastAbility extends Ability {
 
 export class TriggerAbility extends Ability {
 	constructor(ability, game) {
+		let after = null;
+		if (ability.after) {
+			after = interpreter.buildAST("trigger", ability.id, ability.after, game);
+		}
+		let afterPrecondition = null;
+		if (ability.afterPrecondition) {
+			afterPrecondition = interpreter.buildAST("triggerPrecondition", ability.id, ability.afterPrecondition, game);
+		}
+		// super gets called this late so that the trigger and precondition get parsed before the cost/exec, since those may reference back to variable captures in these.
 		super(ability, game);
 		this.mandatory = ability.mandatory;
 		this.turnLimit = interpreter.buildAST("turnLimit", ability.id, ability.turnLimit, game);
@@ -228,14 +260,9 @@ export class TriggerAbility extends Ability {
 			this.during = interpreter.buildAST("during", ability.id, ability.during, game);
 		}
 		this.usedDuring = false;
-		this.after = null;
-		if (ability.after) {
-			this.after = interpreter.buildAST("trigger", ability.id, ability.after, game);
-		}
-		this.afterPrecondition = null;
-		if (ability.afterPrecondition) {
-			this.afterPrecondition = interpreter.buildAST("triggerPrecondition", ability.id, ability.afterPrecondition, game);
-		}
+
+		this.after = after;
+		this.afterPrecondition = afterPrecondition;
 		this.triggerMetOnStacks = [];
 		this.triggerPreconditionMet = false;
 		this.turnActivationCount = 0;

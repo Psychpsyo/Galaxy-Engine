@@ -9,16 +9,22 @@ import * as valueModifiers from "../valueModifiers.mjs";
 let code; // the actual text representation of the code being parsed
 let tokens; // the token stream emitted by the lexer
 let pos; // the current position in the token stream
+let parseType; // The type of the script that is currently being parsed.
 let effectId; // The effect that is currently being parsed.
 let cardId; // the card the effect is on
 
-// contains a list of objects holding variable definition types, indexed by their card IDs, like so:
+// contains a list of objects holding variable definition types, indexed by the IDs of what effects they appear in, like so:
 // {
-// 	"CUU00161": {
+// 	"CUU00161:1": {
 // 		"$units": "card"
 // 	}
 // }
-let foundVariables = {};
+export const variableTypes = {};
+// for each effect ID, this holds a list of what variables are captured in it, like so:
+// {
+// 	"CUU00027:1": ["$cards"]
+// }
+export const capturedVariables = {};
 
 export class ScriptParserError extends Error {
 	constructor(message, startToken, endToken = startToken) {
@@ -47,6 +53,7 @@ export function parseScript(tokenList, newEffectId, type, originalCodeString) {
 		return null;
 	}
 	code = originalCodeString;
+	parseType = type;
 	effectId = newEffectId;
 	cardId = effectId.substring(0, effectId.indexOf(":"));
 	tokens = tokenList;
@@ -107,6 +114,7 @@ function parseLines() {
 
 function parseLine() {
 	let variableName = null;
+	const lineStartPos = pos;
 	switch (tokens[pos].type) {
 		case "if": {
 			return new ast.LineNode(parseIfStatement(), null);
@@ -125,19 +133,22 @@ function parseLine() {
 			break;
 		}
 	}
-	const expr = parseExpression();
+	const expression = parseExpression();
 	// check variable type
 	if (variableName) {
-		if (!foundVariables[cardId]) {
-			foundVariables[cardId] = {};
-		}
-		if (!foundVariables[cardId][variableName]) {
-			foundVariables[cardId][variableName] = expr.returnType;
-		} else if (foundVariables[cardId][variableName] !== expr.returnType) {
-			throw new ScriptParserError("Invalid assignment of type " + expr.returnType + " to variable " + variableName + " of type " + foundVariables[cardId][variableName] + ".", tokens[pos - 2]);
+		variableTypes[effectId] ??= {};
+		if (!variableTypes[effectId][variableName]) {
+			variableTypes[effectId][variableName] = expression.returnType;
+		} else {
+			if (variableTypes[effectId][variableName] !== expression.returnType) {
+				throw new ScriptParserError(`Invalid assignment of type ${expression.returnType} to variable ${variableName} of type ${variableTypes[effectId][variableName]}.`, tokens[lineStartPos], tokens[lineStartPos + 1]);
+			}
+			if (capturedVariables[effectId]?.includes(variableName)) {
+				throw new ScriptParserError("Captured variables cannot be written to manually.", tokens[lineStartPos], tokens[lineStartPos + 1]);
+			}
 		}
 	}
-	return new ast.LineNode(expr, variableName);
+	return new ast.LineNode(expression, variableName);
 }
 
 function parseFunction() {
@@ -437,7 +448,33 @@ function parseValue() {
 			return node;
 		}
 		case "variable": {
-			let variable = parseVariable();
+			// check for variable capturing syntax
+			if (tokens[pos+1]?.type === "leftBrace") {
+				if (parseType !== "trigger") {
+					throw new ScriptParserError("Variable captures may only be used inside the 'after' of an effect.", tokens[pos], tokens[pos+1]);
+				}
+				const startPos = pos;
+				const name = tokens[pos].value;
+				pos += 2;
+				const innerExpression = parseExpression();
+				if (tokens[pos]?.type !== "rightBrace") {
+					throw new ScriptParserError(`Expected a '}' here after the variable capture for ${variable.name}.`, tokens[pos]);
+				}
+
+				variableTypes[effectId] ??= {};
+				if (!variableTypes[effectId][name]) {
+					variableTypes[effectId][name] = innerExpression.returnType;
+					capturedVariables[effectId] ??= [];
+					capturedVariables[effectId].push(name);
+				} else if (variableTypes[effectId][name] !== innerExpression.returnType) {
+					throw new ScriptParserError(`Invalid variable capture of type ${innerExpression.returnType} for variable ${name} of type ${variableTypes[effectId][name]}.`, tokens[startPos], tokens[pos]);
+				}
+
+				pos++;
+				return new ast.VariableCapture(name, innerExpression);
+			}
+			// otherwise, we're just using a variable
+			const variable = parseVariable();
 			if (tokens[pos] && tokens[pos].type == "dotOperator") {
 				pos++;
 				switch (tokens[pos].type) {
@@ -457,7 +494,7 @@ function parseValue() {
 						return parseActionAccessor(variable);
 					}
 					default: {
-						throw new ScriptParserError("'" + tokens[pos].value + "' does not start a valid variable property.", tokens[pos]);
+						throw new ScriptParserError(`'${tokens[pos].value}' does not start a valid variable property.`, tokens[pos]);
 					}
 				}
 			}
@@ -532,7 +569,7 @@ function parseValue() {
 			return node;
 		}
 		default: {
-			throw new ScriptParserError("'" + tokens[pos].value + "' does not start a valid value.", tokens[pos]);
+			throw new ScriptParserError(`'${tokens[pos].value}' does not start a valid value.`, tokens[pos]);
 		}
 	}
 }
@@ -765,10 +802,10 @@ function parseActionAccessor(actionsNode) {
 }
 
 function parseVariable() {
-	if (!foundVariables[cardId]?.[tokens[pos].value]) {
+	if (!variableTypes[effectId]?.[tokens[pos].value]) {
 		throw new ScriptParserError("Reference to unassigned variable " + tokens[pos].value + ".", tokens[pos]);
 	}
-	let node = new ast.VariableNode(tokens[pos].value, foundVariables[cardId][tokens[pos].value]);
+	let node = new ast.VariableNode(tokens[pos].value, variableTypes[effectId][tokens[pos].value]);
 	pos++;
 	return node;
 }

@@ -1,4 +1,5 @@
 import {BaseCard} from "../card.mjs";
+import {capturedVariables} from "./parser.mjs";
 
 // types which are treated as sets (forbidding duplicate values)
 // TODO: re-evaluate if this is necessary / what the implications are
@@ -187,7 +188,11 @@ export class ScriptContext {
 	freezeContext() {
 		const ctx = new ScriptContext(this.card, this.player, this.ability, this.evaluatingPlayer);
 		for (const [key, value] of Object.entries(this.ability?.scriptVariables ?? {})) {
-			ctx.variables[key] = new ScriptValue(value.type, value.get(this.player));
+			if (capturedVariables[this.ability.id]?.contains(key)) {
+				ctx.variables[key] = value.map(val => val? new ScriptValue(val.type, val.get(this.player)) : val);
+			} else {
+				ctx.variables[key] = new ScriptValue(value.type, value.get(this.player));
+			}
 		}
 		return ctx;
 	}

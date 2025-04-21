@@ -64,9 +64,9 @@ export function makeAbility(abilityId, game) {
 	}
 }
 
-export function buildAST(type, id, cdfScript, game) {
-	if (!alreadyParsed[type][id]) {
-		alreadyParsed[type][id] = parseScript(tokenize(cdfScript, id, game), id, type, cdfScript);
+export function buildAST(type, effectId, cdfScript, game) {
+	if (!alreadyParsed[type][effectId]) {
+		alreadyParsed[type][effectId] = parseScript(tokenize(cdfScript, effectId, game), effectId, type, cdfScript);
 	}
-	return alreadyParsed[type][id];
+	return alreadyParsed[type][effectId];
 }
