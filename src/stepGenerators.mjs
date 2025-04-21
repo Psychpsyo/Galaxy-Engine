@@ -295,8 +295,8 @@ export function* combinedStepGenerator(generators) {
 	return successful;
 }
 
-export function* abilityCostStepGenerator(ability, card, player) {
-	let stepGenerator = ability.runCost(card, player);
+export function* abilityCostStepGenerator(ability, ctx) {
+	let stepGenerator = ability.runCost(ctx);
 	let yieldValue;
 	let actionList;
 	do {
@@ -312,8 +312,8 @@ export function* abilityCostStepGenerator(ability, card, player) {
 	return true;
 }
 
-export function* abilityStepGenerator(ability, card, player) {
-	let stepGenerator = ability.run(card, player);
+export function* abilityStepGenerator(ability, ctx) {
+	let stepGenerator = ability.run(ctx);
 	let yieldValue;
 	let actionList;
 	do {

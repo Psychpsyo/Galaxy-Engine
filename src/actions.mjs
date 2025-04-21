@@ -7,7 +7,7 @@ import {Player} from "./player.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {StaticAbility} from "./abilities.mjs";
 import {UndoActionQueueEntry} from "./steps.mjs";
-import { abilityFractionStepGenerator } from "./stepGenerators.mjs";
+import {abilityFractionStepGenerator} from "./stepGenerators.mjs";
 
 // helper functions
 
@@ -1278,7 +1278,7 @@ export class QueueAbilityFragment extends Action {
 
 	async* run(isPrediction) {
 		if (!isPrediction) {
-			this.#timeIndicator.push(abilityFractionStepGenerator(this.#astNode, this.#ctx.freezeContext()));
+			this.#timeIndicator.push(abilityFractionStepGenerator(this.#astNode, this.#ctx.asFrozenContext()));
 		}
 	}
 

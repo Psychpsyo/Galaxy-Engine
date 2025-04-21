@@ -179,19 +179,21 @@ export class ScriptContext {
 		this.ability = ability; // The ability that the script belongs to
 		this.targets = targets; // which objects have already been chosen as targets over the course of the ability
 
-		// only used when context is frozen for use in a modifier (like on 'Mystical Circle')
+		// Used when context is frozen for use in a modifier (like on 'Mystical Circle')
+		// or when freezing captured variables at the start of a script so that the script cannot inadvertantly modify them (through things that reset variables, like moving cards)
 		this.variables = {};
 	}
 
 	// returns a new context, which is a copy of this one, except that it has captured the current variables in the ability.
 	// currently only used for modifiers (mainly in the APPLY function, in case they have backreferences)
-	freezeContext() {
+	asFrozenContext() {
 		const ctx = new ScriptContext(this.card, this.player, this.ability, this.evaluatingPlayer);
+		ctx.variables = {...this.variables};
 		for (const [key, value] of Object.entries(this.ability?.scriptVariables ?? {})) {
-			if (capturedVariables[this.ability.id]?.contains(key)) {
-				ctx.variables[key] = value.map(val => val? new ScriptValue(val.type, val.get(this.player)) : val);
+			if (capturedVariables[this.ability.id]?.includes(key)) {
+				ctx.variables[key] ??= value.map(val => val? new ScriptValue(val.type, val.get(this.player)) : val);
 			} else {
-				ctx.variables[key] = new ScriptValue(value.type, value.get(this.player));
+				ctx.variables[key] ??= new ScriptValue(value.type, value.get(this.player));
 			}
 		}
 		return ctx;

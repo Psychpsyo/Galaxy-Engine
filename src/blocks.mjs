@@ -3,7 +3,7 @@ import * as game from "./game.mjs";
 import * as actions from "./actions.mjs";
 import * as abilities from "./abilities.mjs";
 import * as stepGenerators from "./stepGenerators.mjs";
-import {ScriptContext, ScriptValue, TargetObjects} from "./cdfScriptInterpreter/structs.mjs";
+import {ScriptValue, TargetObjects} from "./cdfScriptInterpreter/structs.mjs";
 import {ObjectValues, FightValues} from "./objectValues.mjs";
 import {Step} from "./steps.mjs";
 
@@ -223,14 +223,14 @@ export class AbilityActivation extends Block {
 		// By the time this block executes, the snapshot might not be able to resolve to a card anymore
 		// This is good because any references to "this card" should be invalid by then.
 		const card = ability.card.snapshot();
-		const scriptTargets = new TargetObjects();
+		const ctx = ability.makeMainContext(card, player);
 		super("abilityActivationBlock", stack, player,
 			new stepGenerators.StepRunner(() =>
-				stepGenerators.abilityStepGenerator(ability, card, player, scriptTargets),
+				stepGenerators.abilityStepGenerator(ability, ctx),
 				player.game
 			),
 			new stepGenerators.StepRunner(() =>
-				stepGenerators.abilityCostStepGenerator(ability, card, player, scriptTargets),
+				stepGenerators.abilityCostStepGenerator(ability, ctx),
 				player.game
 			)
 		);
@@ -245,14 +245,7 @@ export class AbilityActivation extends Block {
 		if (!(await (yield* super.runCost()))) {
 			return false;
 		}
-
-		// Needs to be checked after paying the cost in case paying the cost made some targets invalid.
-		if (this.ability.exec && !this.ability.exec.hasAllTargets(new ScriptContext(this.card, this.player, this.ability))) {
-			yield* this.undoCost();
-			return false;
-		}
-
-		this.ability.successfulActivation();
+		this.ability.successfulActivation(this.player.game.currentStack());
 		return true;
 	}
 }
@@ -275,14 +268,15 @@ export class DeployItem extends Block {
 		for (let ability of card.values.current.abilities) {
 			if (ability instanceof abilities.DeployAbility) {
 				deployAbility = ability;
+				const ctx = ability.makeMainContext(card, player, scriptTargets);
 				if (card.values.current.cardTypes.includes("equipableItem")) {
 					execStepGenerators.unshift(stepGenerators.equipStepGenerator(
 						player,
-						stepGenerators.abilityStepGenerator(ability, card, player, scriptTargets)
+						stepGenerators.abilityStepGenerator(ability, ctx)
 					));
 					equipGeneratorHandled = true;
 				} else {
-					execStepGenerators.unshift(stepGenerators.abilityStepGenerator(ability, card, player, scriptTargets));
+					execStepGenerators.unshift(stepGenerators.abilityStepGenerator(ability, ctx));
 				}
 				// cards only ever have one of these
 				break;
@@ -311,17 +305,7 @@ export class DeployItem extends Block {
 		if (!(await (yield* super.runCost()))) {
 			return false;
 		}
-
 		yield* this.placeStep.run();
-
-		// Needs to be checked after paying the cost in case paying the cost made some targets invalid.
-		if (!this.card.current() ||
-			(this.deployAbility && this.deployAbility.exec && !this.deployAbility.exec.hasAllTargets(new ScriptContext(this.card.current(), this.player, this.deployAbility, this.player)))
-		) {
-			yield* this.undoCost();
-			return false;
-		}
-
 		return true;
 	}
 
@@ -347,14 +331,15 @@ export class CastSpell extends Block {
 		for (let ability of card.values.current.abilities) {
 			if (ability instanceof abilities.CastAbility) {
 				castAbility = ability;
+				const ctx = ability.makeMainContext(card, player, scriptTargets);
 				if (card.values.current.cardTypes.includes("equipableItem")) {
 					execStepGenerators.unshift(stepGenerators.equipStepGenerator(
 						player,
-						stepGenerators.abilityStepGenerator(ability, card, player, scriptTargets)
+						stepGenerators.abilityStepGenerator(ability, ctx)
 					));
 					enchantGeneratorHandled = true;
 				} else {
-					execStepGenerators.unshift(stepGenerators.abilityStepGenerator(ability, card, player, scriptTargets));
+					execStepGenerators.unshift(stepGenerators.abilityStepGenerator(ability, ctx));
 				}
 				// cards only ever have one of these
 				break;
@@ -383,17 +368,7 @@ export class CastSpell extends Block {
 		if (!(await (yield* super.runCost()))) {
 			return false;
 		}
-
 		yield* this.placeStep.run();
-
-		// Needs to be checked after paying the cost in case paying the cost made some targets invalid.
-		if (!this.card.current() ||
-			(this.castAbility && this.castAbility.exec && !this.castAbility.exec.hasAllTargets(new ScriptContext(this.card.current(), this.player, this.castAbility, this.player)))
-		) {
-			yield* this.undoCost();
-			return false;
-		}
-
 		return true;
 	}
 

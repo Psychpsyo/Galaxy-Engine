@@ -628,11 +628,12 @@ export class VariableNode extends AstNode {
 		this.name = name;
 	}
 	* eval(ctx) {
-		// context variables take precedence in case they are frozen
+		// variables baked into the context always take precedence
 		let variable = ctx.variables[this.name] ?? ctx.ability?.scriptVariables[this.name];
 		if (capturedVariables[ctx.ability.id]?.includes(this.name)) {
 			variable = variable.at(-2); // -1 since we are interested in the captured variables from last stack
 		}
+		// This can also mean that we somehow tried accessing a captured variable on stack 1, since there is no preceeding stack.
 		if (variable === undefined) {
 			throw new Error(`Tried to access unitialized variable '${this.name}'.`);
 		}
@@ -1323,7 +1324,7 @@ export class ModifierNode extends AstNode {
 		this.modifications = modifications;
 	}
 	* eval(ctx) {
-		return new ScriptValue("modifier", new Modifier(this.modifications, ctx.freezeContext()));
+		return new ScriptValue("modifier", new Modifier(this.modifications, ctx.asFrozenContext()));
 	}
 }
 

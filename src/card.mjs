@@ -110,7 +110,7 @@ export class BaseCard {
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.CastAbility) {
 				if (ability.cost) {
-					generators.push(stepGenerators.abilityCostStepGenerator(ability, this, player, scriptTargets));
+					generators.push(stepGenerators.abilityCostStepGenerator(ability, ability.makeMainContext(this, player), scriptTargets));
 				}
 				break;
 			}
@@ -133,7 +133,7 @@ export class BaseCard {
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.DeployAbility) {
 				if (ability.cost) {
-					generators.push(stepGenerators.abilityCostStepGenerator(ability, this, player, scriptTargets));
+					generators.push(stepGenerators.abilityCostStepGenerator(ability, ability.makeMainContext(this, player), scriptTargets));
 				}
 				break;
 			}

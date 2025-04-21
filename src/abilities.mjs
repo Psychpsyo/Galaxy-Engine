@@ -28,6 +28,9 @@ export class BaseAbility {
 		snapshot.originalAbilityObject = this;
 		return snapshot;
 	}
+	restoreOriginalAbilityObject() {
+		return this.originalAbilityObject;
+	}
 	// always returns the current version of an ability (attached to a non-snapshot card) or null if that doesn't exist.
 	current() {
 		return this.card.owner.game.currentAbilities.get(this.globalId) ?? null;
@@ -70,30 +73,41 @@ export class Ability extends BaseAbility {
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
 		if (!this.forPlayer.evalFull(ctx).next().value.get(player).includes(player)) return null;
 
-		const stepRunner = new stepGenerators.StepRunner(() => stepGenerators.abilityCostStepGenerator(this, card, player), player.game);
+		const stepRunner = new stepGenerators.StepRunner(() => stepGenerators.abilityCostStepGenerator(this, this.makeMainContext(card, player)), player.game);
 		stepRunner.isCost = true;
 		return new stepGenerators.OptionTreeNode(player.game, stepRunner, () => this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)));
 	}
 
-	* runCost(card, player) {
+	* runCost(ctx) {
 		if (this.cost) {
-			yield* this.cost.eval(new ScriptContext(card, player, this));
+			yield* this.cost.eval(ctx);
 		}
 	}
 
-	* run(card, player) {
-		yield* this.exec.eval(new ScriptContext(card, player, this));
+	* run(ctx) {
+		yield* this.exec.eval(ctx);
 	}
 
-	successfulActivation() {}
+	// takes care of baking captured variables into the context
+	makeMainContext(card, player, targets) {
+		const ctx = new ScriptContext(card, player, this, undefined, targets);
+		for (const [name, value] of Object.entries(this.scriptVariables)) {
+			if (capturedVariables[this.id]?.includes(name)) {
+				ctx.variables[name] = [...value];
+			}
+		}
+		return ctx;
+	}
+
+	successfulActivation(onStack) {}
 
 	// prepares the captured variables of this ability for a new stack
-	initCapturedVariables() {
+	prepareCapturedVariables() {
 		for (const name of capturedVariables[this.id] ?? []) {
 			this.scriptVariables[name] ??= [];
 			const type = variableTypes[this.id][name];
 			if (type === "number") {
-				this.scriptVariables[name].push(new ScriptValue(type, 0));
+				this.scriptVariables[name].push(new ScriptValue(type, [0]));
 			} else {
 				this.scriptVariables[name].push(new ScriptValue(type, []));
 			}
@@ -104,9 +118,28 @@ export class Ability extends BaseAbility {
 		for (const name of capturedVariables[this.id] ?? []) {
 			this.scriptVariables[name] = [];
 		}
+		this.prepareCapturedVariables();
 	}
 
-	// TODO: Override snapshot() to properly snapshot scriptVariables since it does not create a deep copy.
+	// Override snapshot() to properly snapshot scriptVariables since it does not create a deep copy.
+	snapshot() {
+		const snapshot = super.snapshot();
+		snapshot.scriptVariables = {};
+		for (const [name, value] of Object.entries(this.scriptVariables)) {
+			if (capturedVariables[this.id]?.includes(name)) {
+				snapshot.scriptVariables[name] = [...value];
+			} else {
+				snapshot.scriptVariables[name] = value;
+			}
+		}
+		return snapshot;
+	}
+	// restore script variables back to what they were at time of snapshotting
+	restoreOriginalAbilityObject() {
+		const original = super.restoreOriginalAbilityObject();
+		original.scriptVariables = this.scriptVariables;
+		return original;
+	}
 }
 
 export class CastAbility extends Ability {
@@ -141,6 +174,10 @@ export class CastAbility extends Ability {
 	}
 	checkTriggerPrecondition(player) {
 		this.triggerPreconditionMet = this.afterPrecondition === null || this.afterPrecondition.evalFull(new ScriptContext(this.card, player, this)).next().value.getJsBool(player);
+	}
+
+	resetMetTrigger() {
+		this.triggerMetOnStacks = [];
 	}
 }
 
@@ -185,7 +222,7 @@ export class OptionalAbility extends Ability {
 		return super.getActivatabilityCostOptionTree(card, player, evaluatingPlayer);
 	}
 
-	successfulActivation() {
+	successfulActivation(onStack) {
 		this.turnActivationCount++;
 		this.zoneActivationCount++;
 	}
@@ -226,7 +263,7 @@ export class FastAbility extends Ability {
 		return super.getActivatabilityCostOptionTree(card, player, evaluatingPlayer);
 	}
 
-	successfulActivation() {
+	successfulActivation(onStack) {
 		this.turnActivationCount++;
 		this.zoneActivationCount++;
 	}
@@ -312,20 +349,28 @@ export class TriggerAbility extends Ability {
 		}
 	}
 
-	successfulActivation() {
+	successfulActivation(onStack) {
 		this.turnActivationCount++;
 		this.zoneActivationCount++;
-		this.triggerMetOnStacks = [];
+		if (this.triggerMetOnStacks.includes(onStack.index - 1)) {
+			this.triggerMetOnStacks.splice(this.triggerMetOnStacks.indexOf(onStack.index - 1), 1);
+		}
 		if (this.during) {
 			this.usedDuring = true;
 		}
 	}
 
-	zoneMoveReset(game) {
+	resetMetTrigger() {
+		this.triggerMetOnStacks = [];
+		this.resetCapturedVariables();
+	}
+
+	zoneMoveReset(game, isPrediction) {
 		super.zoneMoveReset(game);
 		this.turnActivationCount = 0;
 		this.zoneActivationCount = 0;
 		this.triggerMetOnStacks = [];
+		this.resetCapturedVariables();
 	}
 }
 

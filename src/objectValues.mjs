@@ -35,9 +35,9 @@ export class ObjectValues {
 		return clone;
 	}
 	unsnapshot() {
-		this.initial.abilities = this.initial.abilities.map(ability => ability.originalAbilityObject);
-		this.base.abilities = this.base.abilities.map(ability => ability.originalAbilityObject);
-		this.current.abilities = this.current.abilities.map(ability => ability.originalAbilityObject);
+		this.initial.abilities = this.initial.abilities.map(ability => ability.restoreOriginalAbilityObject());
+		this.base.abilities = this.base.abilities.map(ability => ability.restoreOriginalAbilityObject());
+		this.current.abilities = this.current.abilities.map(ability => ability.restoreOriginalAbilityObject());
 		return this;
 	}
 
