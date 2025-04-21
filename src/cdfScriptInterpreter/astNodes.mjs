@@ -931,8 +931,9 @@ export class AndNode extends LogicNode {
 	}
 	doOperation(left, right, player) {
 		left = left.getJsBool(player);
+		if (!left) return [false];
 		right = right.getJsBool(player);
-		return [left && right];
+		return [right];
 	}
 }
 export class OrNode extends LogicNode {
@@ -941,8 +942,9 @@ export class OrNode extends LogicNode {
 	}
 	doOperation(left, right, player) {
 		left = left.getJsBool(player);
+		if (left) return [true];
 		right = right.getJsBool(player);
-		return [left || right];
+		return [right];
 	}
 }
 
