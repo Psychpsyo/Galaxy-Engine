@@ -711,7 +711,7 @@ export function initFunctions() {
 
 	// Puts X counters of a given type onto the given card(s)
 	PUTCOUNTERS: new ScriptFunction(
-		["card", "counter", "amount"],
+		["card", "counter", "number"],
 		[null, null, null],
 		null,
 		function*(astNode, ctx) {
@@ -737,7 +737,7 @@ export function initFunctions() {
 
 	// Removes X counters of a given type from the given card(s)
 	REMOVECOUNTERS: new ScriptFunction(
-		["card", "counter", "amount"],
+		["card", "counter", "number"],
 		[null, null, null],
 		null,
 		function*(astNode, ctx) {
