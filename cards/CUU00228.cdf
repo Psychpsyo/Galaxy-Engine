@@ -36,5 +36,4 @@ applyTo: thisCard
 modifier: {attackRights = 2}
 
 |o: static
-applyTo: thisCard
 modifier: {prohibit destroyed(dueTo: effect, by: self != thisCard) = thisCard}
