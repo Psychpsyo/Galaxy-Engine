@@ -370,7 +370,7 @@ export class Step {
 		}
 
 		if (!isPrediction) {
-			// consolidate and queue up any undo actions
+			// consolidate and queue up any undo actions for things that may need to run out at some point
 			const undoActionMap = new Map();
 			for (const undoQueueEntry of this.undoActionQueue) {
 				const consolidated = undoActionMap.get(undoQueueEntry.timestep) ?? [];
