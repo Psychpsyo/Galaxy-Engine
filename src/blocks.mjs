@@ -96,7 +96,7 @@ export class StandardSummon extends Block {
 		super("standardSummonBlock", stack, player,
 			new stepGenerators.StepRunner(() =>
 				stepGenerators.arrayStepGenerator([
-					[new actions.Summon(player, placeAction, new ScriptValue("dueToReason", "standardSummon"))]
+					[new actions.Summon(player, placeAction, new ScriptValue("dueToReason", ["standardSummon"]))]
 				]),
 				player.game
 			),
@@ -256,7 +256,7 @@ export class DeployItem extends Block {
 		let execStepGenerators = [
 			stepGenerators.arrayStepGenerator([
 				// snapshot card here to not track it when it moves to another zone during its effect
-				[new actions.Deploy(player, card.snapshot(), player.spellItemZone, new ScriptValue("dueToReason", "deployment"))]
+				[new actions.Deploy(player, card.snapshot(), player.spellItemZone, new ScriptValue("dueToReason", ["deployment"]))]
 			])
 		];
 
@@ -321,7 +321,7 @@ export class CastSpell extends Block {
 		const execStepGenerators = [
 			stepGenerators.arrayStepGenerator([
 				// snapshot card here to not track it when it moves to another zone during its effect
-				[new actions.Cast(player, card.snapshot(), player.spellItemZone, new ScriptValue("dueToReason", "casting"))]
+				[new actions.Cast(player, card.snapshot(), player.spellItemZone, new ScriptValue("dueToReason", ["casting"]))]
 			])
 		];
 
