@@ -10,11 +10,14 @@ Variables in cdfScript can be of any of the following types:
 - cardId
 - cardType
 - counter
+- dueToReason
 - fight
 - modifier
 - number
+- phase
 - player
 - timeIndicator
+- turn
 - type
 - zone
 

@@ -226,7 +226,7 @@ A [cdfScript expression](./TODO:) that should evaluate to `yes` or `no`, indicat
 Example:
 `afterPrecondition: thisCard.zone = field`
 
-This is only allowed on `trigger` and `cast` abilities and not in combination with `during`.
+This is only allowed on `trigger` and `cast` abilities that also have `after`. (and therefore not in combination with `during`)
 
 
 ### during
