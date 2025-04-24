@@ -156,20 +156,27 @@ export class CastAbility extends Ability {
 		super(ability, game);
 		this.after = after;
 		this.afterPrecondition = afterPrecondition;
-		this.triggerMetOnStacks = [];
+		this.triggerMetOnStacks = new Set();
 		this.triggerPreconditionMet = false;
 	}
 
 	// does not use getActivatabilityCostOptionTree as that behavior is rolled into the relevant function on spell cards
 	canActivate(card, player, evaluatingPlayer = player) {
 		if (!this.forPlayer.evalFull(new ScriptContext(card, player, this, evaluatingPlayer)).next().value.get(player).includes(player)) return false;
-		return this.isConditionMet(player, evaluatingPlayer) && (this.after === null || (player.game.currentStack() && this.triggerMetOnStacks.includes(player.game.currentStack().index - 1)));
+		return this.isConditionMet(player, evaluatingPlayer) && (this.after === null || (player.game.currentStack() && this.triggerMetOnStacks.has(player.game.currentStack().index - 1)));
 	}
 
 	checkTrigger(player) {
-		if (this.triggerPreconditionMet && (this.after === null || this.after.evalFull(new ScriptContext(this.card, player, this)).next().value.getJsBool(player))) {
-			// no stack means we haven't started executing them yet
-			this.triggerMetOnStacks.push(player.game.currentStack()?.index ?? 0);
+		const ctx = new ScriptContext(this.card, player, this);
+		if (this.triggerPreconditionMet && (this.after === null || this.after.evalFull(ctx).next().value.getJsBool(player))) {
+			// no stack means we haven't started executing them yet, so do 0 as "before the first stack"
+			this.triggerMetOnStacks.add(player.game.currentStack()?.index ?? 0);
+			// update captured variables, if any
+			if (ctx.capturedVariables) {
+				for (const [name, variable] of ctx.capturedVariables) {
+					this.scriptVariables[name][this.scriptVariables[name].length - 1] = variable;
+				}
+			}
 		}
 	}
 	checkTriggerPrecondition(player) {
@@ -177,7 +184,7 @@ export class CastAbility extends Ability {
 	}
 
 	resetMetTrigger() {
-		this.triggerMetOnStacks = [];
+		this.triggerMetOnStacks.clear();
 	}
 }
 
@@ -300,7 +307,7 @@ export class TriggerAbility extends Ability {
 
 		this.after = after;
 		this.afterPrecondition = afterPrecondition;
-		this.triggerMetOnStacks = [];
+		this.triggerMetOnStacks = new Set();
 		this.triggerPreconditionMet = false;
 		this.turnActivationCount = 0;
 		this.zoneActivationCount = 0;
@@ -309,7 +316,7 @@ export class TriggerAbility extends Ability {
 	async getActivatabilityCostOptionTree(card, player, evaluatingPlayer = player) {
 		// This is only interested in if the trigger has been met at all, not if it is currently the right time to activate this.
 		// Like this, activatability can be checked, even if we are not on the right stack yet, which is necessary at end of turn.
-		if (this.triggerMetOnStacks.length === 0) return null;
+		if (this.triggerMetOnStacks.size === 0) return null;
 
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
 		if (this.turnActivationCount >= this.turnLimit.evalFull(ctx).next().value.getJsNum(player)) return null;
@@ -330,9 +337,16 @@ export class TriggerAbility extends Ability {
 
 	checkTrigger(player) {
 		if (this.after === null) return;
-		if (this.triggerPreconditionMet && this.after.evalFull(new ScriptContext(this.card, player, this)).next().value.getJsBool(player)) {
-			// no stack means we haven't started executing them yet
-			this.triggerMetOnStacks.push(player.game.currentStack()?.index ?? 0);
+		const ctx = new ScriptContext(this.card, player, this);
+		if (this.triggerPreconditionMet && this.after.evalFull(ctx).next().value.getJsBool(player)) {
+			// no stack means we haven't started executing them yet, so do 0 as "before the first stack"
+			this.triggerMetOnStacks.add(player.game.currentStack()?.index ?? 0);
+			// update captured variables, if any
+			if (ctx.capturedVariables) {
+				for (const [name, variable] of ctx.capturedVariables) {
+					this.scriptVariables[name][this.scriptVariables[name].length - 1] = variable;
+				}
+			}
 		}
 	}
 	checkTriggerPrecondition(player) {
@@ -342,26 +356,24 @@ export class TriggerAbility extends Ability {
 	checkDuring(player) {
 		if (this.during === null) return;
 		if (!this.during.evalFull(new ScriptContext(this.card, player, this)).next().value.getJsBool(player)) {
-			this.triggerMetOnStacks = [];
+			this.triggerMetOnStacks.clear();
 			this.usedDuring = false;
 		} else if (!this.usedDuring && player.game.currentStack()) {
-			this.triggerMetOnStacks.push(player.game.currentStack().index - 1);
+			this.triggerMetOnStacks.add(player.game.currentStack().index - 1);
 		}
 	}
 
 	successfulActivation(onStack) {
 		this.turnActivationCount++;
 		this.zoneActivationCount++;
-		if (this.triggerMetOnStacks.includes(onStack.index - 1)) {
-			this.triggerMetOnStacks.splice(this.triggerMetOnStacks.indexOf(onStack.index - 1), 1);
-		}
+		this.triggerMetOnStacks.delete(onStack.index - 1);
 		if (this.during) {
 			this.usedDuring = true;
 		}
 	}
 
 	resetMetTrigger() {
-		this.triggerMetOnStacks = [];
+		this.triggerMetOnStacks.clear();
 		this.resetCapturedVariables();
 	}
 
@@ -369,7 +381,7 @@ export class TriggerAbility extends Ability {
 		super.zoneMoveReset(game);
 		this.turnActivationCount = 0;
 		this.zoneActivationCount = 0;
-		this.triggerMetOnStacks = [];
+		this.triggerMetOnStacks.clear();
 		this.resetCapturedVariables();
 	}
 }

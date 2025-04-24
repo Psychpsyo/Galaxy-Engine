@@ -650,12 +650,13 @@ export class VariableCapture extends AstNode {
 
 	* eval(ctx) {
 		const retVal = (yield* this.innerExpression.eval(ctx));
+		ctx.capturedVariables ??= new Map();
 		// TODO: Ideally this, and also all the operator nodes, should work for split values.
-		const capturedVariable = ctx.ability.scriptVariables[this.name];
-		capturedVariable[capturedVariable.length - 1] = new ScriptValue(
+		const capturedVariable = ctx.capturedVariables.get(this.name) ?? ctx.ability.scriptVariables[this.name].at(-1);
+		ctx.capturedVariables.set(this.name, new ScriptValue(
 			this.returnType,
-			capturedVariable.at(-1).plus(retVal, ctx.player)
-		);
+			capturedVariable.plus(retVal, ctx.player)
+		));
 		return retVal;
 	}
 }

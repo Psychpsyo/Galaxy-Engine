@@ -150,7 +150,7 @@ export class StackPhase extends Phase {
 			for (const ability of card.values.current.abilities) {
 				if (ability instanceof abilities.TriggerAbility) {
 					// whether or not it is currently the right stack for the trigger ability to activate is not part of it's activation conditions so gets checked here instead of inside the function
-					if (!ability.triggerMetOnStacks.includes(stack.index - 1)) continue;
+					if (!ability.triggerMetOnStacks.has(stack.index - 1)) continue;
 					const costOptionTree = await ability.getActivatabilityCostOptionTree(ability.card, player);
 					if (await costOptionTree?.isValid()) { // no tree = precondition failed = invalid
 						eligibleAbilities.push(ability);
