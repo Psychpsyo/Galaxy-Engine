@@ -267,21 +267,21 @@ export class ObjectMatchNode extends AstNode {
 		this.conditions = conditions;
 	}
 	* eval(ctx) {
-		return new ScriptValue("card", yield* this.getMatchingCards(ctx));
+		return new ScriptValue(this.returnType, yield* this.getMatchingObjects(ctx));
 	}
 	* evalFull(ctx) {
-		let generator = this.getMatchingCards(ctx);
+		let generator = this.getMatchingObjects(ctx);
 		let next;
 		do {
 			next = generator.next();
 		} while (!next.done);
-		yield new ScriptValue("card", next.value);
+		yield new ScriptValue(this.returnType, next.value);
 	}
 	getChildNodes() {
 		return this.objectNodes.concat(this.conditions);
 	}
 
-	* getMatchingCards(ctx) {
+	* getMatchingObjects(ctx) {
 		const objects = [];
 		const matchingObjects = [];
 		for (const objectNode of this.objectNodes) {
