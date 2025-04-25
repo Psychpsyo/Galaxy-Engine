@@ -475,7 +475,10 @@ export class Cast extends Action {
 
 export class Move extends Action {
 	constructor(player, card, zone, targetIndex, reason, source) {
-		const properties = {};
+		const properties = {
+			from: new ScriptValue("zone", [card.zone]),
+			to: new ScriptValue("zone", [zone])
+		};
 		if (reason) properties.dueTo = reason;
 		if (source) properties.by = source;
 		super(player, properties);
