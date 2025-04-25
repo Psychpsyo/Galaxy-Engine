@@ -14,5 +14,5 @@ modifier: {attack, defense -= 300}
 o: trigger
 mandatory: no
 condition: thisCard.zone = field
-after: COUNT([from destroyed(dueTo: fight, by: thisCard) where cardType = unit & types = Ice]) > 0
+after: COUNT([from destroyed(dueTo: fights, by: thisCard) where cardType = unit & types = Ice]) > 0
 DRAW(1);

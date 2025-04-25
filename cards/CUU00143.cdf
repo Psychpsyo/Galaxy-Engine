@@ -8,7 +8,7 @@ defense: 500
 
 o: static
 condition: thisCard.zone = field
-modifier: {cancel destroyed(dueTo: fight) = thisCard}
+modifier: {cancel destroyed(dueTo: fights) = thisCard}
 mandatory: no
 zoneDurationLimit: 1
 

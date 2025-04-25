@@ -9,5 +9,5 @@ defense: 600
 o: trigger
 mandatory: no
 condition: thisCard.zone = field & COUNT([from you.field, you.hand where self != thisCard + you.partner]) = 0
-after: COUNT([from destroyed(dueTo: fight, by: thisCard) where cardType = unit]) > 0
+after: COUNT([from destroyed(dueTo: fights, by: thisCard) where cardType = unit]) > 0
 GIVEATTACK(thisCard);

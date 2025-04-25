@@ -8,5 +8,5 @@ defense: 300
 
 o: trigger
 mandatory: no
-after: destroyed(dueTo: fight) = thisCard
+after: destroyed(dueTo: fights) = thisCard
 DRAW(1);

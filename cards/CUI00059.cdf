@@ -12,10 +12,10 @@ modifier: {attack += 800}
 
 o: static
 condition: thisCard.zone = field
-modifier: {replace COUNT([from discarded(byDestroy: yes, dueTo: fight, by: thisCard.equippedUnit) where cardType = unit]) > 0 with EXILE([from discarded(byDestroy: yes, dueTo: fight, by: thisCard.equippedUnit) where cardType = unit])}
+modifier: {replace COUNT([from discarded(byDestroy: yes, dueTo: fights, by: thisCard.equippedUnit) where cardType = unit]) > 0 with EXILE([from discarded(byDestroy: yes, dueTo: fights, by: thisCard.equippedUnit) where cardType = unit])}
 mandatory: yes
 
 o: trigger
 mandatory: yes
-after: COUNT([from destroyed(dueTo: fight, by: thisCard.equippedUnit) where cardType = unit]) > 0
+after: COUNT([from destroyed(dueTo: fights, by: thisCard.equippedUnit) where cardType = unit]) > 0
 DAMAGE(opponent, 200);

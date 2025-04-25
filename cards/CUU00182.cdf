@@ -15,5 +15,5 @@ SETATTACKTARGET(thisCard);
 
 o: trigger
 mandatory: no
-after: destroyed(dueTo: fight) = thisCard
+after: destroyed(dueTo: fights) = thisCard
 GAINLIFE(100);

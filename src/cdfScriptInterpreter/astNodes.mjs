@@ -354,6 +354,16 @@ export class FightsNode extends AstNode {
 		super("fight");
 	}
 	* eval(ctx) {
+		const fightBlocks = ctx.game.getBlocks().filter(block => block instanceof blocks.Fight);
+		return new ScriptValue("fight", fightBlocks.map(block => block.fight));
+	}
+}
+
+export class CurrentFightNode extends AstNode {
+	constructor() {
+		super("fight");
+	}
+	* eval(ctx) {
 		const block = ctx.game.currentBlock();
 		if (block instanceof blocks.Fight) {
 			return new ScriptValue("fight", [block.fight]);
@@ -1110,10 +1120,10 @@ export class TurnNode extends AstNode {
 		const players = (yield* this.playerNode.eval(ctx)).get(ctx.player);
 		const turns = [];
 		for (const player of players) {
-			turns.push(new TurnValue(player, this.next));
+			turns.push(new TurnValue(player, this.next, ctx.game));
 		}
 		if (players.length === 0) {
-			turns.push(new TurnValue(null, this.next));
+			turns.push(new TurnValue(null, this.next, ctx.game));
 		}
 		return new ScriptValue("turn", turns);
 	}

@@ -6,7 +6,7 @@ types: Light
 
 o: cast
 condition: currentTurn = opponent.turn
-after: COUNT([from destroyed(dueTo: fight) where level <= 4 & owner = you]) > 0
+after: COUNT([from destroyed(dueTo: fights) where level <= 4 & owner = you]) > 0
 cost:
 DISCARD(SELECT(1, [from you.hand where types = Light]));
 exec:

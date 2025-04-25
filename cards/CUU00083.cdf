@@ -9,7 +9,7 @@ defense: 200
 o: trigger
 mandatory: yes
 condition: thisCard.zone = field
-after: COUNT([from destroyed(dueTo: fight, by: thisCard) where cardType = unit]) > 0
+after: COUNT([from destroyed(dueTo: fights, by: thisCard) where cardType = unit]) > 0
 DISCARD?(DECKTOP?(opponent, 2));
 
 o: optional

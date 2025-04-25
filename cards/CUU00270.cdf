@@ -16,7 +16,7 @@ APPLY(thisCard, {attack += COUNT($revealed) * 100}, currentTurn.end);
 
 o: trigger
 mandatory: no
-after: COUNT([from destroyed(dueTo: fight, by: thisCard) where cardType = unit]) > 0
+after: COUNT([from destroyed(dueTo: fights, by: thisCard) where cardType = unit]) > 0
 condition: thisCard.zone = field
 MOVE(SELECT(1, [from you.deck where name = [CUS00044, CUI00042]]), hand);
 

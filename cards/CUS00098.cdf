@@ -7,5 +7,5 @@ types: Dragon
 o: trigger
 mandatory: no
 condition: thisCard.zone = field
-after: COUNT(destroyed(dueTo: fight, by: types = Dragon & owner = you)) > 0
+after: COUNT(destroyed(dueTo: fights, by: types = Dragon & owner = you)) > 0
 DAMAGE(opponent, 100);

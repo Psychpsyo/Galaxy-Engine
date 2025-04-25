@@ -436,7 +436,7 @@ function* attackGenerator(attackDeclaration, fight, isCounterattack) {
 		let discard = new actions.Discard(
 			target.owner,
 			target,
-			new ScriptValue("dueToReason", ["fight"]),
+			new ScriptValue("fight", [fight]),
 			new ScriptValue("card", attackers.map(unit => unit.snapshot()))
 		);
 
@@ -451,7 +451,7 @@ function* attackGenerator(attackDeclaration, fight, isCounterattack) {
 				attackDeclaration.creator,
 				player,
 				playerDamage,
-				new ScriptValue("dueToReason", ["fight"]),
+				new ScriptValue("fight", [fight]),
 				new ScriptValue("card", attackers.map(unit => unit.snapshot()))
 			));
 		}

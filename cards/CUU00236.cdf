@@ -17,5 +17,5 @@ APPLY(thisCard, {attackRights = 2}, currentTurn.end);
 o: trigger
 mandatory: no
 condition: thisCard.zone = field
-after: COUNT([from destroyed(dueTo: fight, by: thisCard) where cardType = unit]) > 0
+after: COUNT([from destroyed(dueTo: fights, by: thisCard) where cardType = unit]) > 0
 DISCARD?(DECKTOP?(opponent, 2));

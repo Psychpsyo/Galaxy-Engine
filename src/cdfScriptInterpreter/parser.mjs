@@ -388,6 +388,15 @@ function parseValue() {
 			}
 			return node;
 		}
+		case "currentFight": {
+			const node = new ast.CurrentFightNode();
+			pos++;
+			if (tokens[pos] && tokens[pos].type === "dotOperator") {
+				pos++;
+				return parseFightDotAccess(node);
+			}
+			return node;
+		}
 		case "leftBracket": {
 			if (tokens[pos+1].type === "from") {
 				let cardMatcher = parseCardMatcher();
@@ -475,7 +484,7 @@ function parseValue() {
 			}
 			// otherwise, we're just using a variable
 			const variable = parseVariable();
-			if (tokens[pos] && tokens[pos].type == "dotOperator") {
+			if (tokens[pos] && tokens[pos].type === "dotOperator") {
 				pos++;
 				switch (tokens[pos].type) {
 					case "phaseType":
@@ -492,6 +501,9 @@ function parseValue() {
 					}
 					case "actionAccessor": {
 						return parseActionAccessor(variable);
+					}
+					case "fightProperty": {
+						return parseFightDotAccess(variable);
 					}
 					default: {
 						throw new ScriptParserError(`'${tokens[pos].value}' does not start a valid variable property.`, tokens[pos]);

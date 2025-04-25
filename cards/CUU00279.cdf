@@ -17,7 +17,7 @@ SUMMON(SELECT(1, [from you.deck where name = [CUU00203, CUU00269]]));
 o: trigger
 mandatory: no
 condition: thisCard.zone = field
-after: COUNT([from destroyed(dueTo: fight, by: thisCard) where cardType = unit]) > 0
+after: COUNT([from destroyed(dueTo: fights, by: thisCard) where cardType = unit]) > 0
 opponent.may {
 	LOSELIFE(100);
 } then {

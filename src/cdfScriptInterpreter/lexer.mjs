@@ -42,6 +42,7 @@ const keywordTokenTypes = {
 	own: "player",
 
 	fights: "fights",
+	currentFight: "currentFight",
 
 	life: "playerProperty",
 	mana: "playerProperty",
@@ -192,7 +193,6 @@ const keywordTokenTypes = {
 	to: "accessorProperty",
 
 	effect: "dueToReason",
-	fight: "dueToReason",
 	invalidEquipment: "dueToReason",
 	standardSummon: "dueToReason",
 	deployment: "dueToReason",

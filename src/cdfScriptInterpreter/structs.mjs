@@ -1,9 +1,19 @@
 import {BaseCard} from "../card.mjs";
 import {capturedVariables} from "./parser.mjs";
 
-// types which are treated as sets (forbidding duplicate values)
-// TODO: re-evaluate if this is necessary / what the implications are
-const setTypes = ["card", "player"];
+// Types which are treated as sets (forbidding duplicate values)
+// This is anything that represents non-fungible objects, like cards or players, as opposed to numbers or card types.
+const setTypes = ["card", "player", "fight"];
+function deduplicate(array) {
+	for (let i = 0; i < array.length - 1; i++) {
+		for (let j = i + 1; j < array.length; j++) {
+			if (equalityCompare(array[i], array[j])) {
+				array.splice(j, 1);
+				j--;
+			}
+		}
+	}
+}
 
 export class ScriptValue {
 	#isSplit;
@@ -11,6 +21,15 @@ export class ScriptValue {
 	constructor(type, value) {
 		this.type = type;
 		this.#isSplit = value instanceof Map;
+		if (setTypes.includes(type)) {
+			if (this.#isSplit) {
+				for (const [_, val] of value) {
+					deduplicate(val);
+				}
+			} else {
+				deduplicate(value);
+			}
+		}
 		this.#value = value;
 	}
 
@@ -65,7 +84,7 @@ export class ScriptValue {
 		if (a instanceof Array) {
 			for (const elemA of a) {
 				for (const elemB of b) {
-					if (equalityCompare(elemA, elemB, player.game)) return true;
+					if (equalityCompare(elemA, elemB)) return true;
 				}
 			}
 			return false;
@@ -84,7 +103,7 @@ export class ScriptValue {
 		let b = other.get(player);
 		if (a instanceof Array) {
 			for (const elemA of a) {
-				if (b.some(elemB => equalityCompare(elemA, elemB, player.game))) {
+				if (b.some(elemB => equalityCompare(elemA, elemB))) {
 					return false;
 				}
 			}
@@ -106,18 +125,10 @@ export class ScriptValue {
 			default: {
 				// for non-number types this concatenates the two lists.
 				// TODO: maybe limit this to the types where it actually makes sense.
-				//       deduplication also causes weird inconsistencies with COUNT() or SUM() functions and should probably only apply if these are unique values. (like cards or players)
 				const retVal = this.get(player).concat(other.get(player));
 				// de-duplicate identical values if this type is a set.
 				if (setTypes.includes(this.type)) {
-					for (let i = 0; i < retVal.length - 1; i++) {
-						for (let j = i + 1; j < retVal.length; j++) {
-							if (equalityCompare(retVal[i], retVal[j], player.game)) {
-								retVal.splice(j, 1);
-								j--;
-							}
-						}
-					}
+					deduplicate(retVal);
 				}
 				return retVal;
 			}
@@ -139,9 +150,9 @@ export class ScriptValue {
 				const retVal = [];
 				const otherValues = other.get(player);
 				for (const element of this.get(player)) {
-					if (otherValues.some(elem => equalityCompare(elem, element, player.game))) {
+					if (otherValues.some(elem => equalityCompare(elem, element))) {
 						if (!setTypes.includes(this.type)) {
-							otherValues.splice(otherValues.findIndex(elem => equalityCompare(elem, element, player.game)), 1);
+							otherValues.splice(otherValues.findIndex(elem => equalityCompare(elem, element)), 1);
 						}
 					} else {
 						retVal.push(element);
@@ -153,13 +164,13 @@ export class ScriptValue {
 	}
 }
 // compares two cdfScript values
-export function equalityCompare(elemA, elemB, game) {
+export function equalityCompare(elemA, elemB) {
 	switch (true) {
 		case elemA instanceof BaseCard: {
 			return elemA.globalId === elemB.globalId;
 		}
 		case elemA instanceof TurnValue: {
-			return elemA.getIndex(game) === elemB.getIndex(game);
+			return elemA.getIndex() === elemB.getIndex();
 		}
 		default: {
 			return elemA === elemB;
@@ -240,7 +251,7 @@ export class TimeIndicator {
 				return null;
 			}
 			case "endOfTurn": {
-				const index = this.turn.getIndex(game);
+				const index = this.turn.getIndex();
 				const currentTurn = game.currentTurn();
 				if (index === currentTurn.index) {
 					return currentTurn.actionLists.end;
@@ -248,7 +259,7 @@ export class TimeIndicator {
 				return game.upcomingTurnActions[(index - currentTurn.index) - 1].end;
 			}
 			case "phase": {
-				const index = this.turn.getIndex(game);
+				const index = this.turn.getIndex();
 				const currentTurn = game.currentTurn();
 				if (index === currentTurn.index) {
 					return currentTurn.actionLists[this.phaseType];
@@ -260,25 +271,27 @@ export class TimeIndicator {
 }
 
 export class TurnValue {
-	constructor(player = null, next = false) {
+	#game;
+	constructor(player = null, next = false, game = player.game) {
 		this.player = player;
 		this.next = next;
+		this.#game = game;
 	}
 
-	getIndex(game) {
+	getIndex() {
 		if (this.player) {
-			let currentPlayer = game.currentTurn().player;
+			let currentPlayer = this.#game.currentTurn().player;
 			if (currentPlayer === this.player) {
-				return game.currentTurn().index + (this.next? game.players.length : 0);
+				return this.#game.currentTurn().index + (this.next? this.#game.players.length : 0);
 			}
-			let currentIndex = game.currentTurn().index;
+			let currentIndex = this.#game.currentTurn().index;
 			while (currentPlayer !== this.player) {
 				currentPlayer = currentPlayer.next();
 				currentIndex++;
 			}
 			return currentIndex;
 		} else {
-			return game.currentTurn().index + (this.next? 1 : 0);
+			return this.#game.currentTurn().index + (this.next? 1 : 0);
 		}
 	}
 }

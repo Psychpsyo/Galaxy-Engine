@@ -16,5 +16,5 @@ APPLY($unit, {canAttack, canCounterattack = no}, currentTurn.end);
 
 o: static
 condition: thisCard.zone = field
-modifier: {replace COUNT([from discarded(byDestroy: yes, dueTo: fight, by: thisCard) where cardType = unit]) > 0 with EXILE([from discarded(byDestroy: yes, dueTo: fight, by: thisCard) where cardType = unit])}
+modifier: {replace COUNT([from discarded(byDestroy: yes, dueTo: fights, by: thisCard) where cardType = unit]) > 0 with EXILE([from discarded(byDestroy: yes, dueTo: fights, by: thisCard) where cardType = unit])}
 mandatory: yes

@@ -8,7 +8,7 @@ defense: 200
 
 o: trigger
 mandatory: no
-during: currentPhase = endPhase & COUNT([from currentTurn.destroyed(dueTo: fight, by: thisCard) where cardType = unit]) > 0
+during: currentPhase = endPhase & COUNT([from currentTurn.destroyed(dueTo: fights, by: thisCard) where cardType = unit]) > 0
 condition: thisCard.zone = field
 EXILE(thisCard);
 $moved = MOVE(SELECT(1, [from you.hand, you.deck where name = CUU00228]), you.field);

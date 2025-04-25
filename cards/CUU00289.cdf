@@ -7,8 +7,7 @@ attack: 0
 defense: 500
 
 o: static
-condition: COUNT([from fights.participants where cardType = unit & attack >= 900]) > 0
-modifier: {prohibit destroyed(dueTo: fight) = thisCard}
+modifier: {prohibit destroyed(dueTo: [from fights where COUNT([from participants where cardType = unit & attack >= 900]) > 0 ]) = thisCard}
 
 o: trigger
 mandatory: no

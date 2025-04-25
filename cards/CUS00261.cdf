@@ -6,5 +6,5 @@ types: Machine, Landmine
 
 o: cast
 condition: currentTurn = opponent.turn
-after: COUNT([from destroyed(dueTo: fight) where level <= 3 & types = Machine & cardType = unit]) > 0
+after: COUNT([from destroyed(dueTo: fights) where level <= 3 & types = Machine & cardType = unit]) > 0
 DESTROY(SELECT(1, [from opponent.field where cardType = unit]));
