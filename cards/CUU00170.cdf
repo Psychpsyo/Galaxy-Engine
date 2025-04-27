@@ -9,4 +9,5 @@ defense: 0
 o: trigger
 mandatory: yes
 after: COUNT([from destroyed where self != thisCard & owner = you]) > 0
+condition: thisCard.zone = field
 APPLY(thisCard, {attack += 100}, currentTurn.end);

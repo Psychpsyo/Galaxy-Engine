@@ -9,6 +9,7 @@ defense: 0
 o: trigger
 mandatory: no
 after: COUNT($added{[from moved(by: self != thisCard, dueTo: effect, from: deck, to: you.hand) where types = thisCard.types & cardType = unit]}) > 0
+condition: thisCard.zone = field
 cost:
 $revealed = REVEAL(SELECT(1, $added));
 exec:

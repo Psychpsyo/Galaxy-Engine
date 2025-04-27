@@ -18,4 +18,5 @@ mandatory: yes
 o: trigger
 mandatory: yes
 after: COUNT([from destroyed(dueTo: fights, by: thisCard.equippedUnit) where cardType = unit]) > 0
+condition: thisCard.zone = field
 DAMAGE(opponent, 200);

@@ -9,4 +9,5 @@ defense: 100
 o: trigger
 mandatory: no
 after: declared = thisCard
+condition: thisCard.zone = field
 APPLY(thisCard, {attack += 100});

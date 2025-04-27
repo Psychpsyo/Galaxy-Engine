@@ -12,5 +12,6 @@ modifier: {attack += 100}
 o: trigger
 mandatory: no
 after: COUNT([from destroyed(dueTo: fights, by: thisCard.equippedUnit) where cardType = unit]) > 0
+condition: thisCard.zone = field
 DISCARD(thisCard);
 DESTROY(SELECT(1, [from field where (cardType = unit & defense <= 100) | (cardType = [spell, item])]));
