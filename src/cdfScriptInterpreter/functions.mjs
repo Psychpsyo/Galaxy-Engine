@@ -493,7 +493,7 @@ export function initFunctions() {
 			if (astNode.asManyAsPossible) {
 				amount = Math.min(amount, ctx.player.deckZone.cards.length);
 			}
-			const drawAction = new actions.Draw(ctx.player, amount);
+			const drawAction = new actions.Draw(ctx.player, amount, new ScriptValue("dueToReason", ["effect"]));
 			const step = yield [drawAction];
 			return new ScriptValue("card", getSuccessfulActions(step, [drawAction])[0]?.drawnCards ?? []);
 		},

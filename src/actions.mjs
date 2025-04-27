@@ -221,8 +221,8 @@ export class GainLife extends Action {
 }
 
 export class Draw extends Action {
-	constructor(player, amount) {
-		super(player);
+	constructor(player, amount, reason) {
+		super(player, {dueTo: reason});
 		this.amount = amount;
 		this.drawnCards = [];
 	}

@@ -1166,6 +1166,7 @@ export class ActionAccessorNode extends AstNode {
 			"deployed": "card",
 			"destroyed": "card",
 			"discarded": "card",
+			"drawn": "card",
 			"exiled": "card",
 			"moved": "card",
 			"retired": "card",
@@ -1251,6 +1252,12 @@ export class ActionAccessorNode extends AstNode {
 			case "discarded": {
 				if (action instanceof actions.Discard) {
 					return [action.card];
+				}
+				break;
+			}
+			case "drawn": {
+				if (action instanceof actions.Draw) {
+					return action.drawnCards;
 				}
 				break;
 			}

@@ -352,7 +352,7 @@ export function* abilityFractionStepGenerator(astNode, ctx) {
 }
 
 export function* standardDrawStepGenerator(player) {
-	const step = yield [new actions.Draw(player, player.values.current.standardDrawAmount)];
+	const step = yield [new actions.Draw(player, player.values.current.standardDrawAmount, new ScriptValue("dueToReason", ["standardDraw"]))];
 	return step.successful;
 }
 
