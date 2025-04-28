@@ -107,7 +107,7 @@ This is only allowed on cards with `cardType: enchantSpell` or `cardType: equipa
 If it is not specified, it defaults to no extra restrictions.
 
 > **_Note:_**  
-> The fact that cards can only be equipped to units on the field is implied.
+> The fact that cards can only be equipped to units on the field is implied and as such, you don't need to check for either of those.
 
 
 ### turnLimit
