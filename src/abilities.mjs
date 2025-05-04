@@ -64,6 +64,9 @@ export class Ability extends BaseAbility {
 		}
 		this.exec = interpreter.buildAST("exec", ability.id, ability.exec, game);
 		this.scriptVariables = {};
+
+		// must be called here in case an ability gets create half-way through a stack
+		this.prepareCapturedVariables();
 	}
 
 	async getActivatabilityCostOptionTree(card, player, evaluatingPlayer = player) {
