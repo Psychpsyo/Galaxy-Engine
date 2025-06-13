@@ -2,7 +2,8 @@ const tests = [
 	"./tests/validateCards.mjs",
 	"./tests/testDeckLoading.mjs",
 	"./tests/spellTests/runAll.mjs",
-	"./tests/replayTests/validateTestReplays.mjs"
+	"./tests/replayTests/validateTestReplays.mjs",
+	"./tests/allEffectsOneCard.mjs",
 ];
 const testPromises = [];
 for (const test of tests) {

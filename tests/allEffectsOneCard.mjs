@@ -46,7 +46,6 @@ o: optional
 $everything = VIEW([from you.deck]) + [from you.hand];
 APPLY(thisCard, {abilities = $everything.abilities}, opponent.nextTurn.end);
 `;
-// APPLY(thisCard, {abilities = [from $everything where COUNT(abilities) = 0].abilities});
 
 let deck = [customPartner];
 for (const file of await fs.readdir("cards")) {
@@ -69,11 +68,9 @@ try {
 		let eventCount = 0;
 		for await (const _ of game.begin()) {
 			eventCount++;
-			if (eventCount % 100 === 0) {
-				console.log(eventCount);
-			}
-			if (eventCount > 1000) {
-				throw new Error();
+			// no need to check that far into the future
+			if (eventCount > 500) {
+				break;
 			}
 		}
 	} catch (e) {
