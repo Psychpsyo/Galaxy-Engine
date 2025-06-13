@@ -2,7 +2,7 @@
 
 import {CardValues, ObjectValues} from "./objectValues.mjs";
 import {ScriptContext, TargetObjects} from "./cdfScriptInterpreter/structs.mjs";
-import { parseCdfValues } from "./cdfParser.mjs";
+import {parseCdfValues} from "./cdfParser.mjs";
 import * as abilities from "./abilities.mjs";
 import * as interpreter from "./cdfScriptInterpreter/interpreter.mjs";
 import * as blocks from "./blocks.mjs";
@@ -300,8 +300,8 @@ export class Card extends BaseCard {
 	}
 }
 
-// a card with all its values frozen so it can be held in internal logs of what Actions happened in a Step.
-// these are also used in many actions undo() functions as a state to restore a card to.
+// A card with all its values frozen so it can be held in internal logs of what Actions happened in a Step.
+// These are also used in many actions undo() functions as a state to restore a card to.
 export class SnapshotCard extends BaseCard {
 	#actualGlobalId;
 	#actualCard;

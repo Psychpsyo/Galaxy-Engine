@@ -19,7 +19,7 @@ export class Zone {
 	// returns the index at which the card was inserted.
 	add(card, index, clearValues = true) {
 		// needed later in clearValues
-		const cameFromField = card.zone instanceof FieldZone;
+		const sourceZone = card.zone;
 
 		if (card.zone === this && card.index < index) {
 			index--;
@@ -31,12 +31,14 @@ export class Zone {
 			card.placedTo.placed[card.index] = null;
 			card.placedTo = null;
 		}
-		if (!card.isToken) {
-			this.cards.splice(index, 0, card);
-			this.reindex();
-		} else {
+		// Tokens only ever come from the field.
+		// This avoids accessing token-related properties on hidden cards
+		if (sourceZone instanceof FieldZone && card.isToken) {
 			index = -1;
 			card.isRemovedToken = true;
+		} else {
+			this.cards.splice(index, 0, card);
+			this.reindex();
 		}
 
 		if (clearValues) {
@@ -73,11 +75,13 @@ export class Zone {
 			}
 			card.equipments = [];
 
-			// if the card didn't come from the field, forget what side of the field it was last on (reset it to its owner)
-			// Also, if the card goes to deck, otherwise 'Scout Dog' could just bring cards from deck to opponent field.
+			// If the card didn't come from the field, forget what side of the field it was last on (reset it to its owner)
+			// Also forget if the card goes to deck, since this info would not be trackable for hidden cards in physical games.
 			// TODO: figure out how this works for the hand.
-			if (!cameFromField || this instanceof DeckZone) {
+			if (!(sourceZone instanceof FieldZone) || this instanceof DeckZone) {
 				card.lastFieldSidePlayer = null;
+			} else {
+				card.lastFieldSidePlayer = sourceZone.player;
 			}
 
 			// Snapshots pointing to this card become invalid. (The card stops being tracked as that specific instance)
@@ -203,7 +207,6 @@ export class FieldZone extends Zone {
 		card.zone = this;
 		card.index = index;
 		card.hiddenFor = this.defaultHiddenFor;
-		card.lastFieldSidePlayer = this.player;
 		return index;
 	}
 

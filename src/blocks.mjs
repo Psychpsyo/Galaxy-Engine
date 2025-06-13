@@ -116,6 +116,7 @@ export class StandardSummon extends Block {
 	async* runCost() {
 		this.card = this.card.snapshot();
 		let paid = await (yield* super.runCost());
+		// TODO: check if this is still necessary
 		if (!paid) {
 			this.card.zone.add(this.card.current(), this.card.index);
 			return false;
