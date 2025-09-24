@@ -1,0 +1,543 @@
+Player #0:
+	mana: 3
+	life: 800
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00126
+			U00302
+			U00126
+			U00126
+			U00212
+			U00126
+			U00126
+			U00126
+			S00193
+			U00126
+			U00126
+			U00302
+			S00193
+			U00126
+			U00212
+			U00126
+			U00126
+			U00302
+			U00126
+			U00126
+			U00126
+			U00126
+			U00126
+		partnerZone:
+			U00212:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 1
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00212
+						level: 2
+						types: Water
+						attack: 100
+						defense: 200
+						abilities:
+							U00212:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00212
+						level: 2
+						types: Water
+						attack: 300
+						defense: 200
+						abilities:
+							U00212:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:
+						modifier #0:
+							attack
+		handZone:
+			S00193:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: continuousSpell, spell
+						names: S00193
+						level: 1
+						types: Water
+						attack: null
+						defense: null
+						abilities:
+							S00193:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: continuousSpell, spell
+						names: S00193
+						level: 1
+						types: Water
+						attack: null
+						defense: null
+						abilities:
+							S00193:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+			U00126:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00126:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00126:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00126:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00126:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 2
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00126
+			U00126
+			U00126
+			U00126
+			U00126
+			S00193
+			U00126
+			U00126
+			U00126
+			U00126
+			U00126
+			U00126
+			U00126
+			S00193
+			U00126
+			U00302
+			U00126
+			U00126
+			U00126
+			S00193
+			U00212
+			U00126
+			U00302
+		partnerZone:
+			U00212:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00212
+						level: 2
+						types: Water
+						attack: 100
+						defense: 200
+						abilities:
+							U00212:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00212
+						level: 2
+						types: Water
+						attack: 100
+						defense: 200
+						abilities:
+							U00212:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00126:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00126:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00126:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00126:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00126
+						level: 1
+						types: Water
+						attack: 100
+						defense: 0
+						abilities:
+							U00126:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00212:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00212
+						level: 2
+						types: Water
+						attack: 100
+						defense: 200
+						abilities:
+							U00212:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00212
+						level: 2
+						types: Water
+						attack: 100
+						defense: 200
+						abilities:
+							U00212:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			U00302:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: unit
+						names: U00302
+						level: 1
+						types: Water
+						attack: 50
+						defense: 100
+						abilities:
+							U00302:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00302
+						level: 1
+						types: Water
+						attack: 50
+						defense: 100
+						abilities:
+							U00302:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		exileZone:
+			---
