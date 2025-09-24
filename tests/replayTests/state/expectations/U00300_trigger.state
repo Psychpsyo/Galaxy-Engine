@@ -1,0 +1,591 @@
+Player #0:
+	mana: 4
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00048
+			U00048
+			S00201
+			U00225
+			U00048
+			U00048
+			U00048
+			S00201
+			U00300
+			U00048
+			U00048
+			S00129
+			U00048
+			U00235
+			U00048
+			U00048
+			U00225
+			U00048
+			U00300
+			U00048
+			U00235
+			U00235
+			U00048
+		partnerZone:
+			U00225:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00048:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00048:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00048:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00300:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00300
+						level: 3
+						types: Illusion, Beast, Mage, Ghost, Myth
+						attack: 100
+						defense: 100
+						abilities:
+							U00300:1
+							U00300:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00300
+						level: 3
+						types: Illusion, Beast, Mage, Ghost, Myth
+						attack: 100
+						defense: 100
+						abilities:
+							U00300:1
+							U00300:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00048:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			S00201:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: standardSpell, spell
+						names: S00201
+						level: 1
+						types: 
+						attack: null
+						defense: null
+						abilities:
+							S00201:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: standardSpell, spell
+						names: S00201
+						level: 1
+						types: 
+						attack: null
+						defense: null
+						abilities:
+							S00201:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 4
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00235
+			U00048
+			U00235
+			U00300
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			S00129
+			U00225
+			U00048
+			U00300
+			U00048
+			U00048
+			U00048
+			U00048
+			S00201
+		partnerZone:
+			U00225:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			S00201:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: standardSpell, spell
+						names: S00201
+						level: 1
+						types: 
+						attack: null
+						defense: null
+						abilities:
+							S00201:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: standardSpell, spell
+						names: S00201
+						level: 1
+						types: 
+						attack: null
+						defense: null
+						abilities:
+							S00201:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+			U00048:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00048:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00225:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00235:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00235
+						level: 7
+						types: Illusion, Water, Beast, Ghost, Myth
+						attack: 0
+						defense: 500
+						abilities:
+							U00235:1
+							U00235:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00235
+						level: 7
+						types: Illusion, Water, Beast, Ghost, Myth
+						attack: 0
+						defense: 500
+						abilities:
+							U00235:1
+							U00235:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00048:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			U00300:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: unit
+						names: U00300
+						level: 3
+						types: Illusion, Beast, Mage, Ghost, Myth
+						attack: 100
+						defense: 100
+						abilities:
+							U00300:1
+							U00300:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00300
+						level: 3
+						types: Illusion, Beast, Mage, Ghost, Myth
+						attack: 100
+						defense: 100
+						abilities:
+							U00300:1
+							U00300:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			S00201:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: standardSpell, spell
+						names: S00201
+						level: 1
+						types: 
+						attack: null
+						defense: null
+						abilities:
+							S00201:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: standardSpell, spell
+						names: S00201
+						level: 1
+						types: 
+						attack: null
+						defense: null
+						abilities:
+							S00201:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+		exileZone:
+			---
