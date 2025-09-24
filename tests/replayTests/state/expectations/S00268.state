@@ -1,0 +1,556 @@
+Player #0:
+	mana: 3
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00300
+			U00212
+			U00300
+			U00252
+			U00300
+			S00268
+			S00193
+			U00302
+			U00235
+			U00304
+			U00252
+			U00292
+			U00302
+			U00212
+			U00272
+			U00235
+			U00212
+			S00268
+			U00272
+			U00292
+			U00272
+			S00193
+			U00252
+		partnerZone:
+			U00304:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: true
+				values:
+					base:
+						cardTypes: unit
+						names: U00304
+						level: 1
+						types: Wind, Psychic
+						attack: 100
+						defense: 100
+						abilities:
+							U00304:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00304
+						level: 1
+						types: Wind, Psychic
+						attack: 100
+						defense: 100
+						abilities:
+							U00304:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00302:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00302
+						level: 1
+						types: Water
+						attack: 50
+						defense: 100
+						abilities:
+							U00302:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00302
+						level: 1
+						types: Water
+						attack: 50
+						defense: 100
+						abilities:
+							U00302:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			S00268:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: standardSpell, spell
+						names: S00268
+						level: 2
+						types: Wind, Psychic
+						attack: null
+						defense: null
+						abilities:
+							S00268:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: standardSpell, spell
+						names: S00268
+						level: 2
+						types: Wind, Psychic
+						attack: null
+						defense: null
+						abilities:
+							S00268:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+			S00193:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: continuousSpell, spell
+						names: S00193
+						level: 1
+						types: Water
+						attack: null
+						defense: null
+						abilities:
+							S00193:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: continuousSpell, spell
+						names: S00193
+						level: 1
+						types: Water
+						attack: null
+						defense: null
+						abilities:
+							S00193:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+			U00235:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00235
+						level: 7
+						types: Illusion, Water, Beast, Ghost, Myth
+						attack: 0
+						defense: 500
+						abilities:
+							U00235:1
+							U00235:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00235
+						level: 7
+						types: Illusion, Water, Beast, Ghost, Myth
+						attack: 0
+						defense: 500
+						abilities:
+							U00235:1
+							U00235:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00304:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				lastFieldSidePlayer: #0
+				values:
+					base:
+						cardTypes: unit
+						names: U00304
+						level: 1
+						types: Wind, Psychic
+						attack: 100
+						defense: 100
+						abilities:
+							U00304:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00304
+						level: 1
+						types: Wind, Psychic
+						attack: 100
+						defense: 100
+						abilities:
+							U00304:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00292:
+				owner: #0
+				hiddenFor: #1
+				isToken: false
+				lastFieldSidePlayer: #0
+				values:
+					base:
+						cardTypes: unit
+						names: U00292
+						level: 2
+						types: Fire, Psychic
+						attack: 200
+						defense: 100
+						abilities:
+							U00292:1
+							U00292:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00292
+						level: 2
+						types: Fire, Psychic
+						attack: 200
+						defense: 100
+						abilities:
+							U00292:1
+							U00292:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 1
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00212
+			U00302
+			U00235
+			U00212
+			S00193
+			U00302
+			U00300
+			U00292
+			U00304
+			S00193
+			S00268
+			U00212
+			U00272
+			U00235
+			U00292
+			U00252
+			U00292
+			U00300
+			U00252
+			S00193
+			S00268
+			U00302
+			U00272
+		partnerZone:
+			U00304:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00304
+						level: 1
+						types: Wind, Psychic
+						attack: 100
+						defense: 100
+						abilities:
+							U00304:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00304
+						level: 1
+						types: Wind, Psychic
+						attack: 100
+						defense: 100
+						abilities:
+							U00304:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00235:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00235
+						level: 7
+						types: Illusion, Water, Beast, Ghost, Myth
+						attack: 0
+						defense: 500
+						abilities:
+							U00235:1
+							U00235:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00235
+						level: 7
+						types: Illusion, Water, Beast, Ghost, Myth
+						attack: 0
+						defense: 500
+						abilities:
+							U00235:1
+							U00235:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00300:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00300
+						level: 3
+						types: Illusion, Beast, Mage, Ghost, Myth
+						attack: 100
+						defense: 100
+						abilities:
+							U00300:1
+							U00300:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00300
+						level: 3
+						types: Illusion, Beast, Mage, Ghost, Myth
+						attack: 100
+						defense: 100
+						abilities:
+							U00300:1
+							U00300:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00252:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00252
+						level: 0
+						types: Illusion, Psychic
+						attack: 0
+						defense: 50
+						abilities:
+							U00252:1
+							U00252:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00252
+						level: 0
+						types: Illusion, Psychic
+						attack: 0
+						defense: 50
+						abilities:
+							U00252:1
+							U00252:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00272:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00272
+						level: 2
+						types: Illusion, Psychic
+						attack: 100
+						defense: 200
+						abilities:
+							U00272:1
+							U00272:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00272
+						level: 2
+						types: Illusion, Psychic
+						attack: 100
+						defense: 200
+						abilities:
+							U00272:1
+							U00272:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00304:
+				owner: #1
+				hiddenFor: #0
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: unit
+						names: U00304
+						level: 1
+						types: Wind, Psychic
+						attack: 100
+						defense: 100
+						abilities:
+							U00304:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00304
+						level: 1
+						types: Wind, Psychic
+						attack: 100
+						defense: 100
+						abilities:
+							U00304:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			S00268:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: standardSpell, spell
+						names: S00268
+						level: 2
+						types: Wind, Psychic
+						attack: null
+						defense: null
+						abilities:
+							S00268:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: standardSpell, spell
+						names: S00268
+						level: 2
+						types: Wind, Psychic
+						attack: null
+						defense: null
+						abilities:
+							S00268:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+		exileZone:
+			---
