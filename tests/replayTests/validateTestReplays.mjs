@@ -5,12 +5,13 @@
 import {promises as fs} from "fs";
 import {Game} from "../../src/game.mjs";
 import {InputRequest} from "../../src/inputRequests.mjs";
+import {serializeState} from "./stateSerializer.mjs";
 
 const testDir = import.meta.dirname
 const promises = [];
 
-async function evaluateReplay(filename, shouldError) {
-	const replay = JSON.parse(await fs.readFile(`${testDir}/${shouldError? "invalid" : "valid"}/${filename}`, "utf8"));
+async function evaluateReplay(filename, testType) {
+	const replay = JSON.parse(await fs.readFile(`${testDir}/${testType}/${filename}`, "utf8"));
 	const game = new Game();
 	game.setReplay(replay);
 
@@ -22,25 +23,34 @@ async function evaluateReplay(filename, shouldError) {
 			}
 		}
 	} catch(e) {
-		if (shouldError) {
+		if (testType === "invalid") {
 			if (e.message !== replay.extra.expectedError) {
-				console.log(`Invalid test replay ${filename} threw the wrong error.\nThrown:   ${e.message}\nExpected: ${replay.extra.expectedError}`);
+				console.log(`Test replay invalid/${filename} threw the wrong error.\nThrown:   ${e.message}\nExpected: ${replay.extra.expectedError}`);
 			}
 		} else {
-			console.log(`Valid test replay ${filename} errored when it shouldn't have: ${e.message}`);
+			console.log(`Test replay ${testType}/${filename} errored when it shouldn't have: ${e.message}`);
 		}
 		return;
 	}
-	if (shouldError) {
-		console.log(`Invalid test replay ${filename} did not error when it should have.`);
+	if (testType === "invalid") {
+		console.log(`Test replay invalid/${filename} did not error when it should have.`);
+	} else if (testType === "state") {
+		const stateFilename = `${filename.substring(0, filename.lastIndexOf("."))}.state`;
+		const expectation = await fs.readFile(`${testDir}/state/expectations/${stateFilename}`, "utf8").then((result) => result, () => "");
+		const serialization = serializeState(game);
+		if (serialization !== expectation) {
+			await fs.writeFile(`${testDir}/state/failures/${stateFilename}`, serialization, "utf8");
+			console.log(`Test replay state/${filename} ended in an incorrect game state. Incorrect state has been written to ${testDir}/state/failures/${stateFilename}`);
+		}
 	}
 }
 
-for (const file of await fs.readdir(`${testDir}/valid`)) {
-	promises.push(evaluateReplay(file, false));
-}
-for (const file of await fs.readdir(`${testDir}/invalid`)) {
-	promises.push(evaluateReplay(file, true));
+for (const testType of ["valid", "invalid", "state"]) {
+	for (const file of await fs.readdir(`${testDir}/${testType}`)) {
+		if (file.endsWith(".replay")) {
+			promises.push(evaluateReplay(file, testType));
+		}
+	}
 }
 
 await Promise.all(promises);
