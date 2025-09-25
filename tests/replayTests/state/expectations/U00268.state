@@ -1,0 +1,289 @@
+Player #0:
+	mana: 5
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00048
+			U00048
+			U00048
+			S00001
+			S00001
+			U00048
+			U00268
+			U00048
+			U00268
+			S00005
+			U00048
+			U00048
+			S00006
+			U00048
+			U00048
+			U00048
+			S00006
+			S00001
+			U00048
+			S00005
+			U00268
+			S00005
+			U00048
+		partnerZone:
+			U00048:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+			S00006:
+				hiddenFor: #1
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 7
+	life: 900
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			S00005
+			U00048
+			U00048
+			S00005
+			U00048
+			U00048
+			S00001
+			U00048
+			U00268
+			S00006
+			U00048
+			U00048
+			S00005
+			S00001
+			S00006
+			S00006
+			U00048
+			U00268
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+		partnerZone:
+			U00048:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			S00001:
+				hiddenFor: #0
+			U00048:
+				hiddenFor: #0
+			U00048:
+				hiddenFor: #0
+			U00048:
+				hiddenFor: #0
+			U00048:
+				hiddenFor: #0
+		unitZone:
+			---
+			T00028:
+				owner: #1
+				isToken: true
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: T00028
+						level: 0
+						types: Fire, Plant
+						attack: 0
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: T00028
+						level: 0
+						types: Fire, Plant
+						attack: 0
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			T00028:
+				owner: #1
+				isToken: true
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: T00028
+						level: 0
+						types: Fire, Plant
+						attack: 0
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: T00028
+						level: 0
+						types: Fire, Plant
+						attack: 0
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			U00268:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: unit
+						names: U00268
+						level: 2
+						types: Fire, Plant
+						attack: 0
+						defense: 200
+						abilities:
+							U00268:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00268
+						level: 2
+						types: Fire, Plant
+						attack: 0
+						defense: 200
+						abilities:
+							U00268:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		exileZone:
+			---

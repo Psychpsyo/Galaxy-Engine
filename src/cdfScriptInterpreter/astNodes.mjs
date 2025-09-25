@@ -663,10 +663,15 @@ export class VariableCapture extends AstNode {
 		ctx.capturedVariables ??= new Map();
 		// TODO: Ideally this, and also all the operator nodes, should work for split values.
 		const capturedVariable = ctx.capturedVariables.get(this.name) ?? ctx.ability.scriptVariables[this.name].at(-1);
-		ctx.capturedVariables.set(this.name, new ScriptValue(
-			this.returnType,
-			capturedVariable.plus(retVal, ctx.player)
-		));
+		let returnValue;
+		switch (this.returnType) {
+			case "bool":
+				returnValue = capturedVariable.or(retVal, ctx.player);
+				break;
+			default:
+				returnValue = capturedVariable.plus(retVal, ctx.player);
+		}
+		ctx.capturedVariables.set(this.name, new ScriptValue(this.returnType,returnValue));
 		return retVal;
 	}
 }
@@ -942,10 +947,7 @@ export class AndNode extends LogicNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
-		left = left.getJsBool(player);
-		if (!left) return [false];
-		right = right.getJsBool(player);
-		return [right];
+		return left.and(right, player);
 	}
 }
 export class OrNode extends LogicNode {
@@ -953,10 +955,7 @@ export class OrNode extends LogicNode {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
-		left = left.getJsBool(player);
-		if (left) return [true];
-		right = right.getJsBool(player);
-		return [right];
+		return left.or(right, player);
 	}
 }
 

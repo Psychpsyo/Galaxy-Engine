@@ -162,6 +162,26 @@ export class ScriptValue {
 			}
 		}
 	}
+	or(other, player) {
+		if (this.type !== "bool") {
+			throw new Error(`Cannot OR a value of type '${this.type}'!`);
+		}
+		if (other.type !== "bool") {
+			throw new Error(`Cannot OR a value of type '${other.type}'!`);
+		}
+		if (this.getJsBool(player)) return [true];
+		return [other.getJsBool(player)];
+	}
+	and(other, player) {
+		if (this.type !== "bool") {
+			throw new Error(`Cannot AND a value of type '${this.type}'!`);
+		}
+		if (other.type !== "bool") {
+			throw new Error(`Cannot AND a value of type '${other.type}'!`);
+		}
+		if (!this.getJsBool(player)) return [false];
+		return [other.getJsBool(player)];
+	}
 }
 // compares two cdfScript values
 export function equalityCompare(elemA, elemB) {
