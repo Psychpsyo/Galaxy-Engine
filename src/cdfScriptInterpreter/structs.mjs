@@ -113,7 +113,7 @@ export class ScriptValue {
 	}
 	plus(other, player) {
 		if (this.type !== other.type) {
-			throw new Error(`Cannot add a value of type '${this.type}' to one of type '${other.type}'!`);
+			throw new Error(`Cannot add a value of type '${other.type}' to one of type '${this.type}'!`);
 		}
 		switch (this.type) {
 			case "number": {
