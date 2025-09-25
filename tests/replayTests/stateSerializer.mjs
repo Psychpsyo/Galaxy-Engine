@@ -44,9 +44,15 @@ ${serializeObjectValues(player, "\t\t")
 					continue;
 				}
 				state += `\t\t\t${card.cardId}:\n`;
-				state += `\t\t\t\towner: #${card.owner.index}\n`;
-				if (card.hiddenFor.length > 0)
+				if (zone !== "handZone")
+					state += `\t\t\t\towner: #${card.owner.index}\n`;
+				if (card.hiddenFor.length > 0) {
 					state += `\t\t\t\thiddenFor: ${card.hiddenFor.map(p => `#${p.index}`).join(", ")}\n`;
+				} else if (zone === "handZone") {
+					state += `\t\t\t\thiddenFor: ---\n`;
+				}
+				// Don't need all the other values for hand cards
+				if (zone === "handZone") continue;
 				let propsToLog = ["isToken"];
 				if (["unitZone", "partnerZone"].includes(zone))
 					propsToLog = propsToLog.concat(["attacksMadeThisTurn", "canAttackAgain", "isAttackTarget", "isAttacking"]);
