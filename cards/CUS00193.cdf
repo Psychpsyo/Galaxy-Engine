@@ -7,6 +7,7 @@ types: Water
 o: trigger
 mandatory: no
 after: COUNT($units{[from destroyed(from: you.field) where types = Water & COUNT(types) = 1 & cardType = unit]}) > 0
+condition: thisCard.zone = field
 cost:
 LOSELIFE(200);
 exec:
