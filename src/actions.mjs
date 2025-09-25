@@ -638,7 +638,7 @@ export class EstablishAttackDeclaration extends Action {
 export class DealDamage extends Action {
 	constructor(player, target, amount, reason, source) {
 		super(player, {
-			to: new ScriptValue("player", target),
+			to: new ScriptValue("player", [target]),
 			dueTo: reason,
 			by: source
 		});

@@ -1174,6 +1174,7 @@ export class ActionAccessorNode extends AstNode {
 			"targeted": "card",
 			"viewed": "card",
 
+			"damageDealt": "number",
 			"lifeGained": "number",
 			"lifeLost": "number",
 			"manaGained": "number",
@@ -1214,7 +1215,7 @@ export class ActionAccessorNode extends AstNode {
 				}
 			}
 		}
-		return new ScriptValue("card", values);
+		return new ScriptValue(this.returnType, values);
 	}
 
 	getActionValues(action) {
