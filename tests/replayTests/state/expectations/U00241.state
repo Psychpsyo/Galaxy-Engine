@@ -1,0 +1,317 @@
+Player #0:
+	mana: 3
+	life: 850
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00300
+			U00272
+			U00241
+			S00146
+			S00245
+			U00300
+			U00225
+			U00122
+			S00146
+			U00241
+			U00272
+			U00272
+			U00039
+			I00048
+			U00252
+			U00225
+			S00245
+			S00245
+			I00048
+			U00225
+			U00300
+			U00039
+			U00252
+		partnerZone:
+			U00241:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00241
+						level: 2
+						types: Illusion, Ghost, Psychic
+						attack: 200
+						defense: 50
+						abilities:
+							U00241:1
+							U00241:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00241
+						level: 2
+						types: Illusion, Ghost, Psychic
+						attack: 200
+						defense: 50
+						abilities:
+							U00241:1
+							U00241:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00252:
+				hiddenFor: #1
+			I00048:
+				hiddenFor: #1
+			U00122:
+				hiddenFor: #1
+			S00146:
+				hiddenFor: #1
+			U00122:
+				hiddenFor: #1
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			U00039:
+				owner: #0
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00039
+						level: 0
+						types: Illusion, Ghost
+						attack: 0
+						defense: 0
+						abilities:
+							U00039:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00039
+						level: 0
+						types: Illusion, Ghost
+						attack: 0
+						defense: 0
+						abilities:
+							U00039:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		exileZone:
+			---
+Player #1:
+	mana: 6
+	life: 850
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			S00245
+			S00146
+			U00039
+			U00039
+			U00225
+			S00245
+			U00252
+			I00048
+			U00300
+			U00272
+			I00048
+			U00241
+			U00272
+			U00122
+			U00300
+			I00048
+			U00039
+			S00146
+			U00241
+			S00245
+			U00252
+			U00272
+			U00300
+		partnerZone:
+			U00241:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 1
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00241
+						level: 2
+						types: Illusion, Ghost, Psychic
+						attack: 200
+						defense: 50
+						abilities:
+							U00241:1
+							U00241:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00241
+						level: 2
+						types: Illusion, Ghost, Psychic
+						attack: 200
+						defense: 50
+						abilities:
+							U00241:1
+							U00241:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00122:
+				hiddenFor: #0
+			U00122:
+				hiddenFor: #0
+			S00146:
+				hiddenFor: #0
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			U00225:
+				owner: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		exileZone:
+			U00225:
+				owner: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00252:
+				owner: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00252
+						level: 0
+						types: Illusion, Psychic
+						attack: 0
+						defense: 50
+						abilities:
+							U00252:1
+							U00252:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00252
+						level: 0
+						types: Illusion, Psychic
+						attack: 0
+						defense: 50
+						abilities:
+							U00252:1
+							U00252:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
