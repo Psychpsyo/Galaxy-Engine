@@ -789,6 +789,7 @@ export class DashMathNode extends MathNode {
 	}
 }
 export class PlusNode extends DashMathNode {
+	static invalidOperands = ["bool"];
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
@@ -797,6 +798,7 @@ export class PlusNode extends DashMathNode {
 	}
 }
 export class MinusNode extends DashMathNode {
+	static invalidOperands = ["bool"];
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
@@ -810,41 +812,35 @@ export class DotMathNode extends MathNode {
 	}
 }
 export class MultiplyNode extends DotMathNode {
+	static validOperandTypes = ["number"];
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
 		left = left.get(player);
 		right = right.get(player);
-		if (typeof left[0] != "number" || typeof right[0] != "number") {
-			return [NaN];
-		}
 		return [left[0] * right[0]];
 	}
 }
 export class DivideNode extends DotMathNode {
+	static validOperandTypes = ["number"];
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
 		left = left.get(player);
 		right = right.get(player);
-		if (typeof left[0] != "number" || typeof right[0] != "number") {
-			return [NaN];
-		}
 		return [Math.ceil(left[0] / right[0])];
 	}
 }
 export class FloorDivideNode extends DotMathNode {
+	static validOperandTypes = ["number"];
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
 	doOperation(left, right, player) {
 		left = left.get(player);
 		right = right.get(player);
-		if (typeof left[0] != "number" || typeof right[0] != "number") {
-			return [NaN];
-		}
 		return [Math.floor(left[0] / right[0])];
 	}
 }
@@ -870,6 +866,7 @@ export class NotEqualsNode extends ComparisonNode {
 	}
 }
 export class GreaterThanNode extends ComparisonNode {
+	static validOperandTypes = ["number"];
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
@@ -887,6 +884,7 @@ export class GreaterThanNode extends ComparisonNode {
 	}
 }
 export class GreaterEqualsNode extends ComparisonNode {
+	static validOperandTypes = ["number"];
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
@@ -904,6 +902,7 @@ export class GreaterEqualsNode extends ComparisonNode {
 	}
 }
 export class LessThanNode extends ComparisonNode {
+	static validOperandTypes = ["number"];
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
@@ -921,6 +920,7 @@ export class LessThanNode extends ComparisonNode {
 	}
 }
 export class LessEqualsNode extends ComparisonNode {
+	static validOperandTypes = ["number"];
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}
@@ -938,6 +938,7 @@ export class LessEqualsNode extends ComparisonNode {
 	}
 }
 export class LogicNode extends MathNode {
+	static validOperandTypes = ["bool"];
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide);
 	}

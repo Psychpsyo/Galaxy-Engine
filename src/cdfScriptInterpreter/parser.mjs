@@ -274,7 +274,7 @@ function parseExpression() {
 					continue;
 				}
 			}
-			operatorMetadata.push({startPos: pos, endPos: pos+1, node: expression.at(-1)});
+			operatorMetadata.push({startPos: pos, endPos: pos, node: expression.at(-1)});
 			pos++;
 		}
 	}
@@ -329,10 +329,15 @@ function parseExpression() {
 			if (!elem.node.returnType) missingReturnTypes = true;
 		}
 	}
-	// Now that we have all the return types, make sure that all operators are taking identically-typed operands.
+	// Now that we have all the return types, make sure that all operators are taking valid, identically-typed operands.
 	for (const elem of operatorMetadata) {
 		if (elem.node.leftSide.returnType !== elem.node.rightSide.returnType) {
 			throw new ScriptParserError(`Operator cannot take differing operand types ${elem.node.leftSide.returnType} and ${elem.node.rightSide.returnType}.`, tokens[elem.startPos], tokens[elem.endPos]);
+		}
+		if (elem.node.constructor.invalidOperandTypes?.includes(elem.node.leftSide.returnType) ||
+		   (elem.node.constructor.validOperandTypes && !elem.node.constructor.validOperandTypes.includes(elem.node.leftSide.returnType))
+		) {
+			throw new ScriptParserError(`Operator ${tokens[elem.startPos].value} cannot take operands of type ${elem.node.rightSide.returnType}.`, tokens[elem.startPos], tokens[elem.endPos]);
 		}
 	}
 	return expression[0];
