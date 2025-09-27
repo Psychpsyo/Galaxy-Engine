@@ -367,6 +367,11 @@ export function tokenize(code, effectId, game) {
 				pos++;
 				break;
 			}
+			case "~": {
+				tokens.push(new ScriptToken("tilde", "~", line, pos - lineStart));
+				pos++;
+				break;
+			}
 			case ">": {
 				switch (code[pos+1]) {
 					case "<": {

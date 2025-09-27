@@ -844,6 +844,8 @@ export class FloorDivideNode extends DotMathNode {
 		return [Math.floor(left[0] / right[0])];
 	}
 }
+
+// comparison operators
 export class ComparisonNode extends MathNode {
 	constructor(leftSide, rightSide) {
 		super(leftSide, rightSide, "bool");
@@ -937,6 +939,8 @@ export class LessEqualsNode extends ComparisonNode {
 		return [false];
 	}
 }
+
+// boolean operators
 export class LogicNode extends MathNode {
 	static validOperandTypes = ["bool"];
 	constructor(leftSide, rightSide) {
@@ -957,6 +961,23 @@ export class OrNode extends LogicNode {
 	}
 	doOperation(left, right, player) {
 		return left.or(right, player);
+	}
+}
+
+// range operator (~)
+export class RangeNode extends MathNode {
+	static validOperandTypes = ["number"];
+	constructor(leftSide, rightSide) {
+		super(leftSide, rightSide, "number");
+	}
+	doOperation(left, right, player) {
+		left = left.get(player);
+		right = right.get(player);
+		let retVal = [];
+		for (let i = left[0]; i <= right[0]; i++) {
+			retVal.push(i);
+		}
+		return retVal;
 	}
 }
 

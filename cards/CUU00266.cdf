@@ -10,5 +10,5 @@ o: trigger
 mandatory: no
 after: targeted = thisCard
 condition: thisCard.zone = field
-$discarded = DISCARD(SELECT([1, 2], [from you.hand where types = Dragon]));
+$discarded = DISCARD(SELECT(1~2, [from you.hand where types = Dragon]));
 APPLY(thisCard, {defense += COUNT($discarded) * 200}, currentTurn.end);

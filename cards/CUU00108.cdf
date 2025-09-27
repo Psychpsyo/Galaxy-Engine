@@ -18,5 +18,5 @@ MOVE(SELECT(1, [from you.deck where types = Gravity & cardType = spell]), hand);
 o: optional
 turnLimit: 1
 condition: thisCard.zone = field
-$exiled = EXILE(SELECT([1, 2, 3], [from you.discard where types = Gravity]));
+$exiled = EXILE(SELECT(1~3, [from you.discard where types = Gravity]));
 APPLY(thisCard, {attack += COUNT($exiled) * 100}, currentTurn.end);

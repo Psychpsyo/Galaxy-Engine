@@ -9,7 +9,7 @@ defense: 0
 o: trigger
 mandatory: no
 after: summoned = thisCard
-$exiled = EXILE(SELECT([1, 2, 3], [from you.discard]));
+$exiled = EXILE(SELECT(1~3, [from you.discard]));
 GAINLIFE(COUNT($exiled) * 100);
 
 o: optional

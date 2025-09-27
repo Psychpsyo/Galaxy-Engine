@@ -5,4 +5,4 @@ level: 0
 types: Gravity
 
 o: cast
-EXILE(SELECT([1, 2], [from discard where level <= 2]), nextTurn.end);
+EXILE(SELECT(1~2, [from discard where level <= 2]), nextTurn.end);

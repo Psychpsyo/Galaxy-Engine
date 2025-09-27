@@ -238,6 +238,10 @@ function parseExpression() {
 					expression.push(new ast.FloorDivideNode(null, null));
 					break;
 				}
+				case "tilde": {
+					expression.push(new ast.RangeNode(null, null));
+					break;
+				}
 				case "equals": {
 					expression.push(new ast.EqualsNode(null, null));
 					break;
@@ -302,7 +306,7 @@ function parseExpression() {
 	}
 
 	// consolidate expression
-	for (let type of [ast.DotMathNode, ast.DashMathNode, ast.ComparisonNode, ast.LogicNode]) {
+	for (let type of [ast.RangeNode, ast.DotMathNode, ast.DashMathNode, ast.ComparisonNode, ast.LogicNode]) {
 		for (let i = 1; i < expression.length - 1; i++) {
 			if (expression.length < 3) break;
 			if (expression[i] instanceof type && expression[i].leftSide === null && expression[i].rightSide === null) {
