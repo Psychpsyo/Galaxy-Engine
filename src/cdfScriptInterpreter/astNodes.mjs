@@ -832,7 +832,7 @@ export class DivideNode extends DotMathNode {
 		if (typeof left[0] != "number" || typeof right[0] != "number") {
 			return [NaN];
 		}
-		return [left[0] / right[0]];
+		return [Math.ceil(left[0] / right[0])];
 	}
 }
 export class FloorDivideNode extends DotMathNode {
