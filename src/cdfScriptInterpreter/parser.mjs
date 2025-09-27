@@ -213,7 +213,7 @@ const expressionStops = ["rightParen", "rightBracket", "rightBrace", "newLine", 
 function parseExpression() {
 	const expressionStartPos = pos;
 	let expression = [];
-	let needsReturnType = [];
+	let operatorMetadata = [];
 	while (tokens[pos] && !expressionStops.includes(tokens[pos].type)) {
 		expression.push(parseValue());
 		if (tokens[pos]) {
@@ -274,7 +274,7 @@ function parseExpression() {
 					continue;
 				}
 			}
-			needsReturnType.push(expression.at(-1));
+			operatorMetadata.push({startPos: pos, endPos: pos+1, node: expression.at(-1)});
 			pos++;
 		}
 	}
@@ -285,7 +285,7 @@ function parseExpression() {
 
 	// consolidate 'X+' notation
 	for (let i = 0; i < expression.length - 1; i++) {
-		// singular numbers followed by a plus and then another math symbol get concatenated
+		// singular numbers followed by a plus with only another math symbol after that get concatenated with the plus
 		if ((expression[i] instanceof ast.ArrayNode || expression[i] instanceof ast.ValueNode) &&
 			expression[i+1] instanceof ast.PlusNode &&
 			expression[i].returnType === "number" &&
@@ -295,12 +295,9 @@ function parseExpression() {
 			const nPlusValue = new ast.SomeOrMoreNode(
 				(expression[i].valueNodes?.[0] ?? expression[i]).values[0]
 			);
-			for (const node of expression.splice(i, 2, nPlusValue)) {
-				const index = needsReturnType.indexOf(node);
-				if (index !== -1) {
-					needsReturnType.splice(index, 1);
-				}
-			}
+			const plus = expression.splice(i, 2, nPlusValue)[1];
+			const plusIndex = operatorMetadata.findIndex(elem => elem.node === plus);
+			operatorMetadata.splice(plusIndex, 1);
 		}
 	}
 
@@ -319,16 +316,23 @@ function parseExpression() {
 	if (expression.length > 1) {
 		throw new ScriptParserError("Failed to fully consolidate expression.", tokens[expressionStartPos], tokens[pos-1]);
 	}
-	while (needsReturnType.length > 0) {
-		for (let i = needsReturnType.length - 1; i >= 0; i--) {
-			if (needsReturnType[i].returnType !== null) {
-				needsReturnType.splice(i, 1);
+	// To figure out operator return types, we iterate them, assigning types as we go.
+	// This might not be possible in a single pass, so we repeat as long as there is any left to assign.
+	let missingReturnTypes = true;
+	while (missingReturnTypes) {
+		missingReturnTypes = false;
+		for (const elem of operatorMetadata) {
+			if (elem.node.returnType !== null) {
 				continue;
 			}
-			if (needsReturnType[i].leftSide.returnType) {
-				needsReturnType[i].returnType = needsReturnType[i].leftSide.returnType;
-				needsReturnType.splice(i, 1);
-			}
+			elem.node.returnType = elem.node.leftSide.returnType ?? elem.node.rightSide.returnType;
+			if (!elem.node.returnType) missingReturnTypes = true;
+		}
+	}
+	// Now that we have all the return types, make sure that all operators are taking identically-typed operands.
+	for (const elem of operatorMetadata) {
+		if (elem.node.leftSide.returnType !== elem.node.rightSide.returnType) {
+			throw new ScriptParserError(`Operator cannot take differing operand types ${elem.node.leftSide.returnType} and ${elem.node.rightSide.returnType}.`, tokens[elem.startPos], tokens[elem.endPos]);
 		}
 	}
 	return expression[0];

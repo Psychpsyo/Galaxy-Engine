@@ -1,0 +1,289 @@
+Player #0:
+	mana: 5
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			I00042
+			U00129
+			U00106
+			U00083
+			U00058
+			U00083
+			S00129
+			U00129
+			I00042
+			S00201
+			I00042
+			U00058
+			U00083
+			S00044
+			S00201
+			U00270
+			U00058
+			U00171
+			U00171
+			U00129
+			U00270
+			S00044
+			U00073
+		partnerZone:
+			U00048:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00106:
+				hiddenFor: #1
+			U00106:
+				hiddenFor: #1
+			S00044:
+				hiddenFor: #1
+			U00171:
+				hiddenFor: #1
+			U00270:
+				hiddenFor: #1
+			S00201:
+				hiddenFor: #1
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 0
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			S00201
+			U00106
+			S00129
+			S00044
+			U00083
+			U00106
+			U00129
+			U00129
+			U00073
+			U00058
+			I00042
+			U00270
+			I00042
+			U00083
+			I00042
+			U00270
+			U00058
+			U00106
+			S00044
+			U00083
+			S00044
+			S00201
+			U00171
+		partnerZone:
+			U00048:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00129:
+				hiddenFor: #0
+			U00171:
+				hiddenFor: #0
+			U00058:
+				hiddenFor: #0
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			U00171:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: unit
+						names: U00171
+						level: 3
+						types: Fire, Earth, Rock, Figure
+						attack: 100
+						defense: 300
+						abilities:
+							U00171:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00171
+						level: 3
+						types: Fire, Earth, Rock, Figure
+						attack: 100
+						defense: 300
+						abilities:
+							U00171:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			U00270:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: unit
+						names: U00270
+						level: 7
+						types: Water, Demon
+						attack: 700
+						defense: 500
+						abilities:
+							U00270:1
+							U00270:2
+							U00270:3
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00270
+						level: 7
+						types: Water, Demon
+						attack: 700
+						defense: 500
+						abilities:
+							U00270:1
+							U00270:2
+							U00270:3
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			S00201:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: standardSpell, spell
+						names: S00201
+						level: 1
+						types: 
+						attack: null
+						defense: null
+						abilities:
+							S00201:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: standardSpell, spell
+						names: S00201
+						level: 1
+						types: 
+						attack: null
+						defense: null
+						abilities:
+							S00201:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+		exileZone:
+			---

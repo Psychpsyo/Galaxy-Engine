@@ -24,6 +24,6 @@ o: trigger
 mandatory: yes
 after: destroyed = thisCard
 REVEAL([from you.hand]);
-if ([from you.hand] = [CUS00044, CUI00042]) {
+if ([from you.hand].name = [CUS00044, CUI00042]) {
 	MOVE([from you.hand where name = [CUS00044, CUI00042]], baseOwner.deck);
 };
