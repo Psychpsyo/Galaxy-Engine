@@ -216,7 +216,7 @@ function parseExpression() {
 	let operatorMetadata = [];
 	while (tokens[pos] && !expressionStops.includes(tokens[pos].type)) {
 		expression.push(parseValue());
-		if (tokens[pos]) {
+		opLoop: while(tokens[pos]) {
 			switch (tokens[pos].type) {
 				case "plus": {
 					expression.push(new ast.PlusNode(null, null));
@@ -275,7 +275,7 @@ function parseExpression() {
 					break;
 				}
 				default: {
-					continue;
+					break opLoop;
 				}
 			}
 			operatorMetadata.push({startPos: pos, endPos: pos, node: expression.at(-1)});

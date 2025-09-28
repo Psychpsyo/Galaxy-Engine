@@ -81,35 +81,24 @@ export class ScriptValue {
 
 		let a = this.get(player);
 		let b = other.get(player);
-		if (a instanceof Array) {
+		if (a instanceof Array && b instanceof Array) {
 			for (const elemA of a) {
 				for (const elemB of b) {
 					if (equalityCompare(elemA, elemB)) return true;
 				}
 			}
 			return false;
+		} else if (a instanceof SomeOrMore || b instanceof SomeOrMore) {
+			if (a instanceof SomeOrMore) {
+				return a.equals(b);
+			} else {
+				return b.equals(a);
+			}
 		}
 		return a === b;
 	}
 	notEquals(other, player) {
-		if (this.type !== other.type) {
-			return true;
-		}
-		if (this.type === "bool") {
-			return this.getJsBool(player) !== other.getJsBool(player);
-		}
-
-		let a = this.get(player);
-		let b = other.get(player);
-		if (a instanceof Array) {
-			for (const elemA of a) {
-				if (b.some(elemB => equalityCompare(elemA, elemB))) {
-					return false;
-				}
-			}
-			return true;
-		}
-		return a !== b;
+		return !this.equals(other);
 	}
 	plus(other, player) {
 		if (this.type !== other.type) {
@@ -246,6 +235,15 @@ export class TargetObjects {
 export class SomeOrMore {
 	constructor(lowest) {
 		this.lowest = lowest;
+	}
+
+	// other is either an array of numbers or another SomeOrMore
+	equals(other) {
+		if (other instanceof SomeOrMore) return true;
+		for (const num of other) {
+			if (num >= this.lowest) return true;
+		}
+		return false;
 	}
 }
 
