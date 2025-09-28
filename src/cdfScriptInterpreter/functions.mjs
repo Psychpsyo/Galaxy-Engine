@@ -1203,11 +1203,14 @@ export function initFunctions() {
 
 			// get how many tokens to summon
 			let amount;
-			if (amounts instanceof SomeOrMore) {
-				amount = Infinity;
-			} else if (amounts.length === 1) {
+			if (Array.isArray(amounts) && amounts.length === 1) {
 				amount = amounts[0];
 			} else {
+				// clamp 'X+' and 'any' to 5, since that is the highest summonable number anyways.
+				if (amounts instanceof SomeOrMore) {
+					amounts = [amounts.lowest];
+					while(amounts.at(-1) !== 5) amounts.push(amounts.at(-1) + 1);
+				}
 				const selectionRequest = new requests.SelectTokenAmount(ctx.player, amounts);
 				const response = yield [selectionRequest];
 				amount = selectionRequest.extractResponseValues(response);
