@@ -248,6 +248,32 @@ export class ChooseDeckSide extends InputRequest {
 	}
 }
 
+export class ChooseNumber extends InputRequest {
+	constructor(player, effect, eligibleNumbers) {
+		super(player, "chooseNumber");
+		this.effect = effect;
+		this.eligibleNumbers = eligibleNumbers;
+	}
+
+	// extractResponseValue() does not need to be overidden.
+
+	async validate(response) {
+		const superValid = await super.validate(response);
+		if (superValid !== "") return superValid;
+
+		if (!this.eligibleNumbers.includes(response.value)) {
+			return `Chose an invalid number. Got ${response} when it should have been between any of these: ${this.eligibleNumbers.join(", ")}`;
+		}
+		return "";
+	}
+
+	*generateResponses() {
+		for (const number of this.eligibleNumbers) {
+			yield number;
+		}
+	}
+}
+
 export class ChooseAbility extends InputRequest {
 	constructor(player, effect, abilities) {
 		super(player, "chooseAbility");
@@ -800,32 +826,6 @@ export class ChooseAbilityOrder extends InputRequest {
 			if (a[i] !== b[i]) return false;
 		}
 		return true;
-	}
-}
-
-export class SelectTokenAmount extends InputRequest {
-	constructor(player, eligibleAmounts) {
-		super(player, "selectTokenAmount");
-		this.eligibleAmounts = eligibleAmounts;
-	}
-
-	// extractResponseValue() does not need to be overidden.
-
-	async validate(response) {
-		const superValid = await super.validate(response);
-		if (superValid !== "") return superValid;
-
-		if (!this.eligibleAmounts.includes(response.value)) {
-			return "Supplied incorrect amount of tokens to summon. Got " + response.value + " when it should have been between any of these: " + this.eligibleAmounts;
-		}
-
-		return "";
-	}
-
-	*generateResponses() {
-		for (const amount of this.eligibleAmounts) {
-			yield amount;
-		}
 	}
 }
 

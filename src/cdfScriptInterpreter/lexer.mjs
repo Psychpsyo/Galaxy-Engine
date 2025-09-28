@@ -154,6 +154,7 @@ const keywordTokenTypes = {
 	SELECTABILITY: "function",
 	SELECTCARDNAME: "function",
 	SELECTDECKSIDE: "function",
+	SELECTNUMBER: "function",
 	SELECTPLAYER: "function",
 	SELECTTYPE: "function",
 	SETATTACKTARGET: "function",

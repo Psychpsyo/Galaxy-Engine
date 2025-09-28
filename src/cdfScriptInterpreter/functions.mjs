@@ -1027,6 +1027,29 @@ export function initFunctions() {
 		}
 	),
 
+	// Makes the executing player choose an amount or number
+	SELECTNUMBER: new ScriptFunction(
+		["number"],
+		[null],
+		"number",
+		function*(astNode, ctx) {
+			const selectAction = new actions.SelectNumber(
+				ctx.player,
+				(yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player),
+				ctx.ability.id
+			);
+
+			yield [selectAction];
+			return new ScriptValue("number", [selectAction.selected]);
+		},
+		alwaysHasTarget,
+		function*(astNode, ctx) {
+			for (const option of this.getParameter(astNode, "number").evalFull(ctx)) {
+				yield new ScriptValue("number", [option]);
+			}
+		}
+	),
+
 	// Makes the executing player choose a player
 	SELECTPLAYER: new ScriptFunction(
 		[],
@@ -1211,9 +1234,10 @@ export function initFunctions() {
 					amounts = [amounts.lowest];
 					while(amounts.at(-1) !== 5) amounts.push(amounts.at(-1) + 1);
 				}
-				const selectionRequest = new requests.SelectTokenAmount(ctx.player, amounts);
-				const response = yield [selectionRequest];
-				amount = selectionRequest.extractResponseValues(response);
+
+				const selectAction = new actions.SelectNumber(ctx.player, amounts, ctx.ability.id);
+				yield [selectAction];
+				amount = selectAction.selected;
 			}
 
 			const freeSpaces = zone.getFreeSpaceCount()

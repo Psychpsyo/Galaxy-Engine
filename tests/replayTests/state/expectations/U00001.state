@@ -1,0 +1,268 @@
+Player #0:
+	mana: 5
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00123
+			U00228
+			U00034
+			S00082
+			U00001
+			U00228
+			S00082
+			S00253
+			U00001
+			U00251
+			U00123
+			U00251
+			U00038
+			U00136
+			U00038
+			S00004
+			U00123
+			U00038
+			S00050
+			U00034
+			S00245
+			S00004
+			U00251
+		partnerZone:
+			U00071:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00071
+						level: 0
+						types: Water, Dark
+						attack: 0
+						defense: 0
+						abilities:
+							U00071:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00071
+						level: 0
+						types: Water, Dark
+						attack: 0
+						defense: 0
+						abilities:
+							U00071:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00001:
+				hiddenFor: #1
+			U00034:
+				hiddenFor: #1
+			U00136:
+				hiddenFor: #1
+			S00245:
+				hiddenFor: #1
+			S00050:
+				hiddenFor: #1
+			S00253:
+				hiddenFor: #1
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 0
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			S00004
+			U00001
+			S00253
+			U00123
+			U00123
+			U00034
+			U00034
+			S00050
+			S00050
+			U00001
+			S00245
+			U00038
+			S00245
+			U00136
+			S00004
+			U00038
+			U00251
+			U00038
+			U00251
+			U00123
+			U00251
+			U00034
+		partnerZone:
+			U00071:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00071
+						level: 0
+						types: Water, Dark
+						attack: 0
+						defense: 0
+						abilities:
+							U00071:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00071
+						level: 0
+						types: Water, Dark, Ice
+						attack: 0
+						defense: 0
+						abilities:
+							U00071:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:
+						modifier #0:
+							types
+		handZone:
+			S00253:
+				hiddenFor: #0
+			U00228:
+				hiddenFor: #0
+			U00228:
+				hiddenFor: #0
+			S00082:
+				hiddenFor: #0
+			S00082:
+				hiddenFor: #0
+		unitZone:
+			---
+			---
+			U00001:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00001
+						level: 7
+						types: Light, Dark, Earth, Water, Fire, Wind, Ice, Electric, Mage
+						attack: 700
+						defense: 600
+						abilities:
+							U00001:1
+							U00001:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00001
+						level: 7
+						types: Light, Dark, Earth, Water, Fire, Wind, Ice, Electric, Mage
+						attack: 700
+						defense: 600
+						abilities:
+							U00001:1
+							U00001:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			U00136:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: unit
+						names: U00136
+						level: 5
+						types: Fire, Wind, Ghost
+						attack: 400
+						defense: 500
+						abilities:
+							U00136:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00136
+						level: 5
+						types: Fire, Wind, Ghost
+						attack: 400
+						defense: 500
+						abilities:
+							U00136:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		exileZone:
+			---

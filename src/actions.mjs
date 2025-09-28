@@ -1507,6 +1507,32 @@ export class SelectDeckSide extends Action {
 	}
 }
 
+export class SelectNumber extends Action {
+	constructor(player, options, abilityId) {
+		super(player);
+
+		this.selectionRequest = new requests.ChooseNumber(
+			player,
+			abilityId,
+			options
+		);
+
+		this.selected = null;
+	}
+
+	async* run(isPrediction) {
+		const response = yield [this.selectionRequest];
+		this.selected = await this.selectionRequest.extractResponseValue(response);
+
+		return events.createNumberSelectedEvent(this.player, this.selected);
+	}
+
+	async isImpossible() {
+		const responses = this.selectionRequest.generateValidResponses();
+		return (await responses.next()).done;
+	}
+}
+
 export class SelectPlayer extends Action {
 	constructor(player, abilityId, ctxTargetList) {
 		super(player);
