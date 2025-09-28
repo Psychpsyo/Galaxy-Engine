@@ -58,9 +58,13 @@ export class Ability extends BaseAbility {
 		super(ability, game);
 		this.forPlayer = interpreter.buildAST("forPlayer", ability.id, ability.forPlayer, game);
 		// cost MUST be parsed first to not miss variable declarations that might be mentioned in exec
-		this.cost =  null;
+		this.cost = null;
 		if (ability.cost) {
 			this.cost = interpreter.buildAST("cost", ability.id, ability.cost, game);
+		}
+		this.onComplete = null;
+		if (ability.onComplete) {
+			this.onComplete = interpreter.buildAST("onComplete", ability.id, ability.onComplete, game);
 		}
 		this.exec = interpreter.buildAST("exec", ability.id, ability.exec, game);
 		this.scriptVariables = {};
@@ -76,19 +80,22 @@ export class Ability extends BaseAbility {
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
 		if (!this.forPlayer.evalFull(ctx).next().value.get(player).includes(player)) return null;
 
-		const stepRunner = new stepGenerators.StepRunner(() => stepGenerators.abilityCostStepGenerator(this, this.makeMainContext(card, player)), player.game);
+		const stepRunner = new stepGenerators.StepRunner(() => stepGenerators.abilityStepGenerator(this, this.makeMainContext(card, player), "cost"), player.game);
 		stepRunner.isCost = true;
-		return new stepGenerators.OptionTreeNode(player.game, stepRunner, () => this.exec.hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)));
+		return new stepGenerators.OptionTreeNode(player.game, stepRunner, () => {
+				for (const section of ["exec", "onComplete"]) {
+					if (this[section] && !this[section].hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)))
+						return false;
+				}
+				return true;
+			}
+		);
 	}
 
-	* runCost(ctx) {
-		if (this.cost) {
-			yield* this.cost.eval(ctx);
+	* run(ctx, section) {
+		if (this[section]) {
+			yield* this[section].eval(ctx);
 		}
-	}
-
-	* run(ctx) {
-		yield* this.exec.eval(ctx);
 	}
 
 	// takes care of baking captured variables into the context

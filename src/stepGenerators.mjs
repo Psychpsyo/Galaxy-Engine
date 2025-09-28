@@ -295,29 +295,13 @@ export function* combinedStepGenerator(generators) {
 	return successful;
 }
 
-export function* abilityCostStepGenerator(ability, ctx) {
-	let stepGenerator = ability.runCost(ctx);
+export function* abilityStepGenerator(ability, ctx, section) {
+	let stepGenerator = ability.run(ctx, section);
 	let yieldValue;
 	let actionList;
 	do {
-		// not checking for isCancelled here since costs of cancelled abilities can still be paid.
-		actionList = stepGenerator.next((yieldValue instanceof Step)? yieldValue : undefined);
-		if (!actionList.done) {
-			if (actionList.value.length == 0) {
-				return false;
-			}
-			yieldValue = yield actionList.value;
-		}
-	} while (!actionList.done && (!(yieldValue instanceof Step) || yieldValue.successful));
-	return true;
-}
-
-export function* abilityStepGenerator(ability, ctx) {
-	let stepGenerator = ability.run(ctx);
-	let yieldValue;
-	let actionList;
-	do {
-		if (ability.isCancelled) {
+		// costs of cancelled abilities can still be paid.
+		if (ability.isCancelled && section !== "cost") {
 			return false;
 		}
 		actionList = stepGenerator.next((yieldValue instanceof Step)? yieldValue : undefined);

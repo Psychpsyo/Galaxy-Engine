@@ -17,6 +17,7 @@ let alreadyParsed = {
 	gameLimit: {},
 	globalTurnLimit: {},
 	modifier: {},
+	onComplete: {},
 	trigger: {},
 	triggerPrecondition: {},
 	turnLimit: {},

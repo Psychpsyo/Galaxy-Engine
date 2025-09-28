@@ -1,0 +1,274 @@
+Player #0:
+	mana: 5
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00103
+			U00022
+			U00006
+			U00022
+			U00121
+			U00043
+			U00124
+			S00064
+			U00008
+			U00144
+			U00007
+			U00124
+			S00064
+			U00144
+			U00043
+			U00007
+			U00121
+			U00007
+			S00064
+			U00103
+			U00006
+			U00022
+			U00124
+		partnerZone:
+			U00121:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: true
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00121
+						level: 0
+						types: Ice, Spirit
+						attack: 0
+						defense: 0
+						abilities:
+							U00121:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00121
+						level: 0
+						types: Ice, Spirit
+						attack: 0
+						defense: 0
+						abilities:
+							U00121:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:
+						modifier #0:
+							attack
+							defense
+		handZone:
+			U00006:
+				hiddenFor: #1
+			U00008:
+				hiddenFor: #1
+			U00043:
+				hiddenFor: #1
+			U00144:
+				hiddenFor: #1
+			U00008:
+				hiddenFor: #1
+			U00103:
+				hiddenFor: #1
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 5
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00022
+			U00124
+			S00064
+			U00007
+			U00007
+			U00008
+			U00043
+			U00008
+			U00006
+			U00144
+			U00043
+			U00124
+			U00124
+			U00006
+			U00006
+			U00103
+			U00103
+			S00064
+			U00144
+			U00144
+			U00043
+			U00007
+			U00022
+		partnerZone:
+			U00121:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: true
+				values:
+					base:
+						cardTypes: unit
+						names: U00121
+						level: 0
+						types: Ice, Spirit
+						attack: 0
+						defense: 0
+						abilities:
+							U00121:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00121
+						level: 0
+						types: Ice, Spirit
+						attack: 100
+						defense: 100
+						abilities:
+							U00121:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:
+						modifier #0:
+							attack
+							defense
+		handZone:
+			U00103:
+				hiddenFor: #0
+			U00008:
+				hiddenFor: #0
+			U00022:
+				hiddenFor: #0
+			U00121:
+				hiddenFor: #0
+		unitZone:
+			---
+			---
+			U00121:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 1
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00121
+						level: 0
+						types: Ice, Spirit
+						attack: 0
+						defense: 0
+						abilities:
+							U00121:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00121
+						level: 0
+						types: Ice, Spirit
+						attack: 100
+						defense: 100
+						abilities:
+							U00121:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:
+						modifier #0:
+							attack
+							defense
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			S00064:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: continuousSpell, spell
+						names: S00064
+						level: 1
+						types: Spirit, Boundary
+						attack: null
+						defense: null
+						abilities:
+							S00064:1
+							S00064:2
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: continuousSpell, spell
+						names: S00064
+						level: 1
+						types: Spirit, Boundary
+						attack: null
+						defense: null
+						abilities:
+							S00064:1
+							S00064:2
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+		exileZone:
+			---

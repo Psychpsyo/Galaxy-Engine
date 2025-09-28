@@ -227,11 +227,11 @@ export class AbilityActivation extends Block {
 		const ctx = ability.makeMainContext(card, player);
 		super("abilityActivationBlock", stack, player,
 			new stepGenerators.StepRunner(() =>
-				stepGenerators.abilityStepGenerator(ability, ctx),
+				stepGenerators.abilityStepGenerator(ability, ctx, "exec"),
 				player.game
 			),
 			new stepGenerators.StepRunner(() =>
-				stepGenerators.abilityCostStepGenerator(ability, ctx),
+				stepGenerators.abilityStepGenerator(ability, ctx, "cost"),
 				player.game
 			)
 		);
@@ -266,18 +266,19 @@ export class DeployItem extends Block {
 
 		// handle deploy ability
 		let deployAbility = null;
+		let ctx;
 		for (let ability of card.values.current.abilities) {
 			if (ability instanceof abilities.DeployAbility) {
 				deployAbility = ability;
-				const ctx = ability.makeMainContext(card, player, scriptTargets);
+				ctx = ability.makeMainContext(card, player, scriptTargets);
 				if (card.values.current.cardTypes.includes("equipableItem")) {
 					execStepGenerators.unshift(stepGenerators.equipStepGenerator(
 						player,
-						stepGenerators.abilityStepGenerator(ability, ctx)
+						stepGenerators.abilityStepGenerator(ability, ctx, "exec")
 					));
 					equipGeneratorHandled = true;
 				} else {
-					execStepGenerators.unshift(stepGenerators.abilityStepGenerator(ability, ctx));
+					execStepGenerators.unshift(stepGenerators.abilityStepGenerator(ability, ctx, "exec"));
 				}
 				// cards only ever have one of these
 				break;
@@ -287,6 +288,9 @@ export class DeployItem extends Block {
 			execStepGenerators.unshift(stepGenerators.equipStepGenerator(player));
 		}
 		execStepGenerators.push(stepGenerators.spellItemDiscardGenerator(player, card));
+		if (deployAbility?.onComplete) {
+			execStepGenerators.push(stepGenerators.abilityStepGenerator(deployAbility, ctx, "onComplete"));
+		}
 
 		super("deployBlock", stack, player,
 			new stepGenerators.StepRunner(() => stepGenerators.combinedStepGenerator(execStepGenerators), player.game),
@@ -326,21 +330,24 @@ export class CastSpell extends Block {
 			])
 		];
 
+		// For enchant spells
+		let enchantGeneratorHandled = false;
+
 		// handle cast ability
 		let castAbility = null;
-		let enchantGeneratorHandled = false;
+		let ctx;
 		for (let ability of card.values.current.abilities) {
 			if (ability instanceof abilities.CastAbility) {
 				castAbility = ability;
-				const ctx = ability.makeMainContext(card, player, scriptTargets);
+				ctx = ability.makeMainContext(card, player, scriptTargets);
 				if (card.values.current.cardTypes.includes("equipableItem")) {
 					execStepGenerators.unshift(stepGenerators.equipStepGenerator(
 						player,
-						stepGenerators.abilityStepGenerator(ability, ctx)
+						stepGenerators.abilityStepGenerator(ability, ctx, "exec")
 					));
 					enchantGeneratorHandled = true;
 				} else {
-					execStepGenerators.unshift(stepGenerators.abilityStepGenerator(ability, ctx));
+					execStepGenerators.unshift(stepGenerators.abilityStepGenerator(ability, ctx, "exec"));
 				}
 				// cards only ever have one of these
 				break;
@@ -350,6 +357,9 @@ export class CastSpell extends Block {
 			execStepGenerators.unshift(stepGenerators.equipStepGenerator(player));
 		}
 		execStepGenerators.push(stepGenerators.spellItemDiscardGenerator(player, card));
+		if (castAbility?.onComplete) {
+			execStepGenerators.push(stepGenerators.abilityStepGenerator(castAbility, ctx, "onComplete"));
+		}
 
 		super("castBlock", stack, player,
 			new stepGenerators.StepRunner(() => stepGenerators.combinedStepGenerator(execStepGenerators), player.game),

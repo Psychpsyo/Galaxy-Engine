@@ -110,7 +110,7 @@ export class BaseCard {
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.CastAbility) {
 				if (ability.cost) {
-					generators.push(stepGenerators.abilityCostStepGenerator(ability, ability.makeMainContext(this, player), scriptTargets));
+					generators.push(stepGenerators.abilityStepGenerator(ability, ability.makeMainContext(this, player, scriptTargets), "cost"));
 				}
 				break;
 			}
@@ -133,7 +133,7 @@ export class BaseCard {
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.DeployAbility) {
 				if (ability.cost) {
-					generators.push(stepGenerators.abilityCostStepGenerator(ability, ability.makeMainContext(this, player), scriptTargets));
+					generators.push(stepGenerators.abilityStepGenerator(ability, ability.makeMainContext(this, player, scriptTargets), "cost"));
 				}
 				break;
 			}
@@ -173,7 +173,17 @@ export class BaseCard {
 				if (!ability.canActivate(this, player, evaluatingPlayer)) {
 					return null;
 				}
-				endOfTreeCheck = () => ability.exec.hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer, scriptTargets)) && this.zone === null && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
+				endOfTreeCheck = () => {
+					for (const section of ["exec", "onComplete"]) {
+						if (ability[section] && !ability[section].hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer, scriptTargets)))
+							return false;
+					}
+					if (this.zone !== null)
+						return false;
+					if (checkPlacement && !player.spellItemZone.getFreeSpaceCount() > 0)
+						return false;
+					return true;
+				}
 			}
 		}
 
@@ -202,7 +212,17 @@ export class BaseCard {
 				if (!ability.canActivate(this, player, evaluatingPlayer)) {
 					return null;
 				}
-				endOfTreeCheck = () => ability.exec.hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer, scriptTargets)) && this.zone === null && (!checkPlacement || player.spellItemZone.getFreeSpaceCount() > 0);
+				endOfTreeCheck = () => {
+					for (const section of ["exec", "onComplete"]) {
+						if (ability[section] && !ability[section].hasAllTargets(new ScriptContext(this, player, ability, evaluatingPlayer, scriptTargets)))
+							return false;
+					}
+					if (this.zone !== null)
+						return false;
+					if (checkPlacement && !player.spellItemZone.getFreeSpaceCount() > 0)
+						return false;
+					return true;
+				}
 			}
 		}
 

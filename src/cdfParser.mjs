@@ -105,6 +105,11 @@ export function parseCdfValues(cdf, game) {
 					ability.exec = "";
 					break;
 				}
+				case "onComplete": {
+					abilitySection = "onComplete";
+					ability.onComplete = "";
+					break;
+				}
 				case "applyTo": {
 					if (ability.type != "static") {
 						throw new CardParserError("CDF Parser Error: Only static abilities have a 'applyTo' clause.");
