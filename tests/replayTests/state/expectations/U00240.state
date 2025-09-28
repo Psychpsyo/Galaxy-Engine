@@ -1,0 +1,264 @@
+Player #0:
+	mana: 1
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00158
+			U00195
+			U00036
+			U00122
+			U00134
+			U00036
+			U00278
+			U00102
+			U00189
+			U00134
+			U00158
+			U00102
+			U00010
+			U00189
+			U00240
+			U00158
+			U00102
+			U00122
+			U00240
+			U00189
+			U00010
+			U00278
+			U00010
+			U00134
+		partnerZone:
+			U00240:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00240
+						level: 1
+						types: Illusion, Ghost, Figure
+						attack: 0
+						defense: 100
+						abilities:
+							U00240:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00240
+						level: 1
+						types: Illusion, Ghost, Figure
+						attack: 0
+						defense: 100
+						abilities:
+							U00240:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00195:
+				hiddenFor: #1
+			U00036:
+				hiddenFor: #1
+			U00195:
+				hiddenFor: #1
+			U00122:
+				hiddenFor: #1
+			U00278:
+				hiddenFor: #1
+		unitZone:
+			---
+			---
+			T00027:
+				owner: #0
+				isToken: true
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: T00027
+						level: 4
+						types: Illusion, Ghost
+						attack: 0
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: T00027
+						level: 4
+						types: Illusion, Ghost
+						attack: 0
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 2
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00240
+			U00195
+			U00036
+			U00010
+			U00189
+			U00102
+			U00010
+			U00134
+			U00195
+			U00122
+			U00278
+			U00102
+			U00036
+			U00240
+			U00158
+			U00278
+			U00134
+			U00278
+			U00010
+			U00122
+			U00036
+			U00102
+		partnerZone:
+			U00240:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00240
+						level: 1
+						types: Illusion, Ghost, Figure
+						attack: 0
+						defense: 100
+						abilities:
+							U00240:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00240
+						level: 1
+						types: Illusion, Ghost, Figure
+						attack: 400
+						defense: 100
+						abilities:
+							U00240:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:
+						modifier #0:
+							attack
+		handZone:
+			U00134:
+				hiddenFor: #0
+			U00195:
+				hiddenFor: #0
+			U00189:
+				hiddenFor: #0
+			U00158:
+				hiddenFor: #0
+			U00122:
+				hiddenFor: #0
+			U00158:
+				hiddenFor: #0
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			U00189:
+				owner: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00189
+						level: 4
+						types: Light, Angel, Machine, Warrior
+						attack: 200
+						defense: 200
+						abilities:
+							U00189:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00189
+						level: 4
+						types: Light, Angel, Machine, Warrior
+						attack: 200
+						defense: 200
+						abilities:
+							U00189:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		exileZone:
+			---

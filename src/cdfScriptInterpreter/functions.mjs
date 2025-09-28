@@ -1033,6 +1033,9 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
+			// TODO: It would be nice if this function could just support 'any' or 'X+' without crashing, but that would either require us to
+			//       either figure out how this number will be used to clamp the choices, or to communicate the upper bound of infinity to the UI.
+			//       Once that is done, also update CUU00240.cdf to use 'any'.
 			const selectAction = new actions.SelectNumber(
 				ctx.player,
 				(yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player),
