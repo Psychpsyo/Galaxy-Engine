@@ -340,7 +340,7 @@ export class CastSpell extends Block {
 			if (ability instanceof abilities.CastAbility) {
 				castAbility = ability;
 				ctx = ability.makeMainContext(card, player, scriptTargets);
-				if (card.values.current.cardTypes.includes("equipableItem")) {
+				if (card.values.current.cardTypes.includes("enchantSpell")) {
 					execStepGenerators.unshift(stepGenerators.equipStepGenerator(
 						player,
 						stepGenerators.abilityStepGenerator(ability, ctx, "exec")
