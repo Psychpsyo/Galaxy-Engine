@@ -419,10 +419,7 @@ export class DoStandardDraw extends InputRequest {
 
 	// extractResponseValue() does not need to be overidden.
 
-	async validate(response) {
-		// Doesn't need any actual validation
-		return await super.validate(response);
-	}
+	// validate() does not need to be overidden.
 
 	*generateResponses() {
 		yield null;
