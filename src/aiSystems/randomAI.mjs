@@ -1,9 +1,9 @@
 import AI from "./baseAI.mjs";
 
-// an AI that just picks random options at any possible time.
+// An AI that just picks random options at any possible time.
 // NOT RECOMMENDED FOR ACTUAL GAMES, because:
-// fully random Cross Universe is very unintuitive as stacks & blocks
-// tend to be used in weird ways and attacks generally make no sense
+// Fully random Cross Universe is very unintuitive as stacks & blocks
+// tend to be used in weird ways and attacks generally make no sense.
 
 export class RandomAI extends AI {
 	async selectMove(optionList, player) {
