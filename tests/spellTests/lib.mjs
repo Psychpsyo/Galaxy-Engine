@@ -11,7 +11,7 @@ class SpellTestAI extends PassiveAI {
 	async selectMove(optionList, player) {
 		const spellOption = optionList.find(option => option.type === "castSpell");
 		if (spellOption) {
-			const spellIndex = spellOption.eligibleSpells.findIndex(spell => spell.cardId === "S00000");
+			const spellIndex = spellOption.eligibleCards.findIndex(spell => spell.cardId === "S00000");
 			if (spellIndex >= 0) {
 				return {
 					type: "castSpell",

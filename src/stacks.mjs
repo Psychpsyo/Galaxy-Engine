@@ -53,7 +53,7 @@ export class Stack {
 						this,
 						this.getNextPlayer(),
 						responseValue,
-						request._costOptionTrees[request.eligibleItems.indexOf(responseValue)]
+						request._costOptionTrees[request.eligibleCards.indexOf(responseValue)]
 					);
 					break;
 				}
@@ -62,7 +62,7 @@ export class Stack {
 						this,
 						this.getNextPlayer(),
 						responseValue,
-						request._costOptionTrees[request.eligibleSpells.indexOf(responseValue)]
+						request._costOptionTrees[request.eligibleCards.indexOf(responseValue)]
 					);
 					break;
 				}

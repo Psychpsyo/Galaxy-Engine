@@ -426,10 +426,10 @@ export class DoStandardDraw extends InputRequest {
 	}
 }
 
-export class DoStandardSummon extends InputRequest {
-	constructor(player, eligibleUnits) {
-		super(player, "doStandardSummon");
-		this.eligibleUnits = eligibleUnits;
+export class PlayCard extends InputRequest {
+	constructor(player, type, eligibleCards) {
+		super(player, type);
+		this.eligibleCards = eligibleCards;
 	}
 
 	async extractResponseValue(response) {
@@ -443,90 +443,37 @@ export class DoStandardSummon extends InputRequest {
 		if (superValid !== "") return superValid;
 
 		if (response.value < 0 || response.value >= this.player.handZone.cards.length) {
-			return "Supplied out-of-range hand card index for a standard summon.";
+			return "Supplied out-of-range hand card index for playing a card.";
 		}
-		if (!this.eligibleUnits.includes(this.player.handZone.cards[response.value])) {
-			return "Tried to standard summon a non-eligible unit.";
+		if (!this.eligibleCards.includes(this.player.handZone.cards[response.value])) {
+			return `Tried to play the non-eligible card '${this.player.handZone.cards[response.value].cardId}'.`;
 		}
 		return "";
 	}
 
 	*generateResponses() {
 		for (let i = 0; i < this.player.handZone.cards.length; i++) {
-			if (this.eligibleUnits.includes(this.player.handZone.cards[i])) {
+			if (this.eligibleCards.includes(this.player.handZone.cards[i])) {
 				yield i;
 			}
 		}
 	}
 }
-
-export class DeployItem extends InputRequest {
-	constructor(player, eligibleItems, costOptionTrees) {
-		super(player, "deployItem");
-		this.eligibleItems = eligibleItems;
-		this._costOptionTrees = costOptionTrees;
-	}
-
-	async extractResponseValue(response) {
-		await super.extractResponseValue(response);
-
-		return this.player.handZone.cards[response.value];
-	}
-
-	async validate(response) {
-		const superValid = await super.validate(response);
-		if (superValid !== "") return superValid;
-
-		if (response.value < 0 || response.value >= this.player.handZone.cards.length) {
-			return "Supplied out-of-range hand card index for deploying an item.";
-		}
-		if (!this.eligibleItems.includes(this.player.handZone.cards[response.value])) {
-			return `Tried to deploy the non-eligible item '${this.player.handZone.cards[response.value].cardId}'.`;
-		}
-		return "";
-	}
-
-	*generateResponses() {
-		for (let i = 0; i < this.player.handZone.cards.length; i++) {
-			if (this.eligibleItems.includes(this.player.handZone.cards[i])) {
-				yield i;
-			}
-		}
+export class DoStandardSummon extends PlayCard {
+	constructor(player, eligibleCards) {
+		super(player, "doStandardSummon", eligibleCards);
 	}
 }
-
-export class CastSpell extends InputRequest {
-	constructor(player, eligibleSpells, costOptionTrees) {
-		super(player, "castSpell");
-		this.eligibleSpells = eligibleSpells;
+export class DeployItem extends PlayCard {
+	constructor(player, eligibleCards, costOptionTrees) {
+		super(player, "deployItem", eligibleCards);
 		this._costOptionTrees = costOptionTrees;
 	}
-
-	async extractResponseValue(response) {
-		await super.extractResponseValue(response);
-
-		return this.player.handZone.cards[response.value];
-	}
-
-	async validate(response) {
-		const superValid = await super.validate(response);
-		if (superValid !== "") return superValid;
-
-		if (response.value < 0 || response.value >= this.player.handZone.cards.length) {
-			return "Supplied out-of-range hand card index for casting a spell.";
-		}
-		if (!this.eligibleSpells.includes(this.player.handZone.cards[response.value])) {
-			return "Tried to cast a non-eligible spell.";
-		}
-		return "";
-	}
-
-	*generateResponses() {
-		for (let i = 0; i < this.player.handZone.cards.length; i++) {
-			if (this.eligibleSpells.includes(this.player.handZone.cards[i])) {
-				yield i;
-			}
-		}
+}
+export class CastSpell extends PlayCard {
+	constructor(player, eligibleCards, costOptionTrees) {
+		super(player, "castSpell", eligibleCards);
+		this._costOptionTrees = costOptionTrees;
 	}
 }
 

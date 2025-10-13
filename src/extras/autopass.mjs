@@ -92,7 +92,7 @@ export function getAutoResponse(game, requests, {alwaysPass = false, useHiddenIn
 			currentStack.blocks.length === 1 &&
 			!currentStack.blocks.some(block => block.player !== requests[0].player) && // there is no opponent blocks
 			!requests.some(request => request.type === "activateTriggerAbility") && // the responses are not trigger abilities
-			!requests.some(request => request-type === "castSpell" && request.eligibleSpells.some(isSpellItemTriggered)) // the responses are not triggered spells
+			!requests.some(request => request-type === "castSpell" && request.eligibleCards.some(isSpellItemTriggered)) // the responses are not triggered spells
 		) {
 			return {type: "pass"};
 		}
@@ -108,20 +108,10 @@ function isImportant(request, game, passOnStackTwo, passInDrawPhase, passInBattl
 			return false;
 		}
 		// being able to play 0 of a card is unimportant.
-		case "doStandardSummon": {
-			if (request.eligibleUnits.length == 0) {
-				return false;
-			}
-			break;
-		}
-		case "deployItem": {
-			if (request.eligibleItems.length == 0) {
-				return false;
-			}
-			break;
-		}
+		case "doStandardSummon":
+		case "deployItem":
 		case "castSpell": {
-			if (request.eligibleSpells.length == 0) {
+			if (request.eligibleCards.length == 0) {
 				return false;
 			}
 			break;
@@ -149,7 +139,7 @@ function isImportant(request, game, passOnStackTwo, passInDrawPhase, passInBattl
 	if (passOnStackTwo) {
 		if (currentStack && currentStack.index > 1 && currentStack.blocks.length == 0) {
 			if (request.type != "activateTriggerAbility" &&
-				(request.type != "castSpell" || !request.eligibleSpells.some(isSpellItemTriggered))
+				(request.type != "castSpell" || !request.eligibleCards.some(isSpellItemTriggered))
 			) {
 				return false;
 			}
@@ -168,7 +158,7 @@ function isImportant(request, game, passOnStackTwo, passInDrawPhase, passInBattl
 				return true;
 			}
 			case "castSpell": {
-				for (let card of request.eligibleSpells) {
+				for (let card of request.eligibleCards) {
 					for (let ability of card.values.current.abilities) {
 						if (ability instanceof abilities.CastAbility) {
 							if (ability.condition && hasPhaseEqualityCondition(ability.condition)) {
