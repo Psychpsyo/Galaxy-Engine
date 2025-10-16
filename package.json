@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "v8-profiler-next": "^1.10.0"
+  }
+}
