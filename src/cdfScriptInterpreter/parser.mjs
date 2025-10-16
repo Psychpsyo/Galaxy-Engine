@@ -951,7 +951,7 @@ function parseCardMatcher() {
 
 function parseModifier(forStaticAbility = false) {
 	const modifierStartPos = pos;
-	let valueModifications = [];
+	const valueModifications = [];
 	let hasActionModification = false;
 	let hasNonActionModification = false;
 	while (tokens[pos] && tokens[pos].type != "rightBrace") {
@@ -960,7 +960,7 @@ function parseModifier(forStaticAbility = false) {
 			case "cardProperty":
 			case "playerProperty":
 			case "fightProperty": {
-				valueModifications = valueModifications.concat(parseValueModifications());
+				valueModifications.push(...parseValueModifications());
 				hasNonActionModification = true;
 				break;
 			}

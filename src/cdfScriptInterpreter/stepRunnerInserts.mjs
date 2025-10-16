@@ -81,15 +81,15 @@ export class OptionalEffectSectionInsert extends StepRunnerInsert {
 	}
 
 	getSteps() {
-		let steps = [];
+		const steps = [];
 		if (this.didMainBlock) {
-			steps = steps.concat(this.mainRunner.getSteps());
+			steps.push(...this.mainRunner.getSteps());
 			if (this.thenRunner) {
-				steps = steps.concat(this.thenRunner.getSteps());
+				steps.push(...this.thenRunner.getSteps());
 			}
 		} else {
 			if (this.elseRunner) {
-				steps = steps.concat(this.elseRunner.getSteps());
+				steps.push(...this.elseRunner.getSteps());
 			}
 		}
 		return steps;

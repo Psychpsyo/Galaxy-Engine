@@ -348,13 +348,13 @@ export function initFunctions() {
 		function*(astNode, ctx) {
 			const players = (yield* this.getParameter(astNode, "player").eval(ctx)).get(ctx.player);
 			const amount = (yield* this.getParameter(astNode, "number").eval(ctx)).get(ctx.player)[0];
-			let cards = [];
+			const cards = [];
 			for (const player of players) {
 				if (!astNode.asManyAsPossible && player.deckZone.cards.length < amount) {
 					yield []; // interrupts the effect
 				}
-				cards = cards.concat(
-					player.deckZone.cards.slice(
+				cards.push(
+					...player.deckZone.cards.slice(
 						Math.max(0, player.deckZone.cards.length - amount),
 						player.deckZone.cards.length
 					)

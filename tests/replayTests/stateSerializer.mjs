@@ -53,9 +53,9 @@ ${serializeObjectValues(player, "\t\t")
 				}
 				// Don't need all the other values for hand cards
 				if (zone === "handZone") continue;
-				let propsToLog = ["isToken"];
+				const propsToLog = ["isToken"];
 				if (["unitZone", "partnerZone"].includes(zone))
-					propsToLog = propsToLog.concat(["attacksMadeThisTurn", "canAttackAgain", "isAttackTarget", "isAttacking"]);
+					propsToLog.push("attacksMadeThisTurn", "canAttackAgain", "isAttackTarget", "isAttacking");
 				for (const cardProp of propsToLog) {
 					state += `\t\t\t\t${cardProp}: ${card[cardProp]}\n`;
 				}

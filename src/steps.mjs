@@ -59,7 +59,7 @@ export class Step {
 
 	// returns a list of actionCancelled events and sets impossible actions to cancelled
 	async #cancelImpossibleActions() {
-		let events = [];
+		const events = [];
 		for (const action of this.actions) {
 			if (action.isCancelled) continue;
 			if (await action.isImpossible() ||
@@ -101,7 +101,7 @@ export class Step {
 					return false;
 				})
 			) {
-				events = events.concat(this.#cancelAction(action, true));
+				events.push(...this.#cancelAction(action, true));
 			}
 		}
 		// after cancelling them all, also remove them from the steps since they are not supposed to be about to happen.
@@ -517,7 +517,8 @@ export class Step {
 				new ScriptValue("dueToReason", ["invalidEquipment"]),
 				new ScriptValue("card", [])
 			));
-			return discards.concat(discards.map(discard => new actions.Destroy(discard)));
+			discards.push(...discards.map(discard => new actions.Destroy(discard)))
+			return discards;
 		}
 		return [];
 	}
