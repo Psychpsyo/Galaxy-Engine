@@ -3,6 +3,7 @@
 import {writeFileSync, promises as fs} from "fs";
 import {Game} from "../src/game.mjs";
 import {PassiveAI} from "../src/aiSystems/passiveAI.mjs";
+import {CURandom} from "../src/random.mjs";
 
 class NoMoreAbilitiesError extends Error {
 	constructor() {
@@ -52,7 +53,14 @@ for (const file of await fs.readdir("cards")) {
 	deck.push(await fs.readFile("./cards/" + file, "utf8"));
 }
 
+class BoringRandom extends CURandom {
+	async nextInt(range) {
+		return 0;
+	}
+}
+
 const game = new Game();
+game.rng = new BoringRandom();
 game.config.upperDeckLimit = Infinity;
 try {
 	game.players[0].setDeck(deck);
