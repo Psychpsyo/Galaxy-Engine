@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 const tests = [
 	"./tests/validateCards.mjs",
 	"./tests/testDeckLoading.mjs",
@@ -6,8 +7,10 @@ const tests = [
 	"./tests/allEffectsOneCard.mjs",
 ];
 const testPromises = [];
+console.time("All tests run");
 for (const test of tests) {
 	testPromises.push(import(test));
 }
 await Promise.all(testPromises);
-console.log("All tests run.\nIf there were any errors, they would show above.");
+console.timeEnd("All tests run");
+console.log("If there were any errors, they would show above.");
