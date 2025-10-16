@@ -306,7 +306,7 @@ export function initFunctions() {
 		[null],
 		"number",
 		function*(astNode, ctx) {
-			let list = (yield* this.getParameter(astNode).eval(ctx)).get(ctx.player);
+			const list = (yield* this.getParameter(astNode).eval(ctx)).get(ctx.player);
 			return new ScriptValue("number", [list.length]);
 		},
 		alwaysHasTarget,
@@ -387,14 +387,14 @@ export function initFunctions() {
 		"card",
 		function*(astNode, ctx) {
 			const cards = (yield* this.getParameter(astNode, "card").eval(ctx)).get(ctx.player).filter(card => card.current());
-			const discards = cards.map(card => new actions.Discard(
+			const actionList = cards.map(card => new actions.Discard(
 				ctx.player,
 				card.current(),
 				new ScriptValue("dueToReason", ["effect"]),
 				new ScriptValue("card", [ctx.card.snapshot()])
 			));
 
-			const actionList = discards.concat(discards.map(discard => new actions.Destroy(discard)));
+			actionList.push(...actionList.map(discard => new actions.Destroy(discard)))
 			const step = yield [...actionList];
 			const returnCards = [];
 			for (const action of getSuccessfulActions(step, actionList)) {
