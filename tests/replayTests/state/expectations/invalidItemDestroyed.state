@@ -1,0 +1,257 @@
+Player #0:
+	mana: 0
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00048
+			U00048
+			U00048
+			I00127
+			U00048
+			U00048
+			U00048
+			U00048
+			I00021
+			U00048
+			U00122
+			U00122
+			U00048
+			U00048
+			U00048
+			U00048
+			I00021
+			U00048
+			U00122
+			I00127
+			U00048
+			U00048
+			I00021
+			U00048
+		partnerZone:
+			U00048:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+			I00127:
+				hiddenFor: #1
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 3
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+			I00021
+			U00048
+			U00122
+			I00127
+			I00127
+			I00021
+			U00048
+			U00122
+			U00048
+			U00048
+			U00048
+			U00048
+			U00122
+		partnerZone:
+			U00048:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost, Earth
+						attack: 250
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:
+						modifier #0:
+							types
+						modifier #1:
+							attack
+		handZone:
+			U00048:
+				hiddenFor: #0
+			U00048:
+				hiddenFor: #0
+			U00048:
+				hiddenFor: #0
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			I00127:
+				owner: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: equipableItem, item
+						names: I00127
+						level: 1
+						types: Earth, Sword
+						attack: null
+						defense: null
+						abilities:
+							I00127:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: equipableItem, item
+						names: I00127
+						level: 1
+						types: Earth, Sword
+						attack: null
+						defense: null
+						abilities:
+							I00127:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+			---
+			---
+		discardPile:
+			I00021:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: standardItem, item
+						names: I00021
+						level: 1
+						types: Illusion, Rock
+						attack: null
+						defense: null
+						abilities:
+							I00021:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: standardItem, item
+						names: I00021
+						level: 1
+						types: Illusion, Rock
+						attack: null
+						defense: null
+						abilities:
+							I00021:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+		exileZone:
+			---
