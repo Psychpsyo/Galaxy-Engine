@@ -1,16 +1,15 @@
 // Random math-y functions that are needed throughout the rules engine.
 
 // returns all possible ways to choose k elements from a list of n elements.
-export function nChooseK(n, k) {
+export function* nChooseK(n, k) {
 	if (k > n) throw new Error("Cannot choose " + k + " elements from a list of " + n + ".");
 
 	let choices = [];
 	for (let i = k - 1; i >= 0; i--) {
 		choices.push(i);
 	}
-	let combinations = [];
 
-	combinations.push([...choices]);
+	yield [...choices];
 	while (choices.at(-1) < n - k) {
 		for (let i = 0; i < k; i++) {
 			if (choices[i] < n - 1 - i) {
@@ -18,12 +17,11 @@ export function nChooseK(n, k) {
 				for (let j = 1; j <= i; j++) {
 					choices[i - j] = choices[i] + j;
 				}
-				combinations.push([...choices]);
+				yield [...choices];
 				break;
 			}
 		}
 	}
-	return combinations;
 }
 
 // generates every possible combination [A1, A2, A3 ... Ax] so that An is from
