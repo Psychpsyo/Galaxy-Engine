@@ -1,0 +1,234 @@
+Player #0:
+	mana: 5
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00225
+			U00107
+			U00107
+			U00273
+			U00160
+			U00273
+			U00225
+			U00299
+			U00160
+			U00107
+			U00299
+			U00275
+			U00107
+			U00275
+			U00193
+			U00193
+			U00193
+			U00107
+			U00174
+			U00299
+			U00273
+			U00160
+		partnerZone:
+			U00225:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00174:
+				hiddenFor: #1
+			U00107:
+				hiddenFor: #1
+			U00275:
+				hiddenFor: #1
+			U00107:
+				hiddenFor: #1
+			U00174:
+				hiddenFor: #1
+			U00107:
+				hiddenFor: #1
+			U00107:
+				hiddenFor: #1
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 5
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00160
+			U00193
+			U00174
+			U00193
+			U00107
+			U00107
+			U00225
+			U00107
+			U00107
+			U00275
+			U00299
+			U00273
+			U00299
+			U00160
+			U00275
+			U00273
+			U00160
+			U00107
+			U00107
+			U00174
+			U00275
+			U00225
+		partnerZone:
+			U00225:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00225
+						level: 1
+						types: Illusion, Beast, Mage, Ghost
+						attack: 100
+						defense: 100
+						abilities:
+							U00225:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00273:
+				hiddenFor: #0
+			U00174:
+				hiddenFor: #0
+			U00107:
+				hiddenFor: #0
+			U00193:
+				hiddenFor: #0
+			U00107:
+				hiddenFor: #0
+			U00107:
+				hiddenFor: #0
+		unitZone:
+			---
+			---
+			---
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			U00299:
+				owner: #1
+				isToken: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00299
+						level: 4
+						types: Dark, Beast, Curse
+						attack: 400
+						defense: 300
+						abilities:
+							U00299:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00299
+						level: 4
+						types: Dark, Beast, Curse
+						attack: 400
+						defense: 300
+						abilities:
+							U00299:1
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
