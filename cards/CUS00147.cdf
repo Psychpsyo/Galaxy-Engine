@@ -5,5 +5,5 @@ level: 0
 types: Light
 
 o: cast
-after: COUNT([from targeted where types = Light & owner = you]) > 0
+after: COUNT([from targeted where owner = you & types = Light & cardType = unit]) > 0
 CANCELATTACK();

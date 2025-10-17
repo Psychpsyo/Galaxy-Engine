@@ -1,0 +1,293 @@
+Player #0:
+	mana: 5
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00048
+			U00048
+			U00048
+			U00048
+			U00033
+			U00048
+			U00048
+			U00048
+			U00048
+			S00147
+			U00048
+			U00048
+			S00147
+			U00182
+			U00033
+			U00048
+			U00048
+			U00048
+			U00048
+			S00147
+			U00033
+			U00048
+			U00182
+		partnerZone:
+			U00182:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00182
+						level: 1
+						types: Light, Angel, Shield
+						attack: 0
+						defense: 100
+						abilities:
+							U00182:1
+							U00182:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00182
+						level: 1
+						types: Light, Angel, Shield
+						attack: 0
+						defense: 100
+						abilities:
+							U00182:1
+							U00182:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+			U00048:
+				hiddenFor: #1
+		unitZone:
+			---
+			---
+			U00048:
+				owner: #0
+				isToken: false
+				attacksMadeThisTurn: 1
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			---
+		exileZone:
+			---
+Player #1:
+	mana: 4
+	life: 1000
+	victoryConditions: none
+	values:
+		base:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		current:
+			manaGainAmount: 5
+			standardDrawAmount: 1
+			needsToPayForPartner: true
+			canEnterBattlePhase: true
+		modifiers:none
+	zones:
+		deck:
+			U00033
+			U00048
+			U00048
+			U00033
+			U00048
+			U00048
+			U00048
+			U00182
+			U00048
+			U00048
+			U00048
+			S00147
+			U00048
+			S00147
+			U00182
+			U00048
+			U00048
+			U00033
+			U00048
+			U00048
+			U00048
+			U00048
+			U00048
+		partnerZone:
+			U00182:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00182
+						level: 1
+						types: Light, Angel, Shield
+						attack: 0
+						defense: 100
+						abilities:
+							U00182:1
+							U00182:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00182
+						level: 1
+						types: Light, Angel, Shield
+						attack: 0
+						defense: 100
+						abilities:
+							U00182:1
+							U00182:2
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+		handZone:
+			U00048:
+				hiddenFor: #0
+			U00048:
+				hiddenFor: #0
+			U00048:
+				hiddenFor: #0
+			U00048:
+				hiddenFor: #0
+		unitZone:
+			---
+			---
+			U00048:
+				owner: #1
+				isToken: false
+				attacksMadeThisTurn: 0
+				canAttackAgain: false
+				isAttackTarget: false
+				isAttacking: false
+				values:
+					base:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					current:
+						cardTypes: unit
+						names: U00048
+						level: 0
+						types: Fire, Ghost
+						attack: 50
+						defense: 0
+						abilities:
+						attackRights: 1
+						canAttack: true
+						canCounterattack: true
+					modifiers:none
+			---
+			---
+		spellItemZone:
+			---
+			---
+			---
+			---
+		discardPile:
+			S00147:
+				owner: #1
+				isToken: false
+				lastFieldSidePlayer: #1
+				values:
+					base:
+						cardTypes: standardSpell, spell
+						names: S00147
+						level: 0
+						types: Light
+						attack: null
+						defense: null
+						abilities:
+							S00147:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					current:
+						cardTypes: standardSpell, spell
+						names: S00147
+						level: 0
+						types: Light
+						attack: null
+						defense: null
+						abilities:
+							S00147:1
+						attackRights: null
+						canAttack: null
+						canCounterattack: null
+					modifiers:none
+		exileZone:
+			---
