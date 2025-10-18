@@ -2,7 +2,7 @@
 import {Stack} from "./stacks.mjs";
 import {createStackCreatedEvent} from "./events.mjs";
 import {Step} from "./steps.mjs";
-import {StepRunner, arrayStepGenerator} from "./stepGenerators.mjs";
+import {StepRunner} from "./stepGenerators.mjs";
 import {ScriptValue, ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
 import * as actions from "./actions.mjs";
 import * as requests from "./inputRequests.mjs";
