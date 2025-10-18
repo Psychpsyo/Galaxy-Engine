@@ -199,7 +199,7 @@ export class Game {
 		while (true) {
 			this.turns.push(new Turn(currentPlayer, this.upcomingTurnActions.shift()));
 			this.upcomingTurnActions.push(new TurnActions());
-			yield [createTurnStartedEvent()];
+			yield [createTurnStartedEvent(this.turns.at(-1))];
 
 			const turnGenerator = this.currentTurn().run();
 			let generatorOutput = await turnGenerator.next();

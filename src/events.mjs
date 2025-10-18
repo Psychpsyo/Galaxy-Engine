@@ -41,10 +41,11 @@ export function createGameStartedEvent() {
 	}
 }
 
-export function createTurnStartedEvent() {
+export function createTurnStartedEvent(turn) {
 	return {
 		"nature": "event",
-		"type": "turnStarted"
+		"type": "turnStarted",
+		"turn": turn
 	}
 }
 
