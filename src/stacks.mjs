@@ -1,7 +1,7 @@
 import * as abilities from "./abilities.mjs";
 import * as blocks from "./blocks.mjs";
 import {createBlockCreatedEvent, createBlockCreationAbortedEvent, createStackStartedEvent, createBlockStartedEvent} from "./events.mjs";
-import {runInterjectedSteps} from "./steps.mjs";
+import {runInterjectedTimings} from "./timings.mjs";
 
 export class Stack {
 	constructor(phase, index) {
@@ -109,10 +109,10 @@ export class Stack {
 	currentBlock() {
 		return this.executingBlock;
 	}
-	getSteps() {
-		let costSteps = this.blocks.map(block => block.getCostSteps()).flat();
-		let executionSteps = this.blocks.toReversed().map(block => block.getExecutionSteps()).flat();
-		return costSteps.concat(executionSteps);
+	getTimings() {
+		let costTimings = this.blocks.map(block => block.getCostTimings()).flat();
+		let executionTimings = this.blocks.toReversed().map(block => block.getExecutionTimings()).flat();
+		return costTimings.concat(executionTimings);
 	}
 	getActions() {
 		let costActions = this.blocks.map(block => block.getCostActions()).flat();
@@ -126,7 +126,7 @@ export class Stack {
 			yield [createBlockStartedEvent(this.blocks[i])];
 			yield* this.blocks[i].run();
 			this.executingBlock = null;
-			this.blocks[i].followupStep = await (yield* runInterjectedSteps(this.phase.turn.game, false));
+			this.blocks[i].followupTiming = await (yield* runInterjectedTimings(this.phase.turn.game, false));
 		}
 		this.processed = true;
 	}

@@ -43,8 +43,8 @@ export class Turn {
 	getBlocks() {
 		return this.phases.slice(1).map(phase => phase.getBlocks()).flat();
 	}
-	getSteps() {
-		return this.phases.map(phase => phase.getSteps()).flat();
+	getTimings() {
+		return this.phases.map(phase => phase.getTimings()).flat();
 	}
 	getActions() {
 		return this.phases.map(phase => phase.getActions()).flat();

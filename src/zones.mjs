@@ -198,7 +198,7 @@ export class FieldZone extends Zone {
 				// static abilities need to update their zone enter timer
 				for (const ability of card.values.current.abilities) {
 					if (ability instanceof abilities.StaticAbility) {
-						ability.zoneEnterStepIndex = card.owner.game.nextStepIndex - 1;
+						ability.zoneEnterTimingIndex = card.owner.game.nextTimingIndex - 1;
 					}
 				}
 			}

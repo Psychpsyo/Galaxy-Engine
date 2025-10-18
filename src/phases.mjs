@@ -1,8 +1,8 @@
 // This file contains definitions for all phases in the game.
 import {Stack} from "./stacks.mjs";
 import {createStackCreatedEvent} from "./events.mjs";
-import {Step} from "./steps.mjs";
-import {StepRunner} from "./stepGenerators.mjs";
+import {Timing} from "./timings.mjs";
+import {TimingRunner} from "./timingGenerators.mjs";
 import {ScriptValue, ScriptContext} from "./cdfScriptInterpreter/structs.mjs";
 import * as actions from "./actions.mjs";
 import * as requests from "./inputRequests.mjs";
@@ -13,13 +13,13 @@ class Phase {
 	constructor(turn, types) {
 		this.turn = turn;
 		this.types = types;
-		// Set by a step when it successfully runs, to be read by the TriggerRoot AST nodes right after.
+		// Set by a timing when it successfully runs, to be read by the TriggerRoot AST nodes right after.
 		this.lastActionList = [];
 	}
 
 	async* run() {}
 
-	getSteps() {
+	getTimings() {
 		return [];
 	}
 	getActions() {
@@ -51,18 +51,18 @@ export class StackPhase extends Phase {
 	constructor(turn, types) {
 		super(turn, types);
 		this.stacks = [];
-		this.ranStartSteps = false;
+		this.ranStartTimings = false;
 	}
 
 	async* run() {
 		// we need to check this because the end phase repeats itself (it calls run() in a loop)
-		if (!this.ranStartSteps) {
-			for (const stepGenerator of this.turn.actionLists[this.types[0]]) {
-				const stepRunner = new StepRunner(() => stepGenerator, this.turn.game);
-				await (yield* stepRunner.run());
+		if (!this.ranStartTimings) {
+			for (const timingGenerator of this.turn.actionLists[this.types[0]]) {
+				const timingRunner = new TimingRunner(() => timingGenerator, this.turn.game);
+				await (yield* timingRunner.run());
 			}
-			// TODO: Were we actually supposed to run steps that got queued during this?
-			this.ranStartSteps = true;
+			// TODO: Were we actually supposed to run timings that got queued during this?
+			this.ranStartTimings = true;
 		}
 
 		let currentStackIndex = 0;
@@ -165,8 +165,8 @@ export class StackPhase extends Phase {
 	getBlocks() {
 		return this.stacks.map(stack => stack.blocks).flat();
 	}
-	getSteps() {
-		return this.stacks.map(stack => stack.getSteps()).flat();
+	getTimings() {
+		return this.stacks.map(stack => stack.getTimings()).flat();
 	}
 	getActions() {
 		return this.stacks.map(stack => stack.getActions()).flat();
@@ -180,7 +180,7 @@ export class StackPhase extends Phase {
 export class ManaSupplyPhase extends Phase {
 	constructor(turn) {
 		super(turn, ["manaSupplyPhase"]);
-		this.steps = [];
+		this.timings = [];
 	}
 
 	async* run() {
@@ -192,8 +192,8 @@ export class ManaSupplyPhase extends Phase {
 			}
 		}
 		if (firstReduceManaActions.length > 0) {
-			this.steps.push(new Step(this.turn.game, firstReduceManaActions));
-			await (yield* this.runStep());
+			this.timings.push(new Timing(this.turn.game, firstReduceManaActions));
+			await (yield* this.runTiming());
 		}
 
 		// RULES: Next, the active player gains 5 mana.
@@ -201,8 +201,8 @@ export class ManaSupplyPhase extends Phase {
 			// manaPlyers is the list of players that need to gain mana this turn.
 			// usually this is only the turn player, but when using the old mana rule, both players gain mana on the first player's turn
 			const manaPlayers = this.turn.game.config.useOldManaRule? this.turn.game.players : [this.turn.player];
-			this.steps.push(new Step(this.turn.game, manaPlayers.map(player => new actions.GainMana(player, player.values.current.manaGainAmount))));
-			await (yield* this.runStep());
+			this.timings.push(new Timing(this.turn.game, manaPlayers.map(player => new actions.GainMana(player, player.values.current.manaGainAmount))));
+			await (yield* this.runTiming());
 
 			// RULES: Then they pay their partner's level in mana. If they can't pay, they loose the game.
 			const payForPartnerActions = [];
@@ -220,8 +220,8 @@ export class ManaSupplyPhase extends Phase {
 			yield* this.turn.game.checkGameOver();
 			// if we made it through that, it's time to actually pay mana
 			if (payForPartnerActions.length > 0) {
-				this.steps.push(new Step(this.turn.game, payForPartnerActions));
-				await (yield* this.runStep());
+				this.timings.push(new Timing(this.turn.game, payForPartnerActions));
+				await (yield* this.runTiming());
 			}
 
 			// RULES: If they still have more than 5 mana, it will again be reduced to 5.
@@ -232,8 +232,8 @@ export class ManaSupplyPhase extends Phase {
 				}
 			}
 			if (secondReduceManaActions.length > 0) {
-				this.steps.push(new Step(this.turn.game, secondReduceManaActions));
-				await (yield* this.runStep());
+				this.timings.push(new Timing(this.turn.game, secondReduceManaActions));
+				await (yield* this.runTiming());
 			}
 		}
 
@@ -243,28 +243,28 @@ export class ManaSupplyPhase extends Phase {
 			if (player.handZone.cards.length > 8) {
 				const choiceRequest = new requests.ChooseCards(player, player.handZone.cards, [player.handZone.cards.length - 8], "handTooFull");
 				const chosenCards = await choiceRequest.extractResponseValue((yield [choiceRequest]));
-				this.steps.push(new Step(this.turn.game, chosenCards.map(card => new actions.Discard(
+				this.timings.push(new Timing(this.turn.game, chosenCards.map(card => new actions.Discard(
 					player,
 					card,
 					new ScriptValue("dueToReason", ["turnDiscard"])
 				))));
-				await (yield* this.runStep());
+				await (yield* this.runTiming());
 			}
 		}
 	}
 
-	async* runStep() {
-		await (yield* this.steps.at(-1).run());
-		while(this.steps.at(-1).followupStep) {
-			this.steps.push(this.steps.at(-1).followupStep);
+	async* runTiming() {
+		await (yield* this.timings.at(-1).run());
+		while(this.timings.at(-1).followupTiming) {
+			this.timings.push(this.timings.at(-1).followupTiming);
 		}
 	}
 
-	getSteps() {
-		return this.steps;
+	getTimings() {
+		return this.timings;
 	}
 	getActions() {
-		return this.steps.map(step => step.actions).flat();
+		return this.timings.map(timing => timing.actions).flat();
 	}
 }
 
@@ -391,7 +391,7 @@ export class BattlePhase extends StackPhase {
 export class EndPhase extends StackPhase {
 	constructor(turn) {
 		super(turn, ["endPhase"]);
-		this.notInStack = false; // set when running end-of-turn steps so that currentStack() does not return anything
+		this.notInStack = false; // set when running end-of-turn timings so that currentStack() does not return anything
 	}
 
 	async* run() {
@@ -400,12 +400,12 @@ export class EndPhase extends StackPhase {
 			yield* super.run();
 			this.notInStack = true;
 
-			for (const stepGenerator of this.turn.actionLists.end) {
-				const stepRunner = new StepRunner(() => stepGenerator, this.turn.game);
-				await (yield* stepRunner.run());
+			for (const timingGenerator of this.turn.actionLists.end) {
+				const timingRunner = new TimingRunner(() => timingGenerator, this.turn.game);
+				await (yield* timingRunner.run());
 			}
 			this.turn.actionLists.end = []; // needs to clear this so they don't re-run
-			// TODO: Were we actually supposed to run steps that got queued during this?
+			// TODO: Were we actually supposed to run timings that got queued during this?
 		} while (await this.triggerAbilitiesMet());
 	}
 

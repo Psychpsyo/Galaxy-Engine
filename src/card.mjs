@@ -7,7 +7,7 @@ import * as abilities from "./abilities.mjs";
 import * as interpreter from "./cdfScriptInterpreter/interpreter.mjs";
 import * as blocks from "./blocks.mjs";
 import * as actions from "./actions.mjs";
-import * as stepGenerators from "./stepGenerators.mjs";
+import * as timingGenerators from "./timingGenerators.mjs";
 
 export class BaseCard {
 	constructor(player, cardId, isToken, values, deckLimit, equipableTo, turnLimit, condition) {
@@ -94,7 +94,7 @@ export class BaseCard {
 		if (this.values.current.level > 0) {
 			costActions.push([new actions.LoseMana(player, this.values.current.level)]);
 		}
-		return stepGenerators.arrayStepGenerator(costActions);
+		return timingGenerators.arrayTimingGenerator(costActions);
 	}
 	getCastingCost(player, scriptTargets) {
 		const costActions = [];
@@ -105,19 +105,19 @@ export class BaseCard {
 			costActions.unshift([new actions.SelectEquipableUnit(player, this)]);
 		}
 		const generators = [
-			stepGenerators.arrayStepGenerator(costActions)
+			timingGenerators.arrayTimingGenerator(costActions)
 		];
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.CastAbility) {
 				if (ability.cost) {
-					generators.push(stepGenerators.abilityStepGenerator(ability, ability.makeMainContext(this, player, scriptTargets), "cost"));
+					generators.push(timingGenerators.abilityTimingGenerator(ability, ability.makeMainContext(this, player, scriptTargets), "cost"));
 				}
 				break;
 			}
 		}
 		// Lifting the card out of the hand needs to be the last part of its cost so that the validity checker for its exec does not have access to it during its effect
-		generators.push(stepGenerators.arrayStepGenerator([[new actions.LiftCardOutOfCurrentZone(player, this)]]));
-		return stepGenerators.combinedStepGenerator(generators);
+		generators.push(timingGenerators.arrayTimingGenerator([[new actions.LiftCardOutOfCurrentZone(player, this)]]));
+		return timingGenerators.combinedTimingGenerator(generators);
 	}
 	getDeploymentCost(player, scriptTargets) {
 		const costActions = [];
@@ -128,28 +128,28 @@ export class BaseCard {
 			costActions.unshift([new actions.SelectEquipableUnit(player, this)]);
 		}
 		const generators = [
-			stepGenerators.arrayStepGenerator(costActions)
+			timingGenerators.arrayTimingGenerator(costActions)
 		];
 		for (let ability of this.values.current.abilities) {
 			if (ability instanceof abilities.DeployAbility) {
 				if (ability.cost) {
-					generators.push(stepGenerators.abilityStepGenerator(ability, ability.makeMainContext(this, player, scriptTargets), "cost"));
+					generators.push(timingGenerators.abilityTimingGenerator(ability, ability.makeMainContext(this, player, scriptTargets), "cost"));
 				}
 				break;
 			}
 		}
 		// Lifting the card out of the hand needs to be the last part of its cost so that the validity checker for its exec does not have access to it during its effect
-		generators.push(stepGenerators.arrayStepGenerator([[new actions.LiftCardOutOfCurrentZone(player, this)]]));
-		return stepGenerators.combinedStepGenerator(generators);
+		generators.push(timingGenerators.arrayTimingGenerator([[new actions.LiftCardOutOfCurrentZone(player, this)]]));
+		return timingGenerators.combinedTimingGenerator(generators);
 	}
 
 	async canSummon(checkPlacement, player) {
 		if (!this.values.current.cardTypes.includes("unit")) {
 			return false;
 		}
-		const stepRunner = new stepGenerators.StepRunner(() => this.getSummoningCost(player), player.game);
-		stepRunner.isCost = true;
-		const costOptionTree = new stepGenerators.OptionTreeNode(player.game, stepRunner, () => !checkPlacement || player.unitZone.getFreeSpaceCount() > 0);
+		const timingRunner = new timingGenerators.TimingRunner(() => this.getSummoningCost(player), player.game);
+		timingRunner.isCost = true;
+		const costOptionTree = new timingGenerators.OptionTreeNode(player.game, timingRunner, () => !checkPlacement || player.unitZone.getFreeSpaceCount() > 0);
 		return costOptionTree.isValid();
 	}
 	// If checkPlacement is false, only the casting conditions that the rules care about will be evaluated, not if the card can actually sucessfully be placed on the field
@@ -187,9 +187,9 @@ export class BaseCard {
 			}
 		}
 
-		const stepRunner = new stepGenerators.StepRunner(() => this.getCastingCost(player, scriptTargets), player.game);
-		stepRunner.isCost = true;
-		return new stepGenerators.OptionTreeNode(player.game, stepRunner, endOfTreeCheck);
+		const timingRunner = new timingGenerators.TimingRunner(() => this.getCastingCost(player, scriptTargets), player.game);
+		timingRunner.isCost = true;
+		return new timingGenerators.OptionTreeNode(player.game, timingRunner, endOfTreeCheck);
 	}
 	// If checkPlacement is false, only the deployment conditions that the rules care about will be evaluated, not if the card can actually sucessfully be placed on the field
 	async getDeployabilityCostOptionTree(checkPlacement, player, evaluatingPlayer = player) {
@@ -226,9 +226,9 @@ export class BaseCard {
 			}
 		}
 
-		const stepRunner = new stepGenerators.StepRunner(() => this.getDeploymentCost(player, scriptTargets), player.game);
-		stepRunner.isCost = true;
-		return new stepGenerators.OptionTreeNode(player.game, stepRunner, endOfTreeCheck);
+		const timingRunner = new timingGenerators.TimingRunner(() => this.getDeploymentCost(player, scriptTargets), player.game);
+		timingRunner.isCost = true;
+		return new timingGenerators.OptionTreeNode(player.game, timingRunner, endOfTreeCheck);
 	}
 
 	// Does not check if the card can be declared to attack, only if it is allowed to be/stay in an attack declaration.
@@ -320,7 +320,7 @@ export class Card extends BaseCard {
 	}
 }
 
-// A card with all its values frozen so it can be held in internal logs of what Actions happened in a Step.
+// A card with all its values frozen so it can be held in internal logs of what Actions happened in a Timing.
 // These are also used in many actions undo() functions as a state to restore a card to.
 export class SnapshotCard extends BaseCard {
 	#actualGlobalId;

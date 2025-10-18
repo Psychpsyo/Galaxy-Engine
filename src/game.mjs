@@ -99,7 +99,7 @@ export class Game {
 			new TurnActions()
 		];
 		this.currentAttackDeclaration = null;
-		this.nextStepIndex = 1;
+		this.nextTimingIndex = 1;
 
 		this.rng = new CURandom(); // the random number source for this game
 		this.config = {
@@ -356,8 +356,8 @@ export class Game {
 	getBlocks() {
 		return this.turns.map(turn => turn.getBlocks()).flat();
 	}
-	getSteps() {
-		return this.turns.map(turn => turn.getSteps()).flat();
+	getTimings() {
+		return this.turns.map(turn => turn.getTimings()).flat();
 	}
 
 	currentTurn() {

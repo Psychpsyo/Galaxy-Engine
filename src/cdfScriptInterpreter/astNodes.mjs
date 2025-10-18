@@ -2,7 +2,7 @@
 
 import * as actions from "../actions.mjs";
 import * as blocks from "../blocks.mjs";
-import * as stepRunnerInserts from "./stepRunnerInserts.mjs";
+import * as timingRunnerInserts from "./timingRunnerInserts.mjs";
 import {BaseCard} from "../card.mjs";
 import {Modifier} from "../valueModifiers.mjs";
 import {ScriptValue, DeckPosition, SomeOrMore, TimeIndicator, TurnValue} from "./structs.mjs";
@@ -1433,7 +1433,7 @@ export class OptionalSectionNode extends AstNode {
 	* eval(ctx) {
 		// TODO: figure out how a both.may needs to work or if it should be forbidden
 		const player = this.playerNode? (yield* this.playerNode.eval(ctx)).get(ctx.player)[0] : null;
-		yield new stepRunnerInserts.OptionalEffectSectionInsert(player, ctx, this.mainBlock, this.thenBlock, this.elseBlock);
+		yield new timingRunnerInserts.OptionalEffectSectionInsert(player, ctx, this.mainBlock, this.thenBlock, this.elseBlock);
 	}
 	hasAllTargets(ctx) {
 		// just one path needs all targets

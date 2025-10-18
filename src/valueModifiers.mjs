@@ -462,7 +462,7 @@ export class CompletelyUnaffectedModification extends Modification {
 }
 
 // ActionModifications are mandatory or optional modifications that apply to actions which are about to happen.
-// They are intentionally very empty since the actual functionality is inside of the Step class
+// They are intentionally very empty since the actual functionality is inside of the Timing class
 export class ActionModification extends Modification {
 	constructor(toModify, condition) {
 		super(condition);

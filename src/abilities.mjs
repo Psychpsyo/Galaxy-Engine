@@ -1,6 +1,6 @@
 import * as interpreter from "./cdfScriptInterpreter/interpreter.mjs";
 import * as blocks from "./blocks.mjs";
-import * as stepGenerators from "./stepGenerators.mjs";
+import * as timingGenerators from "./timingGenerators.mjs";
 import {ScriptContext, ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
 import {capturedVariables, variableTypes} from "./cdfScriptInterpreter/parser.mjs";
 
@@ -80,9 +80,9 @@ export class Ability extends BaseAbility {
 		let ctx = new ScriptContext(card, player, this, evaluatingPlayer);
 		if (!this.forPlayer.evalFull(ctx).next().value.get(player).includes(player)) return null;
 
-		const stepRunner = new stepGenerators.StepRunner(() => stepGenerators.abilityStepGenerator(this, this.makeMainContext(card, player), "cost"), player.game);
-		stepRunner.isCost = true;
-		return new stepGenerators.OptionTreeNode(player.game, stepRunner, () => {
+		const timingRunner = new timingGenerators.TimingRunner(() => timingGenerators.abilityTimingGenerator(this, this.makeMainContext(card, player), "cost"), player.game);
+		timingRunner.isCost = true;
+		return new timingGenerators.OptionTreeNode(player.game, timingRunner, () => {
 				for (const section of ["exec", "onComplete"]) {
 					if (this[section] && !this[section].hasAllTargets(new ScriptContext(card, player, this, evaluatingPlayer)))
 						return false;
@@ -401,7 +401,7 @@ export class StaticAbility extends BaseAbility {
 		super(ability, game);
 		this.modifier = interpreter.buildAST("modifier", ability.id, ability.modifier, game);
 		this.applyTo = interpreter.buildAST("applyTarget", ability.id, ability.applyTo, game);
-		this.zoneEnterStepIndex = 0;
+		this.zoneEnterTimingIndex = 0;
 		this.mandatory = ability.mandatory; // for action-replacing abilities
 
 		// all of these are for cancel or replacement static abilities.
@@ -416,7 +416,7 @@ export class StaticAbility extends BaseAbility {
 		if (!this.isConditionMet(player, evaluatingPlayer = player)) {
 			return [];
 		}
-		// no applyTo means this is an action / prohibit modification and target is deduced at apply time by the step processing
+		// no applyTo means this is an action / prohibit modification and target is deduced at apply time by the timing processing
 		if (this.applyTo) {
 			return this.applyTo.evalFull(new ScriptContext(this.card, player, this, evaluatingPlayer)).next().value.get(player);
 		}
@@ -440,7 +440,7 @@ export class StaticAbility extends BaseAbility {
 		if (this.zoneApplicationCount >= this.zoneDurationLimit.evalFull(ctx).next().value.getJsNum(player)) return false;
 
 		let gameLimit = this.gameLimit.evalFull(ctx).next().value.getJsNum(player);
-		if (gameLimit !== Infinity && player.game.getSteps().map(step => step.staticAbilitiesApplied.filter(a => a.player === player && a.ability.id === this.id)).flat().length >= gameLimit)
+		if (gameLimit !== Infinity && player.game.getTimings().map(timing => timing.staticAbilitiesApplied.filter(a => a.player === player && a.ability.id === this.id)).flat().length >= gameLimit)
 			return false;
 
 		return true;
@@ -453,7 +453,7 @@ export class StaticAbility extends BaseAbility {
 
 	zoneMoveReset(game) {
 		super.zoneMoveReset(game);
-		this.zoneEnterStepIndex = game.nextStepIndex - 1;
+		this.zoneEnterTimingIndex = game.nextTimingIndex - 1;
 		this.turnApplicationCount = 0;
 		this.zoneApplicationCount = 0;
 	}

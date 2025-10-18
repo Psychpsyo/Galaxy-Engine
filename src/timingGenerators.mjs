@@ -1,15 +1,15 @@
-// This file contains step generator functions and related utility classes
+// This file contains timing generator functions and related utility classes
 
-import {Step, runInterjectedSteps} from "./steps.mjs";
+import {Timing, runInterjectedTimings} from "./timings.mjs";
 import {createCardsAttackedEvent} from "./events.mjs";
 import {FieldZone} from "./zones.mjs";
 import {ScriptValue} from "./cdfScriptInterpreter/structs.mjs";
-import {StepRunnerInsert} from "./cdfScriptInterpreter/stepRunnerInserts.mjs";
+import {TimingRunnerInsert} from "./cdfScriptInterpreter/timingRunnerInserts.mjs";
 import * as actions from "./actions.mjs";
 import * as requests from "./inputRequests.mjs";
 
-export class StepRunner {
-	#history = []; // contains both steps and inserts that were run
+export class TimingRunner {
+	#history = []; // contains both timings and inserts that were run
 	constructor(generatorFunction, game) {
 		this.generatorFunction = generatorFunction;
 		this.game = game;
@@ -48,59 +48,59 @@ export class StepRunner {
 	}
 
 	async* runAndIgnoreOptionTree(isPrediction = false) {
-		const interjected = await (yield* runInterjectedSteps(this.game, isPrediction));
+		const interjected = await (yield* runInterjectedTimings(this.game, isPrediction));
 		if (interjected) {
 			this.#history.push(interjected);
-			while (this.#history.at(-1).followupStep) {
-				this.#history.push(this.#history.at(-1).followupStep);
+			while (this.#history.at(-1).followupTiming) {
+				this.#history.push(this.#history.at(-1).followupTiming);
 			}
 		}
 
 		let generator = this.generatorFunction();
-		let step = await (yield* this.getNextStep(generator, null, isPrediction));
-		while (step instanceof Step) {
+		let timing = await (yield* this.getNextTiming(generator, null, isPrediction));
+		while (timing instanceof Timing) {
 			if (this.isCost) {
-				// if an empty step is generated as part of a cost
-				if (step.actions.length === 0) {
+				// if an empty timing is generated as part of a cost
+				if (timing.actions.length === 0) {
 					return false;
 				}
-				for (let action of step.actions) {
+				for (let action of timing.actions) {
 					action.costIndex = 0;
 				}
 			}
-			this.#history.push(step);
-			yield* step.run(isPrediction);
-			while (this.#history.at(-1).followupStep) {
-				this.#history.push(this.#history.at(-1).followupStep);
+			this.#history.push(timing);
+			yield* timing.run(isPrediction);
+			while (this.#history.at(-1).followupTiming) {
+				this.#history.push(this.#history.at(-1).followupTiming);
 			}
-			if (!step.successful && this.isCost) {
+			if (!timing.successful && this.isCost) {
 				return false;
 			}
-			step = await (yield* this.getNextStep(generator, step, isPrediction));
+			timing = await (yield* this.getNextTiming(generator, timing, isPrediction));
 		}
-		// step should be a boolean by now
-		return step;
+		// timing should be a boolean by now
+		return timing;
 	}
 
-	// Returns either the next step or the final return value of the passed-in generator
-	async* getNextStep(stepGenerator, previousStep, isPrediction = false) {
-		let generatorOutput = stepGenerator.next(previousStep);
+	// Returns either the next timing or the final return value of the passed-in generator
+	async* getNextTiming(timingGenerator, previousTiming, isPrediction = false) {
+		let generatorOutput = timingGenerator.next(previousTiming);
 		while (!generatorOutput.done) {
-			if (generatorOutput.value instanceof StepRunnerInsert) {
+			if (generatorOutput.value instanceof TimingRunnerInsert) {
 				yield* generatorOutput.value.run(isPrediction);
 				this.#history.push(generatorOutput.value);
-				generatorOutput = stepGenerator.next();
+				generatorOutput = timingGenerator.next();
 				continue;
 			}
 			if (generatorOutput.value.length > 0 && generatorOutput.value[0] instanceof actions.Action) {
 				break;
 			}
-			generatorOutput = stepGenerator.next(yield generatorOutput.value);
+			generatorOutput = timingGenerator.next(yield generatorOutput.value);
 		}
 		if (generatorOutput.done) {
 			return generatorOutput.value;
 		}
-		return new Step(this.game, generatorOutput.value);
+		return new Timing(this.game, generatorOutput.value);
 	}
 
 	* undo(isPrediction = false) {
@@ -109,11 +109,11 @@ export class StepRunner {
 		}
 	}
 
-	getSteps() {
+	getTimings() {
 		return this.#history.map(histElem => {
-			if (histElem instanceof Step) return histElem;
+			if (histElem instanceof Timing) return histElem;
 			// else it's an insert
-			return histElem.getSteps();
+			return histElem.getTimings();
 		}).flat();
 	}
 }
@@ -275,28 +275,28 @@ export class OptionTreeNode {
 	}
 }
 
-// It follows: all different types of step generators
+// It follows: all different types of timing generators
 // They return true or false, depending on if all the actions within them were successful.
-export function* arrayStepGenerator(actionArrays) {
+export function* arrayTimingGenerator(actionArrays) {
 	for (const actionList of actionArrays) {
 		yield actionList;
 	}
 	return true;
 }
 
-export function* combinedStepGenerator(generators) {
+export function* combinedTimingGenerator(generators) {
 	let successful = true;
-	for (const stepGenerator of generators) {
-		// any failed step should make the whole thing count as unsuccessful.
-		if (!(yield* stepGenerator)) {
+	for (const timingGenerator of generators) {
+		// any failed timing should make the whole thing count as unsuccessful.
+		if (!(yield* timingGenerator)) {
 			successful = false;
 		}
 	}
 	return successful;
 }
 
-export function* abilityStepGenerator(ability, ctx, section) {
-	let stepGenerator = ability.run(ctx, section);
+export function* abilityTimingGenerator(ability, ctx, section) {
+	let timingGenerator = ability.run(ctx, section);
 	let yieldValue;
 	let actionList;
 	do {
@@ -304,46 +304,46 @@ export function* abilityStepGenerator(ability, ctx, section) {
 		if (ability.isCancelled && section !== "cost") {
 			return false;
 		}
-		actionList = stepGenerator.next((yieldValue instanceof Step)? yieldValue : undefined);
+		actionList = timingGenerator.next((yieldValue instanceof Timing)? yieldValue : undefined);
 		if (!actionList.done) {
 			if (actionList.value.length === 0) {
 				return false;
 			}
 			yieldValue = yield actionList.value;
 		}
-	} while (!actionList.done && (!(yieldValue instanceof Step) || yieldValue.successful));
+	} while (!actionList.done && (!(yieldValue instanceof Timing) || yieldValue.successful));
 	return true;
 }
 
 // runs a part of an ability, used mostly for things that need OptionTree limiting during an effect
-export function* abilityFractionStepGenerator(astNode, ctx) {
-	let stepGenerator = astNode.eval(ctx);
+export function* abilityFractionTimingGenerator(astNode, ctx) {
+	let timingGenerator = astNode.eval(ctx);
 	let yieldValue;
 	let actionList;
 	do {
 		if (ctx.ability.isCancelled) {
 			return false;
 		}
-		actionList = stepGenerator.next((yieldValue instanceof Step)? yieldValue : undefined);
+		actionList = timingGenerator.next((yieldValue instanceof Timing)? yieldValue : undefined);
 		if (!actionList.done) {
 			if (actionList.value.length == 0) {
 				return false;
 			}
 			yieldValue = yield actionList.value;
 		}
-	} while (!actionList.done && (!(yieldValue instanceof Step) || yieldValue.successful));
+	} while (!actionList.done && (!(yieldValue instanceof Timing) || yieldValue.successful));
 	return true;
 }
 
-export function* standardDrawStepGenerator(player) {
-	const step = yield [new actions.Draw(player, player.values.current.standardDrawAmount, new ScriptValue("dueToReason", ["standardDraw"]))];
-	return step.successful;
+export function* standardDrawTimingGenerator(player) {
+	const timing = yield [new actions.Draw(player, player.values.current.standardDrawAmount, new ScriptValue("dueToReason", ["standardDraw"]))];
+	return timing.successful;
 }
 
-export function* equipStepGenerator(player, abilityGenerator = null) {
+export function* equipTimingGenerator(player, abilityGenerator = null) {
 	const currentBlock = player.game.currentBlock();
-	const step = yield [new actions.EquipCard(player, currentBlock.card, currentBlock.equipTarget)];
-	if (!step.successful) return false;
+	const timing = yield [new actions.EquipCard(player, currentBlock.card, currentBlock.equipTarget)];
+	if (!timing.successful) return false;
 
 	if (abilityGenerator !== null) {
 		return yield* abilityGenerator;
@@ -360,23 +360,23 @@ export function* spellItemDiscardGenerator(player, spellItem) {
 	// don't discard spells/items that equipped successfully
 	if (spellItem.equippedTo !== null) return true;
 
-	const step = yield [new actions.Discard(
+	const timing = yield [new actions.Discard(
 		player,
 		spellItem,
 		new ScriptValue("dueToReason", [spellItem.values.current.cardTypes.includes("spell")? "wasCast" : "wasDeployed"])
 	)];
-	return step.successful;
+	return timing.successful;
 }
 
-export function* retireStepGenerator(player, units) {
-	let discardStep = yield units.map(unit => new actions.Discard(
+export function* retireTimingGenerator(player, units) {
+	let discardTiming = yield units.map(unit => new actions.Discard(
 		player,
 		unit,
 		new ScriptValue("dueToReason", ["retire"])
 	));
 
 	let gainedMana = 0;
-	for (const action of discardStep.actions) {
+	for (const action of discardTiming.actions) {
 		if (action instanceof actions.Discard && !action.isCancelled) {
 			gainedMana += action.card.values.current.level;
 		}
@@ -387,7 +387,7 @@ export function* retireStepGenerator(player, units) {
 	return true;
 }
 
-export function* fightStepGenerator(attackDeclaration, fight) {
+export function* fightTimingGenerator(attackDeclaration, fight) {
 	if (!(yield* attackGenerator(attackDeclaration, fight, fight.values.current.counterattackFirst))) return false;
 	if (!(yield* attackGenerator(attackDeclaration, fight, !fight.values.current.counterattackFirst))) return false;
 	return true;
