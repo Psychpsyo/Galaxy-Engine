@@ -297,7 +297,7 @@ export function initFunctions() {
 			)];
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // evalFull is not needed since this has no return value and is therefore never called from inside another function
 	),
 
 	// Counts the number of elements in the passed-in variable
