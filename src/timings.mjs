@@ -629,21 +629,19 @@ async function* orderStaticAbilities(target, abilities, game) {
 		} else {
 			// otherwise the abilities get ordered by when they entered the field
 			const lastMoved = abilities[i].zoneEnterTimingIndex;
-			if (fieldEnterBuckets[lastMoved] === undefined) {
-				fieldEnterBuckets[lastMoved] = [];
-			}
+			fieldEnterBuckets[lastMoved] ??= [];
 			fieldEnterBuckets[lastMoved].push(abilities[i]);
 		}
 	}
 
 	// sort abilities by when they were put on the field, then by category bucket. (whose field they are on)
-	for (const timing of Object.keys(fieldEnterBuckets)) {
+	for (const bucket of Object.values(fieldEnterBuckets)) {
 		let applyBuckets = [];
 		switch (true) {
 			case target instanceof BaseCard: { // applying to cards
 				applyBuckets.push({player: target.currentOwner(), abilities: []}); // abilities on same side of field
 				applyBuckets.push({player: target.currentOwner().next(), abilities: []}); // abilities on other side of field
-				for (const ability of fieldEnterBuckets[timing]) {
+				for (const ability of bucket) {
 					if (ability.card.currentOwner() === target.currentOwner()) {
 						applyBuckets[0].abilities.push(ability);
 					} else {
@@ -655,7 +653,7 @@ async function* orderStaticAbilities(target, abilities, game) {
 			case target instanceof Player: { // applying to players
 				applyBuckets.push({player: target, abilities: []}); // abilities on same side of field
 				applyBuckets.push({player: target.next(), abilities: []}); // abilities on other side of field
-				for (const ability of fieldEnterBuckets[timing]) {
+				for (const ability of bucket) {
 					if (ability.card.currentOwner() === target) {
 						applyBuckets[0].abilities.push(ability);
 					} else {
@@ -667,7 +665,7 @@ async function* orderStaticAbilities(target, abilities, game) {
 			default: { // applying to everything else (game processes like fights)
 				applyBuckets.push({player: game.currentTurn().player, abilities: []}); // abilities owned by the turn player
 				applyBuckets.push({player: game.currentTurn().player.next(), abilities: []}); // abilities owned by the non-turn player
-				for (const ability of fieldEnterBuckets[timing]) {
+				for (const ability of bucket) {
 					if (ability.card.currentOwner() === applyBuckets[0].player) {
 						applyBuckets[0].abilities.push(ability);
 					} else {
