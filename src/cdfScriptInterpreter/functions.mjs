@@ -146,7 +146,7 @@ class ScriptFunction {
 		this.returnType = returnType;
 		this.run = func.bind(this);
 		this.hasAllTargets = hasAllTargets.bind(this);
-		// this should retun all the possible return values of this function
+		// this should yield all the possible return values of this function
 		this.runFull = funcFull?.bind(this);
 	}
 
@@ -236,7 +236,7 @@ export function initFunctions() {
 			}
 			return false;
 		},
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Checks if there exist X cards in the given location that satisfy a given condition
@@ -281,7 +281,7 @@ export function initFunctions() {
 			return new ScriptValue("bool", [false]);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Cancels an attack
@@ -310,7 +310,11 @@ export function initFunctions() {
 			return new ScriptValue("number", [list.length]);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		function*(astNode, ctx) {
+			for (const list of this.getParameter(astNode).evalFull(ctx)) {
+				yield new ScriptValue("number", [list.get(ctx.player).length]);
+			}
+		}
 	),
 
 	// Damages the executing player
@@ -337,7 +341,11 @@ export function initFunctions() {
 			return new ScriptValue("number", getSuccessfulActions(timing, damageActions).map(action => action.amount));
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		function*(astNode, ctx) {
+			for (const number of this.getParameter(astNode, "number").evalFull(ctx)) {
+				yield new ScriptValue("number", number.get(ctx.player));
+			}
+		}
 	),
 
 	// Returns the top X cards of the executing player's deck
@@ -437,7 +445,7 @@ export function initFunctions() {
 			}
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Discards the passed-in cards
@@ -498,7 +506,7 @@ export function initFunctions() {
 			return new ScriptValue("card", getSuccessfulActions(timing, [drawAction])[0]?.drawnCards ?? []);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Exiles the passed-in cards
@@ -576,7 +584,7 @@ export function initFunctions() {
 			return new ScriptValue("number", [total]);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Allows the passed-in units to attack again
@@ -594,7 +602,7 @@ export function initFunctions() {
 			)];
 		},
 		hasCardTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// The executing player loses X life
@@ -608,7 +616,7 @@ export function initFunctions() {
 			return new ScriptValue("number", [getSuccessfulActions(timing, [loseLifeAction])[0]?.amount ?? 0]);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// The executing player loses X mana
@@ -622,7 +630,7 @@ export function initFunctions() {
 			return new ScriptValue("number", [getSuccessfulActions(timing, [loseManaAction])[0]?.amount ?? 0]);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Move cards from where they are to certain zone(s)
@@ -732,7 +740,7 @@ export function initFunctions() {
 			yield actionList;
 		},
 		hasCardTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Removes X counters of a given type from the given card(s)
@@ -758,7 +766,7 @@ export function initFunctions() {
 			yield actionList;
 		},
 		hasCardTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Makes the executing player reveal the given card
@@ -822,7 +830,7 @@ export function initFunctions() {
 			return new ScriptValue("bool", [true]);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Makes the executing player choose X cards from the given ones, either selecting at random or not.
@@ -1150,7 +1158,7 @@ export function initFunctions() {
 			}
 			return false;
 		},
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Sums up all the numbers in the variable passed to it
@@ -1167,7 +1175,7 @@ export function initFunctions() {
 			return new ScriptValue("number", [sum]);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Summons the given cards and applies the given modifier to the summoning process.
@@ -1269,7 +1277,7 @@ defense: ${defense}`;
 			return yield* doSummonProcess(ctx, cards, zone, modifier, boolParam);
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// Swaps two cards with eachother
@@ -1310,7 +1318,7 @@ defense: ${defense}`;
 			}
 			return hasCardB;
 		},
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	),
 
 	// The player looks at a card.
@@ -1339,7 +1347,7 @@ defense: ${defense}`;
 			yield [new actions.WinGame(ctx.player, ctx.ability.id)];
 		},
 		alwaysHasTarget,
-		undefined // TODO: Write evalFull
+		undefined // TODO: Write runFull
 	)
 }
 };
